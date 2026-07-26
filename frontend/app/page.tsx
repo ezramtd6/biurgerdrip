@@ -1,17 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    fetch("http://127.0.0.1:8000/api")
-      .then(res => res.json())
-      .then(data => setMessage(data.message));
-  }, []);
-
-  return (
-    <h1>{message}</h1>
-  );
+  const router = useRouter();
+  useEffect(() => { router.push("/menu"); }, [router]);
+  return null;
 }

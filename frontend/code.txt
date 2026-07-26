@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pizza Hut Ethiopia | Pizza, Sides & Desserts</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            phred: '#C8102E',
+            phdark: '#A00D24',
+            phlight: '#FFF0F2',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .checkered {
+      background-image: 
+        linear-gradient(45deg, #f3f4f6 25%, transparent 25%),
+        linear-gradient(-45deg, #f3f4f6 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #f3f4f6 75%),
+        linear-gradient(-45deg, transparent 75%, #f3f4f6 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+    .dark .checkered {
+      background-image: 
+        linear-gradient(45deg, #374151 25%, transparent 25%),
+        linear-gradient(-45deg, #374151 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #374151 75%),
+        linear-gradient(-45deg, transparent 75%, #374151 75%);
+    }
+    .hero-gradient {
+      background: linear-gradient(135deg, #C8102E 0%, #8B0A1E 50%, #C8102E 100%);
+    }
+    .category-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+    .menu-card:hover { transform: translateY(-2px); }
+    .cart-slide { transition: transform 0.3s ease; }
+    .cart-open { transform: translateX(0); }
+    .cart-closed { transform: translateX(100%); }
+    .fade-in { animation: fadeIn 0.5s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .bounce { animation: bounce 0.3s ease; }
+    @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+    .nav-link { position: relative; }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: #C8102E;
+      transition: width 0.3s ease;
+    }
+    .nav-link:hover::after { width: 100%; }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .lang-btn { transition: all 0.2s ease; }
+    .lang-btn.active { background: #C8102E; color: white; }
+  </style>
+<base target="_blank">
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+
+  <!-- Top Bar -->
+  <div class="bg-phred text-white text-xs py-1.5">
+    <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+      <div class="flex items-center gap-4">
+        <span><i class="fas fa-phone-alt mr-1"></i> 8090</span>
+        <span class="hidden sm:inline" data-i18n="hours"><i class="fas fa-clock mr-1"></i> Open 10:00 AM - 10:00 PM</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="#" class="hover:underline" data-i18n="store_locations">Store Locations</a>
+        <span class="hidden sm:inline">|</span>
+        <a href="#" class="hover:underline hidden sm:inline" data-i18n="contact_us">Contact Us</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50 transition-colors duration-300">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo -->
+        <a href="#" class="flex items-center gap-2">
+          <div class="w-10 h-10 bg-phred rounded-full flex items-center justify-center">
+            <svg viewBox="0 0 100 100" class="w-7 h-7" fill="white">
+              <path d="M50 5 L85 25 L85 35 L50 20 L15 35 L15 25 Z"/>
+              <path d="M20 35 L20 75 Q20 85 30 85 L40 85 L40 45 L35 45 L35 35 Z"/>
+              <path d="M45 35 L45 85 L55 85 L55 35 Z"/>
+              <path d="M60 35 L60 45 L65 45 L65 85 L70 85 Q80 85 80 75 L80 35 Z"/>
+            </svg>
+          </div>
+          <span class="text-xl font-black text-phred tracking-tight">Pizza Hut</span>
+        </a>
+
+        <!-- Desktop Nav -->
+        <nav class="hidden lg:flex items-center gap-6">
+          <a href="#" class="nav-link text-sm font-semibold text-gray-700 dark:text-gray-200 hover:text-phred transition" data-i18n="home">Home</a>
+          <a href="#menu" class="nav-link text-sm font-semibold text-gray-700 dark:text-gray-200 hover:text-phred transition" data-i18n="menu">Menu</a>
+          <a href="#deals" class="nav-link text-sm font-semibold text-gray-700 dark:text-gray-200 hover:text-phred transition" data-i18n="deals">Deals</a>
+          <a href="#" class="nav-link text-sm font-semibold text-gray-700 dark:text-gray-200 hover:text-phred transition" data-i18n="store_locations">Store Locations</a>
+          <a href="#" class="nav-link text-sm font-semibold text-gray-700 dark:text-gray-200 hover:text-phred transition" data-i18n="about_us">About Us</a>
+        </nav>
+
+        <!-- Right Actions -->
+        <div class="flex items-center gap-2">
+          <!-- Dark Mode Toggle -->
+          <button onclick="toggleDarkMode()" id="dark-toggle" class="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Toggle Dark Mode">
+            <i class="fas fa-moon dark:hidden"></i>
+            <i class="fas fa-sun hidden dark:block"></i>
+          </button>
+
+          <!-- Language Switcher -->
+          <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full p-0.5">
+            <button onclick="setLanguage('en')" id="lang-en" class="lang-btn active px-3 py-1 rounded-full text-xs font-bold">EN</button>
+            <button onclick="setLanguage('am')" id="lang-am" class="lang-btn px-3 py-1 rounded-full text-xs font-bold text-gray-600 dark:text-gray-300 hover:text-phred">AM</button>
+          </div>
+
+          <button class="hidden md:flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-phred transition">
+            <i class="far fa-user"></i> <span data-i18n="my_account">My Account</span>
+          </button>
+          <button onclick="toggleCart()" class="relative bg-phred text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-phdark transition flex items-center gap-2">
+            <i class="fas fa-shopping-bag"></i>
+            <span class="hidden sm:inline" data-i18n="cart">Cart</span>
+            <span id="cart-badge" class="absolute -top-1 -right-1 bg-yellow-400 text-phred text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
+          </button>
+          <button onclick="toggleMobileMenu()" class="lg:hidden text-gray-700 dark:text-gray-200 text-xl p-2">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="lg:hidden hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700">
+      <div class="px-4 py-3 space-y-2">
+        <a href="#" class="block py-2 text-sm font-semibold text-gray-700 dark:text-gray-200" data-i18n="home">Home</a>
+        <a href="#menu" class="block py-2 text-sm font-semibold text-gray-700 dark:text-gray-200" data-i18n="menu">Menu</a>
+        <a href="#deals" class="block py-2 text-sm font-semibold text-gray-700 dark:text-gray-200" data-i18n="deals">Deals</a>
+        <a href="#" class="block py-2 text-sm font-semibold text-gray-700 dark:text-gray-200" data-i18n="store_locations">Store Locations</a>
+        <a href="#" class="block py-2 text-sm font-semibold text-gray-700 dark:text-gray-200" data-i18n="about_us">About Us</a>
+        <a href="#" class="block py-2 text-sm font-semibold text-gray-700 dark:text-gray-200" data-i18n="my_account">My Account</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-gradient relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10">
+      <div class="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
+      <div class="absolute bottom-10 right-10 w-48 h-48 bg-yellow-300 rounded-full blur-3xl"></div>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 py-16 md:py-24 relative">
+      <div class="grid md:grid-cols-2 gap-8 items-center">
+        <div class="text-white">
+          <span class="inline-block bg-yellow-400 text-phred text-xs font-bold px-3 py-1 rounded-full mb-4" data-i18n="new_arrival">NEW ARRIVAL</span>
+          <h1 class="text-4xl md:text-6xl font-black mb-4 leading-tight" data-i18n="hero_title">
+            No One OutPizzas<br>the Hut!
+          </h1>
+          <p class="text-lg md:text-xl text-red-100 mb-8 max-w-lg" data-i18n="hero_desc">
+            Order your favorite pizza online from Pizza Hut Ethiopia. Explore delicious flavors and enjoy fast, reliable delivery to your doorstep in Addis Ababa.
+          </p>
+          <div class="flex flex-wrap gap-4">
+            <a href="#menu" class="bg-white text-phred px-8 py-3.5 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg">
+              <span data-i18n="order_now">Order Now</span> <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+            <a href="#deals" class="border-2 border-white text-white px-8 py-3.5 rounded-full font-bold text-lg hover:bg-white hover:text-phred transition" data-i18n="view_deals">
+              View Deals
+            </a>
+          </div>
+        </div>
+        <div class="relative hidden md:block">
+          <img src="https://www.pizzahut.et/95e49adae4d362a79e4d4df4c7c1c62d04bf9250" alt="Pizza" class="w-full max-w-md mx-auto drop-shadow-2xl rounded-full">
+          <div class="absolute -bottom-4 -left-4 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-xl">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-motorcycle text-green-600 text-xl"></i>
+              </div>
+              <div>
+                <p class="font-bold text-gray-800 dark:text-gray-100" data-i18n="free_delivery">Free Delivery</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400" data-i18n="free_delivery_desc">On orders over ETB 500</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Category Section -->
+  <section class="py-12 bg-white dark:bg-gray-800 transition-colors duration-300">
+    <div class="max-w-7xl mx-auto px-4">
+      <h2 class="text-2xl md:text-3xl font-black text-center text-gray-800 dark:text-white mb-8" data-i18n="explore_menu">Explore Our Menu</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+
+        <div onclick="filterCategory('pizza')" class="category-card cursor-pointer checkered rounded-2xl p-4 text-center transition-all duration-300 border border-gray-100 dark:border-gray-700">
+          <img src="https://www.pizzahut.et/14f21833f06b806d66c7325669e39cf3e42dfdc9" alt="Pizzas" class="w-full h-28 object-contain mb-2">
+          <h3 class="text-phred font-black text-lg tracking-wide" data-i18n="cat_pizza">PIZZAS</h3>
+        </div>
+
+        <div onclick="filterCategory('sides')" class="category-card cursor-pointer checkered rounded-2xl p-4 text-center transition-all duration-300 border border-gray-100 dark:border-gray-700">
+          <img src="https://www.pizzahut.et/ef8bd19dee4eeb1b03c32c2f753d8cdac1028145" alt="Sides" class="w-full h-28 object-contain mb-2">
+          <h3 class="text-phred font-black text-lg tracking-wide" data-i18n="cat_sides">SIDES</h3>
+        </div>
+
+        <div onclick="filterCategory('melts')" class="category-card cursor-pointer checkered rounded-2xl p-4 text-center transition-all duration-300 border border-gray-100 dark:border-gray-700">
+          <img src="https://www.pizzahut.et/319a192f538b83d2e13e6164f56151366ae17ea7" alt="Melts" class="w-full h-28 object-contain mb-2">
+          <h3 class="text-phred font-black text-lg tracking-wide" data-i18n="cat_melts">MELTS</h3>
+        </div>
+
+        <div onclick="filterCategory('pasta')" class="category-card cursor-pointer checkered rounded-2xl p-4 text-center transition-all duration-300 border border-gray-100 dark:border-gray-700">
+          <img src="https://www.pizzahut.et/68927e46bbfc43b2bb5c9ff2fbde4406608bdfac" alt="Pasta" class="w-full h-28 object-contain mb-2">
+          <h3 class="text-phred font-black text-lg tracking-wide" data-i18n="cat_pasta">PASTA</h3>
+        </div>
+
+        <div onclick="filterCategory('drinks')" class="category-card cursor-pointer checkered rounded-2xl p-4 text-center transition-all duration-300 border border-gray-100 dark:border-gray-700">
+          <img src="https://www.pizzahut.et/86f922d8879d8bbc5e5edff271268f90e91102ae" alt="Soft Drinks" class="w-full h-28 object-contain mb-2">
+          <h3 class="text-phred font-black text-lg tracking-wide" data-i18n="cat_drinks">DRINKS</h3>
+        </div>
+
+        <div onclick="filterCategory('desserts')" class="category-card cursor-pointer checkered rounded-2xl p-4 text-center transition-all duration-300 border border-gray-100 dark:border-gray-700">
+          <img src="https://www.pizzahut.et/1891b6103046c4cd46f7eaaa4e979486b04aa1f7" alt="Desserts" class="w-full h-28 object-contain mb-2">
+          <h3 class="text-phred font-black text-lg tracking-wide" data-i18n="cat_desserts">DESSERTS</h3>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Deals Banner -->
+  <section id="deals" class="py-8 bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="bg-phred rounded-3xl overflow-hidden relative">
+        <div class="absolute inset-0 opacity-20">
+          <div class="absolute top-0 right-0 w-64 h-64 bg-yellow-400 rounded-full blur-3xl"></div>
+        </div>
+        <div class="relative p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="text-white text-center md:text-left">
+            <span class="bg-yellow-400 text-phred text-xs font-bold px-3 py-1 rounded-full" data-i18n="hot_deal">HOT DEAL</span>
+            <h2 class="text-3xl md:text-4xl font-black mt-3 mb-2" data-i18n="deal_title">3 Personal Pan Pizzas</h2>
+            <p class="text-red-100 text-lg" data-i18n="deal_desc">Starting @ ETB 499 only! Save up to 35%</p>
+          </div>
+          <button onclick="filterCategory('pizza')" class="bg-white text-phred px-8 py-3 rounded-full font-bold hover:bg-gray-100 transition shadow-lg whitespace-nowrap" data-i18n="grab_deal">
+            Grab the Deal
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Menu Section -->
+  <section id="menu" class="py-12 bg-white dark:bg-gray-800 transition-colors duration-300">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-black text-gray-800 dark:text-white" data-i18n="our_menu">Our Menu</h2>
+          <p class="text-gray-500 dark:text-gray-400 mt-1" data-i18n="menu_subtitle">Freshly made, delivered hot to your door</p>
+        </div>
+        <div class="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+          <button onclick="filterCategory('all')" class="filter-btn active px-5 py-2 rounded-full text-sm font-semibold bg-phred text-white transition whitespace-nowrap" data-category="all" data-i18n="all">All</button>
+          <button onclick="filterCategory('pizza')" class="filter-btn px-5 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred transition whitespace-nowrap" data-category="pizza" data-i18n="cat_pizza">Pizza</button>
+          <button onclick="filterCategory('sides')" class="filter-btn px-5 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred transition whitespace-nowrap" data-category="sides" data-i18n="cat_sides">Sides</button>
+          <button onclick="filterCategory('melts')" class="filter-btn px-5 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred transition whitespace-nowrap" data-category="melts" data-i18n="cat_melts">Melts</button>
+          <button onclick="filterCategory('pasta')" class="filter-btn px-5 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred transition whitespace-nowrap" data-category="pasta" data-i18n="cat_pasta">Pasta</button>
+          <button onclick="filterCategory('drinks')" class="filter-btn px-5 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred transition whitespace-nowrap" data-category="drinks" data-i18n="cat_drinks">Drinks</button>
+          <button onclick="filterCategory('desserts')" class="filter-btn px-5 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred transition whitespace-nowrap" data-category="desserts" data-i18n="cat_desserts">Desserts</button>
+        </div>
+      </div>
+
+      <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <!-- Menu items will be rendered by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="py-12 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition">
+          <div class="w-16 h-16 bg-phlight rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-motorcycle text-phred text-2xl"></i>
+          </div>
+          <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-2" data-i18n="feat_delivery">Fast Delivery</h3>
+          <p class="text-gray-500 dark:text-gray-400 text-sm" data-i18n="feat_delivery_desc">Hot and fresh delivered to your doorstep in 30 minutes or less.</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition">
+          <div class="w-16 h-16 bg-phlight rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-utensils text-phred text-2xl"></i>
+          </div>
+          <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-2" data-i18n="feat_quality">Quality Ingredients</h3>
+          <p class="text-gray-500 dark:text-gray-400 text-sm" data-i18n="feat_quality_desc">Only the freshest ingredients go into every pizza we make.</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition">
+          <div class="w-16 h-16 bg-phlight rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-tag text-phred text-2xl"></i>
+          </div>
+          <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-2" data-i18n="feat_deals">Best Deals</h3>
+          <p class="text-gray-500 dark:text-gray-400 text-sm" data-i18n="feat_deals_desc">Amazing combos and discounts every day of the week.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- App Download -->
+  <section class="py-12 bg-phred">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+        <div class="text-white text-center md:text-left">
+          <h2 class="text-3xl font-black mb-3" data-i18n="download_app">Download Our App</h2>
+          <p class="text-red-100 mb-6" data-i18n="download_app_desc">Order faster, track your delivery, and unlock exclusive app-only deals.</p>
+          <div class="flex gap-3 justify-center md:justify-start">
+            <button class="bg-black text-white px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-gray-900 transition">
+              <i class="fab fa-apple text-xl"></i>
+              <div class="text-left">
+                <div class="text-[10px] leading-none">Download on the</div>
+                <div class="text-sm font-bold leading-tight">App Store</div>
+              </div>
+            </button>
+            <button class="bg-black text-white px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-gray-900 transition">
+              <i class="fab fa-google-play text-xl"></i>
+              <div class="text-left">
+                <div class="text-[10px] leading-none">Get it on</div>
+                <div class="text-sm font-bold leading-tight">Google Play</div>
+              </div>
+            </button>
+          </div>
+        </div>
+        <div class="hidden md:block">
+          <div class="w-64 h-64 bg-white/10 rounded-full flex items-center justify-center">
+            <i class="fas fa-mobile-alt text-white/30 text-8xl"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-white pt-12 pb-6">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 bg-phred rounded-full flex items-center justify-center">
+              <svg viewBox="0 0 100 100" class="w-5 h-5" fill="white">
+                <path d="M50 5 L85 25 L85 35 L50 20 L15 35 L15 25 Z"/>
+                <path d="M20 35 L20 75 Q20 85 30 85 L40 85 L40 45 L35 45 L35 35 Z"/>
+                <path d="M45 35 L45 85 L55 85 L55 35 Z"/>
+                <path d="M60 35 L60 45 L65 45 L65 85 L70 85 Q80 85 80 75 L80 35 Z"/>
+              </svg>
+            </div>
+            <span class="text-lg font-black">Pizza Hut</span>
+          </div>
+          <p class="text-gray-400 text-sm leading-relaxed" data-i18n="footer_about">The Pizza Hut story begins in May 1958. Dan and Frank Carney opened their 550-square-foot pizza restaurant in Wichita, Kansas.</p>
+        </div>
+        <div>
+          <h4 class="font-bold mb-4" data-i18n="quick_links">Quick Links</h4>
+          <ul class="space-y-2 text-sm text-gray-400">
+            <li><a href="#" class="hover:text-white transition" data-i18n="home">Home</a></li>
+            <li><a href="#menu" class="hover:text-white transition" data-i18n="menu">Menu</a></li>
+            <li><a href="#deals" class="hover:text-white transition" data-i18n="deals">Deals</a></li>
+            <li><a href="#" class="hover:text-white transition" data-i18n="store_locations">Store Locations</a></li>
+            <li><a href="#" class="hover:text-white transition" data-i18n="about_us">About Us</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-bold mb-4" data-i18n="help_support">Help & Support</h4>
+          <ul class="space-y-2 text-sm text-gray-400">
+            <li><a href="#" class="hover:text-white transition" data-i18n="contact_us">Contact Us</a></li>
+            <li><a href="#" class="hover:text-white transition" data-i18n="faqs">FAQs</a></li>
+            <li><a href="#" class="hover:text-white transition" data-i18n="terms">Terms & Conditions</a></li>
+            <li><a href="#" class="hover:text-white transition" data-i18n="privacy">Privacy Policy</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-bold mb-4" data-i18n="contact">Contact</h4>
+          <ul class="space-y-2 text-sm text-gray-400">
+            <li><i class="fas fa-phone-alt mr-2 text-phred"></i> 8090</li>
+            <li><i class="fas fa-envelope mr-2 text-phred"></i> info@pizzahut.et</li>
+            <li><i class="fas fa-map-marker-alt mr-2 text-phred"></i> Addis Ababa, Ethiopia</li>
+          </ul>
+          <div class="flex gap-3 mt-4">
+            <a href="#" class="w-9 h-9 bg-gray-800 rounded-full flex items-center justify-center hover:bg-phred transition"><i class="fab fa-facebook-f text-sm"></i></a>
+            <a href="#" class="w-9 h-9 bg-gray-800 rounded-full flex items-center justify-center hover:bg-phred transition"><i class="fab fa-instagram text-sm"></i></a>
+            <a href="#" class="w-9 h-9 bg-gray-800 rounded-full flex items-center justify-center hover:bg-phred transition"><i class="fab fa-twitter text-sm"></i></a>
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-gray-800 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p class="text-gray-500 text-sm"> 2026 Pizza Hut (Pty) Ltd. <span data-i18n="rights">All rights reserved.</span></p>
+        <div class="flex items-center gap-4 text-gray-500 text-sm">
+          <span data-i18n="delivered_by">Delivered by:</span>
+          <span class="font-semibold text-white" data-i18n="ph_ethiopia">Pizza Hut Ethiopia</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Cart Sidebar -->
+  <div id="cart-overlay" onclick="toggleCart()" class="fixed inset-0 bg-black/50 z-50 hidden transition-opacity opacity-0"></div>
+  <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-gray-800 z-50 cart-slide cart-closed shadow-2xl flex flex-col">
+    <div class="p-4 border-b dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900">
+      <h3 class="font-bold text-lg text-gray-800 dark:text-white"><i class="fas fa-shopping-bag mr-2 text-phred"></i><span data-i18n="your_cart">Your Cart</span></h3>
+      <button onclick="toggleCart()" class="w-8 h-8 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition">
+        <i class="fas fa-times text-gray-600 dark:text-gray-300"></i>
+      </button>
+    </div>
+    <div id="cart-items" class="flex-1 overflow-y-auto p-4">
+      <div id="cart-empty" class="text-center py-12">
+        <div class="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-shopping-basket text-gray-300 dark:text-gray-500 text-3xl"></i>
+        </div>
+        <p class="text-gray-500 dark:text-gray-400" data-i18n="cart_empty">Your cart is empty</p>
+        <p class="text-gray-400 dark:text-gray-500 text-sm mt-1" data-i18n="cart_empty_desc">Add some delicious items!</p>
+      </div>
+      <div id="cart-list" class="space-y-3 hidden"></div>
+    </div>
+    <div id="cart-footer" class="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hidden">
+      <div class="flex justify-between mb-2 text-sm">
+        <span class="text-gray-500 dark:text-gray-400" data-i18n="subtotal">Subtotal</span>
+        <span id="cart-subtotal" class="font-semibold text-gray-800 dark:text-white">ETB 0.00</span>
+      </div>
+      <div class="flex justify-between mb-4 text-sm">
+        <span class="text-gray-500 dark:text-gray-400" data-i18n="delivery">Delivery</span>
+        <span class="font-semibold text-green-600" data-i18n="free">Free</span>
+      </div>
+      <div class="flex justify-between mb-4 text-lg font-bold text-gray-800 dark:text-white">
+        <span data-i18n="total">Total</span>
+        <span id="cart-total">ETB 0.00</span>
+      </div>
+      <button class="w-full bg-phred text-white py-3.5 rounded-xl font-bold hover:bg-phdark transition" data-i18n="checkout">
+        Checkout <i class="fas fa-arrow-right ml-2"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-full shadow-xl z-50 hidden items-center gap-3">
+    <i class="fas fa-check-circle text-green-400 dark:text-green-600"></i>
+    <span id="toast-message" class="font-medium">Item added to cart!</span>
+  </div>
+
+  <script>
+    // Translations
+    const translations = {
+      en: {
+        hours: '<i class="fas fa-clock mr-1"></i> Open 10:00 AM - 10:00 PM',
+        store_locations: 'Store Locations',
+        contact_us: 'Contact Us',
+        home: 'Home',
+        menu: 'Menu',
+        deals: 'Deals',
+        about_us: 'About Us',
+        my_account: 'My Account',
+        cart: 'Cart',
+        new_arrival: 'NEW ARRIVAL',
+        hero_title: 'No One OutPizzas<br>the Hut!',
+        hero_desc: 'Order your favorite pizza online from Pizza Hut Ethiopia. Explore delicious flavors and enjoy fast, reliable delivery to your doorstep in Addis Ababa.',
+        order_now: 'Order Now',
+        view_deals: 'View Deals',
+        free_delivery: 'Free Delivery',
+        free_delivery_desc: 'On orders over ETB 500',
+        explore_menu: 'Explore Our Menu',
+        cat_pizza: 'PIZZAS',
+        cat_sides: 'SIDES',
+        cat_melts: 'MELTS',
+        cat_pasta: 'PASTA',
+        cat_drinks: 'DRINKS',
+        cat_desserts: 'DESSERTS',
+        hot_deal: 'HOT DEAL',
+        deal_title: '3 Personal Pan Pizzas',
+        deal_desc: 'Starting @ ETB 499 only! Save up to 35%',
+        grab_deal: 'Grab the Deal',
+        our_menu: 'Our Menu',
+        menu_subtitle: 'Freshly made, delivered hot to your door',
+        all: 'All',
+        feat_delivery: 'Fast Delivery',
+        feat_delivery_desc: 'Hot and fresh delivered to your doorstep in 30 minutes or less.',
+        feat_quality: 'Quality Ingredients',
+        feat_quality_desc: 'Only the freshest ingredients go into every pizza we make.',
+        feat_deals: 'Best Deals',
+        feat_deals_desc: 'Amazing combos and discounts every day of the week.',
+        download_app: 'Download Our App',
+        download_app_desc: 'Order faster, track your delivery, and unlock exclusive app-only deals.',
+        footer_about: 'The Pizza Hut story begins in May 1958. Dan and Frank Carney opened their 550-square-foot pizza restaurant in Wichita, Kansas.',
+        quick_links: 'Quick Links',
+        help_support: 'Help & Support',
+        faqs: 'FAQs',
+        terms: 'Terms & Conditions',
+        privacy: 'Privacy Policy',
+        contact: 'Contact',
+        rights: 'All rights reserved.',
+        delivered_by: 'Delivered by:',
+        ph_ethiopia: 'Pizza Hut Ethiopia',
+        your_cart: 'Your Cart',
+        cart_empty: 'Your cart is empty',
+        cart_empty_desc: 'Add some delicious items!',
+        subtotal: 'Subtotal',
+        delivery: 'Delivery',
+        free: 'Free',
+        total: 'Total',
+        checkout: 'Checkout',
+        add: 'Add',
+        added_to_cart: 'added to cart!',
+      },
+      am: {
+        hours: '<i class="fas fa-clock mr-1"></i> ከጠዋት 10:00 - ከምሽት 10:00',
+        store_locations: 'የሱቅ ቦታዎች',
+        contact_us: 'አግኙን',
+        home: 'መነሻ',
+        menu: 'ምናሌ',
+        deals: 'ቅናሾች',
+        about_us: 'ስለ እኛ',
+        my_account: 'የእኔ መለያ',
+        cart: 'ተራማጅ',
+        new_arrival: 'አዲስ መጥቶዋል',
+        hero_title: 'ማንም ሆቱን<br>አያሸንፍም!',
+        hero_desc: 'የተወደደውን ፒዛ ከፒዛ ሆት ኢትዮጵያ በኦንላይን ይዘዙ። ጣፋጭ ጣዕሞችን ያስሱ እና በአዲስ አበባ ወደ ቤትዎ ፈጣን እና አስተማማኝ አቅርቦት ይደህኑ።',
+        order_now: 'አሁን ይዘዙ',
+        view_deals: 'ቅናሾችን ይመልከቱ',
+        free_delivery: 'ነፃ አቅርቦት',
+        free_delivery_desc: 'በ ETB 500 በላይ ትዕዛዞች ላይ',
+        explore_menu: 'ምናሌያችንን ይመረምሩ',
+        cat_pizza: 'ፒዛዎች',
+        cat_sides: 'ጎን ምግቦች',
+        cat_melts: 'ሜልትስ',
+        cat_pasta: 'ፓስታ',
+        cat_drinks: 'መጠጦች',
+        cat_desserts: 'ጣፋጭ ምግቦች',
+        hot_deal: 'ሞቃታማ ቅናሽ',
+        deal_title: '3 የግል ፓን ፒዛዎች',
+        deal_desc: 'ከ ETB 499 ጀምሮ! እስከ 35% ይቆጥቡ',
+        grab_deal: 'ቅናሹን ያግኙ',
+        our_menu: 'ምናሌያችን',
+        menu_subtitle: 'በቅርብ ጊዜ የተሰራ፣ ለበርዎ በሙቀት ይደርሳል',
+        all: 'ሁሉም',
+        feat_delivery: 'ፈጣን አቅርቦት',
+        feat_delivery_desc: 'በሙቀት እና በአዲስነት ወደ ቤትዎ በ30 ደቂቃ ውስጥ ይደርሳል።',
+        feat_quality: 'ጥራት ያላቸው ንጥረ ነገሮች',
+        feat_quality_desc: 'በእያንዳንዱ ፒዛ ውስጥ የሚገቡት የተረጋገጠ ንጥረ ነገሮች ብቻ ናቸው።',
+        feat_deals: 'ምርጥ ቅናሾች',
+        feat_deals_desc: 'በሳምንቱ ሁሉ ቀን አስደናቂ ኮምቦዎች እና ቅናሾች።',
+        download_app: 'መተግበሪያችንን ያውርዱ',
+        download_app_desc: 'ይበልጥ ፈጣን ይዘዙ፣ አቅርቦትዎን ይከታተሉ እና ለመተግበሪያ ብቻ የሆኑ ቅናሾችን ይክፈቱ።',
+        footer_about: 'የፒዛ ሆት ታሪክ በሚያዚያ 1958 ጀመረ። ዳን እና ፍራንክ ካርኒ በዊቺታ፣ ካንሳስ 550 ካሬ ጫማ የሆነውን የፒዛ ሬስቶራንት ከፈቱ።',
+        quick_links: 'ፈጣን አገናኞች',
+        help_support: 'እገዛ እና ድጋፍ',
+        faqs: 'ተደጋጋሚ ጥያቄዎች',
+        terms: 'ደንቦች እና ሁኔታዎች',
+        privacy: 'የግላዊነት ፖሊሲ',
+        contact: 'አድራሻ',
+        rights: 'ሁሉም መብቶች የተጠበቁ ናቸው።',
+        delivered_by: 'የሚያቀርበው፦',
+        ph_ethiopia: 'ፒዛ ሆት ኢትዮጵያ',
+        your_cart: 'ተራማጅዎ',
+        cart_empty: 'ተራማጅዎ ባዶ ነው',
+        cart_empty_desc: 'ጣፋጭ ዕቃዎችን ይጨምሩ!',
+        subtotal: 'ንዑስ ድምር',
+        delivery: 'አቅርቦት',
+        free: 'ነፃ',
+        total: 'ጠቅላላ',
+        checkout: 'ይክፈሉ',
+        add: 'ጨምር',
+        added_to_cart: 'ወደ ተራማጅ ተጨምሯል!',
+      }
+    };
+
+    let currentLang = 'en';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      document.documentElement.lang = lang;
+
+      // Update buttons
+      document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+      document.getElementById('lang-am').classList.toggle('active', lang === 'am');
+      if (lang === 'en') {
+        document.getElementById('lang-en').classList.add('bg-phred', 'text-white');
+        document.getElementById('lang-en').classList.remove('text-gray-600', 'dark:text-gray-300');
+        document.getElementById('lang-am').classList.remove('bg-phred', 'text-white');
+        document.getElementById('lang-am').classList.add('text-gray-600', 'dark:text-gray-300');
+      } else {
+        document.getElementById('lang-am').classList.add('bg-phred', 'text-white');
+        document.getElementById('lang-am').classList.remove('text-gray-600', 'dark:text-gray-300');
+        document.getElementById('lang-en').classList.remove('bg-phred', 'text-white');
+        document.getElementById('lang-en').classList.add('text-gray-600', 'dark:text-gray-300');
+      }
+
+      // Update all elements with data-i18n
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang][key]) {
+          el.innerHTML = translations[lang][key];
+        }
+      });
+
+      // Re-render menu to update "Add" button text
+      renderMenu(currentCategory);
+      updateCart();
+    }
+
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+    }
+
+    // Check saved preferences
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.documentElement.classList.add('dark');
+    }
+
+    // Menu Data
+    const menuItems = [
+      { id: 1, name: 'Cheese', nameAm: 'ቺዝ', category: 'pizza', price: 525, image: 'https://www.pizzahut.et/14f21833f06b806d66c7325669e39cf3e42dfdc9', desc: 'Classic cheese pizza with our signature tomato sauce', descAm: 'በራሳችን የሆነ የቲማቲም ሶስ ያለው ክላሲክ ቺዝ ፒዛ', badge: 'Best Seller', badgeAm: 'የተሸጠ ብዙ' },
+      { id: 2, name: 'Margherita', nameAm: 'ማርገሪታ', category: 'pizza', price: 545, image: 'https://www.pizzahut.et/95e49adae4d362a79e4d4df4c7c1c62d04bf9250', desc: 'Fresh tomatoes, mozzarella, and basil on a classic crust', descAm: 'አዲስ ቲማቲም፣ ሞዘሬላ እና ቤዚል በክላሲክ ክሬስት ላይ' },
+      { id: 3, name: 'Veggie Supreme', nameAm: 'ቬጂ ሱፕሪም', category: 'pizza', price: 595, image: 'https://www.pizzahut.et/14f21833f06b806d66c7325669e39cf3e42dfdc9', desc: 'Loaded with peppers, onions, mushrooms, and olives', descAm: 'በፈረፈራ፣ ሽንኩርት፣ እንጉዳይ እና ዘይቶች የተሞላ' },
+      { id: 4, name: 'Hot Veg', nameAm: 'ሆት ቬጅ', category: 'pizza', price: 605, image: 'https://www.pizzahut.et/95e49adae4d362a79e4d4df4c7c1c62d04bf9250', desc: 'Spicy veggie blend with jalapeños and hot sauce', descAm: 'በጃላፔኖ እና ሆት ሶስ የተቀላቀለ ቀፋፊ አትክልት' },
+      { id: 5, name: 'Chicken', nameAm: 'ዶሮ', category: 'pizza', price: 730, image: 'https://www.pizzahut.et/14f21833f06b806d66c7325669e39cf3e42dfdc9', desc: 'Grilled chicken with BBQ sauce and red onions', descAm: 'በቢቢኪው ሶስ እና ቀይ ሽንኩርት የተደረደረ ዶሮ', badge: 'Popular', badgeAm: 'ታዋቂ' },
+      { id: 6, name: 'Super Supreme', nameAm: 'ሱፐር ሱፕሪም', category: 'pizza', price: 875, image: 'https://www.pizzahut.et/95e49adae4d362a79e4d4df4c7c1c62d04bf9250', desc: 'The ultimate loaded pizza with all your favorite toppings', descAm: 'በሁሉም የምትወዷቸው ንጥረ ነገሮች የተሞላ የመጨረሻ ፒዛ' },
+      { id: 7, name: 'Tuna Pizza', nameAm: 'የጦና ፒዛ', category: 'pizza', price: 750, image: 'https://www.pizzahut.et/14f21833f06b806d66c7325669e39cf3e42dfdc9', desc: 'Tender tuna with melted cheese and special seasoning', descAm: 'በየቀረው ቺዝ እና ልዩ ቅመም የተደረደረ ጦና' },
+      { id: 8, name: 'Crispy Fries', nameAm: 'ክሪስፒ ፍራይስ', category: 'sides', price: 490, image: 'https://www.pizzahut.et/ef8bd19dee4eeb1b03c32c2f753d8cdac1028145', desc: 'Golden crispy fries, perfectly seasoned', descAm: 'የወርቅ ቀለም ያላቸው ክሪስፒ ፍራይስ፣ በትክክል የቀመሙ' },
+      { id: 9, name: 'Garlic Bread', nameAm: 'የነጭ ሽንኩርት ዳቦ', category: 'sides', price: 350, image: 'https://www.pizzahut.et/ef8bd19dee4eeb1b03c32c2f753d8cdac1028145', desc: 'Toasted garlic bread with herb butter', descAm: 'በሐብሐብ ቅቤ የተቀረቀረ የነጭ ሽንኩርት ዳቦ' },
+      { id: 10, name: 'Chicken Nuggets', nameAm: 'የዶሮ ናጌትስ', category: 'sides', price: 450, image: 'https://www.pizzahut.et/ef8bd19dee4eeb1b03c32c2f753d8cdac1028145', desc: 'Crispy chicken nuggets with dipping sauce', descAm: 'ክሪስፒ የዶሮ ናጌትስ ከዲፕ ሶስ ጋር' },
+      { id: 11, name: 'Pepperoni Melt', nameAm: 'ፔፐሮኒ ሜልት', category: 'melts', price: 550, image: 'https://www.pizzahut.et/319a192f538b83d2e13e6164f56151366ae17ea7', desc: 'Folded pizza pocket with pepperoni and cheese', descAm: 'በፔፐሮኒ እና ቺዝ የተሞላ የተቦጨቀ ፒዛ ጆሮ' },
+      { id: 12, name: 'Chicken Melt', nameAm: 'የዶሮ ሜልት', category: 'melts', price: 580, image: 'https://www.pizzahut.et/319a192f538b83d2e13e6164f56151366ae17ea7', desc: 'Grilled chicken melt with melted mozzarella', descAm: 'በየቀረው ሞዘሬላ የተሞላ የተቦጨቀ ዶሮ', badge: 'New', badgeAm: 'አዲስ' },
+      { id: 13, name: 'Alfredo Pasta', nameAm: 'አልፍሬዶ ፓስታ', category: 'pasta', price: 520, image: 'https://www.pizzahut.et/68927e46bbfc43b2bb5c9ff2fbde4406608bdfac', desc: 'Creamy alfredo sauce over penne pasta', descAm: 'ክሬሚ አልፍሬዶ ሶስ በፔኔ ፓስታ ላይ' },
+      { id: 14, name: 'Bolognese Pasta', nameAm: 'ቦሎኜዝ ፓስታ', category: 'pasta', price: 550, image: 'https://www.pizzahut.et/68927e46bbfc43b2bb5c9ff2fbde4406608bdfac', desc: 'Rich meat sauce with Italian herbs', descAm: 'በጣም ብዙ ስጋ ሶስ ከጣሊያን ሐብሐብ ጋር' },
+      { id: 15, name: 'Pepsi 1L', nameAm: 'ፔፕሲ 1ሊ', category: 'drinks', price: 180, image: 'https://www.pizzahut.et/86f922d8879d8bbc5e5edff271268f90e91102ae', desc: 'Refreshing Pepsi, 1 liter bottle', descAm: 'አዲስ አድርጎ የሚያድን ፔፕሲ፣ 1 ሊትር ብርጭቆ' },
+      { id: 16, name: '7UP 1L', nameAm: '7አፕ 1ሊ', category: 'drinks', price: 180, image: 'https://www.pizzahut.et/86f922d8879d8bbc5e5edff271268f90e91102ae', desc: 'Crisp and refreshing 7UP, 1 liter', descAm: 'ክሪስፕ እና አዲስ አድርጎ የሚያድን 7አፕ፣ 1 ሊትር' },
+      { id: 17, name: 'Chocolate Cake', nameAm: 'ቸኮሌት ኬክ', category: 'desserts', price: 420, image: 'https://www.pizzahut.et/1891b6103046c4cd46f7eaaa4e979486b04aa1f7', desc: 'Rich chocolate cake with fudge frosting', descAm: 'በፋጅ ፍሮስቲንግ የተሞላ ብዙ ቸኮሌት ኬክ' },
+      { id: 18, name: 'Cookie Dough', nameAm: 'ኩኪ ዶ', category: 'desserts', price: 390, image: 'https://www.pizzahut.et/1891b6103046c4cd46f7eaaa4e979486b04aa1f7', desc: 'Warm cookie dough with vanilla ice cream', descAm: 'በቫኒላ አይስ ክሬም የተሞላ ሞቃታማ ኩኪ ዶ', badge: 'Sweet', badgeAm: 'ጣፋጭ' },
+    ];
+
+    let cart = [];
+    let currentCategory = 'all';
+
+    function renderMenu(category = 'all') {
+      const grid = document.getElementById('menu-grid');
+      const items = category === 'all' ? menuItems : menuItems.filter(i => i.category === category);
+      const isAm = currentLang === 'am';
+
+      grid.innerHTML = items.map(item => `
+        <div class="menu-card bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 fade-in">
+          <div class="relative">
+            <img src="${item.image}" alt="${isAm ? item.nameAm : item.name}" class="w-full h-48 object-contain bg-gray-50 dark:bg-gray-900 p-4">
+            ${item.badge ? `<span class="absolute top-3 left-3 bg-phred text-white text-xs font-bold px-3 py-1 rounded-full">${isAm ? item.badgeAm : item.badge}</span>` : ''}
+          </div>
+          <div class="p-4">
+            <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-1">${isAm ? item.nameAm : item.name}</h3>
+            <p class="text-gray-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">${isAm ? item.descAm : item.desc}</p>
+            <div class="flex items-center justify-between">
+              <span class="text-phred font-black text-xl">ETB ${item.price.toFixed(2)}</span>
+              <button onclick="addToCart(${item.id})" class="bg-phred text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-phdark transition flex items-center gap-1.5 active:scale-95">
+                <i class="fas fa-plus text-xs"></i> ${isAm ? translations.am.add : translations.en.add}
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterCategory(category) {
+      currentCategory = category;
+      renderMenu(category);
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.dataset.category === category) {
+          btn.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-200');
+          btn.classList.add('bg-phred', 'text-white');
+        } else {
+          btn.classList.remove('bg-phred', 'text-white');
+          btn.classList.add('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-200');
+        }
+      });
+
+      document.getElementById('menu').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function addToCart(id) {
+      const item = menuItems.find(i => i.id === id);
+      const existing = cart.find(i => i.id === id);
+
+      if (existing) {
+        existing.qty++;
+      } else {
+        cart.push({ ...item, qty: 1 });
+      }
+
+      updateCart();
+      const itemName = currentLang === 'am' ? item.nameAm : item.name;
+      showToast(`${itemName} ${currentLang === 'am' ? translations.am.added_to_cart : translations.en.added_to_cart}`);
+
+      const badge = document.getElementById('cart-badge');
+      badge.classList.add('bounce');
+      setTimeout(() => badge.classList.remove('bounce'), 300);
+    }
+
+    function removeFromCart(id) {
+      cart = cart.filter(i => i.id !== id);
+      updateCart();
+    }
+
+    function updateQty(id, delta) {
+      const item = cart.find(i => i.id === id);
+      if (item) {
+        item.qty += delta;
+        if (item.qty <= 0) {
+          removeFromCart(id);
+        } else {
+          updateCart();
+        }
+      }
+    }
+
+    function updateCart() {
+      const badge = document.getElementById('cart-badge');
+      const emptyState = document.getElementById('cart-empty');
+      const cartList = document.getElementById('cart-list');
+      const cartFooter = document.getElementById('cart-footer');
+      const totalQty = cart.reduce((sum, i) => sum + i.qty, 0);
+      const total = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+      const isAm = currentLang === 'am';
+
+      if (totalQty > 0) {
+        badge.textContent = totalQty;
+        badge.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        cartList.classList.remove('hidden');
+        cartFooter.classList.remove('hidden');
+
+        cartList.innerHTML = cart.map(item => `
+          <div class="flex gap-3 bg-gray-50 dark:bg-gray-700 rounded-xl p-3">
+            <img src="${item.image}" alt="${isAm ? item.nameAm : item.name}" class="w-16 h-16 object-contain rounded-lg bg-white dark:bg-gray-800">
+            <div class="flex-1 min-w-0">
+              <h4 class="font-semibold text-sm text-gray-800 dark:text-white truncate">${isAm ? item.nameAm : item.name}</h4>
+              <p class="text-phred font-bold text-sm">ETB ${item.price.toFixed(2)}</p>
+              <div class="flex items-center gap-2 mt-1">
+                <button onclick="updateQty(${item.id}, -1)" class="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white">-</button>
+                <span class="text-sm font-semibold w-4 text-center text-gray-800 dark:text-white">${item.qty}</span>
+                <button onclick="updateQty(${item.id}, 1)" class="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white">+</button>
+              </div>
+            </div>
+            <button onclick="removeFromCart(${item.id})" class="text-gray-400 hover:text-red-500 transition self-start">
+              <i class="fas fa-trash-alt text-sm"></i>
+            </button>
+          </div>
+        `).join('');
+
+        document.getElementById('cart-subtotal').textContent = `ETB ${total.toFixed(2)}`;
+        document.getElementById('cart-total').textContent = `ETB ${total.toFixed(2)}`;
+      } else {
+        badge.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        cartList.classList.add('hidden');
+        cartFooter.classList.add('hidden');
+      }
+    }
+
+    function toggleCart() {
+      const sidebar = document.getElementById('cart-sidebar');
+      const overlay = document.getElementById('cart-overlay');
+
+      if (sidebar.classList.contains('cart-closed')) {
+        sidebar.classList.remove('cart-closed');
+        sidebar.classList.add('cart-open');
+        overlay.classList.remove('hidden');
+        setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+        document.body.style.overflow = 'hidden';
+      } else {
+        sidebar.classList.remove('cart-open');
+        sidebar.classList.add('cart-closed');
+        overlay.classList.add('opacity-0');
+        setTimeout(() => overlay.classList.add('hidden'), 300);
+        document.body.style.overflow = '';
+      }
+    }
+
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').textContent = message;
+      toast.classList.remove('hidden');
+      toast.classList.add('flex');
+
+      setTimeout(() => {
+        toast.classList.add('hidden');
+        toast.classList.remove('flex');
+      }, 2500);
+    }
+
+    // Initialize
+    renderMenu();
+  </script>
+</body>
+</html>

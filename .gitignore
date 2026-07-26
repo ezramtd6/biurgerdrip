@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+backend/venv/
+.venv/
+env/
+
+# Node
+node_modules/
+.next/
+out/
+
+# Environment files
+backend/.env
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# Django media uploads
+backend/media/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug
+*.log
