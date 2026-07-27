@@ -13,4 +13,6 @@ urlpatterns = [
     path("set-password/<str:token>/confirm/", views.SetPasswordView.as_view(), name="set-password-confirm"),
     path("cashiers/", views.CashierListCreateView.as_view(), name="cashier-list-create"),
     path("cashiers/<int:pk>/", views.CashierDetailView.as_view(), name="cashier-detail"),
+    path("customers/", views.CustomerListView.as_view(), name="customer-list"),
+    path("customers/<int:pk>/", views.CustomerDetailView.as_view(), name="customer-detail"),
 ]

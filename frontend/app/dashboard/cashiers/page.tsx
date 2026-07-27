@@ -48,6 +48,11 @@ export default function CashiersPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-cashiers"] }),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => api.delete(`/auth/cashiers/${id}/`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-cashiers"] }),
+  });
+
   const { register, handleSubmit, reset, formState: { errors } } = useForm<CashierForm>({
     resolver: zodResolver(schema),
   });
@@ -81,13 +86,26 @@ export default function CashiersPage() {
               key: "actions",
               header: "",
               render: (item: Record<string, unknown>) => (
-                <Button
-                  variant={item.is_active ? "danger" : "secondary"}
-                  size="sm"
-                  onClick={() => deactivateMutation.mutate({ id: item.id as number, is_active: !item.is_active })}
-                >
-                  {item.is_active ? "Deactivate" : "Activate"}
-                </Button>
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant={item.is_active ? "danger" : "secondary"}
+                    size="sm"
+                    onClick={() => deactivateMutation.mutate({ id: item.id as number, is_active: !item.is_active })}
+                  >
+                    {item.is_active ? "Freeze" : "Unfreeze"}
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => {
+                      if (confirm("Are you sure you want to delete this cashier?")) {
+                        deleteMutation.mutate(item.id as number);
+                      }
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </div>
               ),
             },
           ]}

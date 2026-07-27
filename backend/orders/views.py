@@ -116,6 +116,12 @@ class CashierOrderDetailView(generics.RetrieveUpdateAPIView):
 
 class CashierPaymentView(APIView):
     def post(self, request, pk):
+        if request.user.role not in ("MANAGER", "CASHIER"):
+            return Response(
+                {"error": "You do not have permission to process payments."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         try:
             order = Order.objects.get(id=pk)
         except Order.DoesNotExist:

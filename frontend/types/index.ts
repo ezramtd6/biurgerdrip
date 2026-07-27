@@ -23,7 +23,6 @@ export interface Product {
   name: string;
   description: string;
   image: string | null;
-  available: boolean;
   option_groups: OptionGroup[];
   created_at: string;
   updated_at: string;

@@ -74,3 +74,10 @@ class CashierCreateSerializer(serializers.ModelSerializer):
         user.set_unusable_password()
         user.save()
         return user
+
+
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "email", "first_name", "last_name", "phone", "role", "is_active", "date_joined"]
+        read_only_fields = ["id", "role", "date_joined"]

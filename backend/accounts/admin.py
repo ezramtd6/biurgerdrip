@@ -11,15 +11,11 @@ class CustomUserCreationForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ("email", "first_name", "last_name", "phone", "role")
-        widgets = {
-            "role": admin.widgets.AdminRadioSelect,
-        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["role"].choices = [
             (User.Role.MANAGER, "Manager"),
-            (User.Role.CASHIER, "Cashier"),
         ]
 
 

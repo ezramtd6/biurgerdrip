@@ -9,12 +9,14 @@ from django.utils import timezone
 from datetime import timedelta
 import secrets
 from .models import User, PasswordResetToken
+from products.views import IsManager
 from .serializers import (
     UserSerializer,
     RegisterSerializer,
     CustomTokenObtainPairSerializer,
     CashierSerializer,
     CashierCreateSerializer,
+    CustomerSerializer,
 )
 from .utils import send_set_password_email, send_password_reset_email
 
@@ -299,11 +301,6 @@ class SetPasswordView(APIView):
         )
 
 
-class IsManager(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "MANAGER"
-
-
 class CashierListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsManager]
 
@@ -338,3 +335,17 @@ class CashierDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsManager]
     serializer_class = CashierSerializer
     queryset = User.objects.filter(role="CASHIER")
+
+
+class CustomerListView(generics.ListAPIView):
+    permission_classes = [IsManager]
+    serializer_class = CustomerSerializer
+
+    def get_queryset(self):
+        return User.objects.filter(role="CUSTOMER").order_by("-date_joined")
+
+
+class CustomerDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsManager]
+    serializer_class = CustomerSerializer
+    queryset = User.objects.filter(role="CUSTOMER")

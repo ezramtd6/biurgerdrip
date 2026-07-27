@@ -13,6 +13,7 @@ const links = [
   { href: "/dashboard/option-groups", label: "Option Groups", icon: "⚙️" },
   { href: "/dashboard/restaurant", label: "Restaurant", icon: "🏪" },
   { href: "/dashboard/cashiers", label: "Cashiers", icon: "👨‍💼" },
+  { href: "/dashboard/customers", label: "Customers", icon: "👥" },
   { href: "/dashboard/reports", label: "Reports", icon: "📈" },
 ];
 

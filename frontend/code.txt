@@ -6,7 +6,7 @@
   <title>Pizza Hut Ethiopia | Pizza, Sides & Desserts</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script>
     tailwind.config = {
@@ -20,13 +20,19 @@
           },
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
+            display: ['Playfair Display', 'serif'],
           }
         }
       }
     }
   </script>
   <style>
-    body { font-family: 'Inter', sans-serif; }
+    body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
+    html { scroll-behavior: smooth; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #C8102E; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #A00D24; }
     .checkered {
       background-image: 
         linear-gradient(45deg, #f3f4f6 25%, transparent 25%),
@@ -45,59 +51,254 @@
     }
     .hero-gradient {
       background: linear-gradient(135deg, #C8102E 0%, #8B0A1E 50%, #C8102E 100%);
+      background-size: 200% 200%;
+      animation: gradientShift 8s ease infinite;
     }
-    .category-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
-    .menu-card:hover { transform: translateY(-2px); }
-    .cart-slide { transition: transform 0.3s ease; }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .float { animation: float 6s ease-in-out infinite; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(2deg); }
+    }
+    .category-card { 
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+      position: relative;
+      overflow: hidden;
+    }
+    .category-card:hover { 
+      transform: translateY(-8px) scale(1.02); 
+      box-shadow: 0 25px 50px rgba(200, 16, 46, 0.2); 
+    }
+    .category-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    .category-card:hover::before { left: 100%; }
+    .menu-card { 
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+    }
+    .menu-card:hover { 
+      transform: translateY(-6px) scale(1.01); 
+      box-shadow: 0 20px 40px rgba(0,0,0,0.12); 
+    }
+    .menu-card .add-btn {
+      transform: translateX(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    .menu-card:hover .add-btn {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    .menu-card img {
+      transition: transform 0.5s ease;
+    }
+    .menu-card:hover img {
+      transform: scale(1.08) rotate(2deg);
+    }
+    .cart-slide { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     .cart-open { transform: translateX(0); }
     .cart-closed { transform: translateX(100%); }
-    .fade-in { animation: fadeIn 0.5s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .bounce { animation: bounce 0.3s ease; }
-    @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+    .fade-in { animation: fadeIn 0.6s ease forwards; opacity: 0; }
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateY(30px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    .slide-up { animation: slideUp 0.6s ease forwards; opacity: 0; }
+    @keyframes slideUp { 
+      from { opacity: 0; transform: translateY(50px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    .scale-in { animation: scaleIn 0.5s ease forwards; opacity: 0; }
+    @keyframes scaleIn { 
+      from { opacity: 0; transform: scale(0.8); } 
+      to { opacity: 1; transform: scale(1); } 
+    }
+    .bounce { animation: bounce 0.4s ease; }
+    @keyframes bounce { 
+      0%, 100% { transform: scale(1); } 
+      50% { transform: scale(1.3); } 
+    }
+    .stagger-children > * { opacity: 0; }
+    .stagger-children.animate > *:nth-child(1) { animation: slideUp 0.5s ease 0.1s forwards; }
+    .stagger-children.animate > *:nth-child(2) { animation: slideUp 0.5s ease 0.2s forwards; }
+    .stagger-children.animate > *:nth-child(3) { animation: slideUp 0.5s ease 0.3s forwards; }
+    .stagger-children.animate > *:nth-child(4) { animation: slideUp 0.5s ease 0.4s forwards; }
+    .stagger-children.animate > *:nth-child(5) { animation: slideUp 0.5s ease 0.5s forwards; }
+    .stagger-children.animate > *:nth-child(6) { animation: slideUp 0.5s ease 0.6s forwards; }
     .nav-link { position: relative; }
     .nav-link::after {
       content: '';
       position: absolute;
-      bottom: -2px;
-      left: 0;
+      bottom: -4px;
+      left: 50%;
       width: 0;
-      height: 2px;
+      height: 3px;
       background: #C8102E;
-      transition: width 0.3s ease;
+      transition: all 0.3s ease;
+      transform: translateX(-50%);
+      border-radius: 2px;
     }
     .nav-link:hover::after { width: 100%; }
+    .nav-link:hover { color: #C8102E; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .lang-btn { transition: all 0.2s ease; }
-    .lang-btn.active { background: #C8102E; color: white; }
+    .lang-btn { transition: all 0.3s ease; position: relative; overflow: hidden; }
+    .lang-btn.active { background: #C8102E; color: white; box-shadow: 0 4px 15px rgba(200, 16, 46, 0.3); }
+    .lang-btn:not(.active):hover { background: rgba(200, 16, 46, 0.1); }
+    .filter-btn { 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .filter-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: #C8102E;
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s ease;
+      border-radius: inherit;
+      z-index: -1;
+    }
+    .filter-btn.active::after { transform: scaleX(1); }
+    .filter-btn.active { color: white !important; }
+    .filter-btn:not(.active):hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .toast-enter { animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .toast-exit { animation: toastOut 0.3s ease forwards; }
+    @keyframes toastIn { 
+      from { opacity: 0; transform: translate(-50%, 20px) scale(0.9); } 
+      to { opacity: 1; transform: translate(-50%, 0) scale(1); } 
+    }
+    @keyframes toastOut { 
+      from { opacity: 1; transform: translate(-50%, 0) scale(1); } 
+      to { opacity: 0; transform: translate(-50%, 20px) scale(0.9); } 
+    }
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      animation: particleFloat 15s infinite;
+    }
+    @keyframes particleFloat {
+      0%, 100% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-100vh) translateX(50px) scale(0); opacity: 0; }
+    }
+    .feature-card {
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(200,16,46,0.05) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-card:hover { 
+      transform: translateY(-8px); 
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
+    }
+    .feature-card:hover .feature-icon {
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 0 8px 25px rgba(200, 16, 46, 0.3);
+    }
+    .feature-icon { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .deal-card {
+      position: relative;
+      overflow: hidden;
+    }
+    .deal-card::before {
+      content: '';
+      position: absolute;
+      top: -50%; right: -50%;
+      width: 100%; height: 100%;
+      background: radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 70%);
+      animation: pulseGlow 3s ease-in-out infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); opacity: 0.5; }
+      50% { transform: scale(1.2); opacity: 1; }
+    }
+    .app-btn {
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .app-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transition: left 0.5s;
+    }
+    .app-btn:hover::before { left: 100%; }
+    .app-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .social-icon {
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .social-icon:hover {
+      transform: translateY(-3px) scale(1.1);
+      box-shadow: 0 8px 20px rgba(200, 16, 46, 0.3);
+    }
+    .cart-item {
+      animation: cartItemIn 0.3s ease forwards;
+      transition: all 0.2s ease;
+    }
+    .cart-item:hover { background: rgba(200, 16, 46, 0.05); }
+    @keyframes cartItemIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .badge-pulse { animation: badgePulse 2s ease-in-out infinite; }
+    @keyframes badgePulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(200, 16, 46, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(200, 16, 46, 0); }
+    }
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .dark-toggle {
+      transition: all 0.3s ease;
+    }
+    .dark-toggle:hover { transform: rotate(15deg) scale(1.1); }
   </style>
 <base target="_blank">
+<base target="_blank">
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-
-  <!-- Top Bar -->
-  <div class="bg-phred text-white text-xs py-1.5">
-    <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
-      <div class="flex items-center gap-4">
-        <span><i class="fas fa-phone-alt mr-1"></i> 8090</span>
-        <span class="hidden sm:inline" data-i18n="hours"><i class="fas fa-clock mr-1"></i> Open 10:00 AM - 10:00 PM</span>
-      </div>
-      <div class="flex items-center gap-3">
-        <a href="#" class="hover:underline" data-i18n="store_locations">Store Locations</a>
-        <span class="hidden sm:inline">|</span>
-        <a href="#" class="hover:underline hidden sm:inline" data-i18n="contact_us">Contact Us</a>
-      </div>
-    </div>
-  </div>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-500">
 
   <!-- Header -->
-  <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50 transition-colors duration-300">
+  <header class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl shadow-sm sticky top-0 z-50 transition-all duration-300" id="main-header">
     <div class="max-w-7xl mx-auto px-4">
-      <div class="flex items-center justify-between h-16">
-        <!-- Logo -->
-        <a href="#" class="flex items-center gap-2">
-          <div class="w-10 h-10 bg-phred rounded-full flex items-center justify-center">
+      <div class="flex items-center justify-between h-18 py-3">
+        <a href="#" class="flex items-center gap-3 group">
+          <div class="w-11 h-11 bg-phred rounded-full flex items-center justify-center shadow-lg group-hover:shadow-phred/30 group-hover:scale-110 transition-all duration-300">
             <svg viewBox="0 0 100 100" class="w-7 h-7" fill="white">
               <path d="M50 5 L85 25 L85 35 L50 20 L15 35 L15 25 Z"/>
               <path d="M20 35 L20 75 Q20 85 30 85 L40 85 L40 45 L35 45 L35 35 Z"/>
@@ -105,88 +306,93 @@
               <path d="M60 35 L60 45 L65 45 L65 85 L70 85 Q80 85 80 75 L80 35 Z"/>
             </svg>
           </div>
-          <span class="text-xl font-black text-phred tracking-tight">Pizza Hut</span>
+          <span class="text-2xl font-black text-phred tracking-tight group-hover:tracking-wide transition-all duration-300">Pizza Hut</span>
         </a>
 
-        <!-- Desktop Nav -->
-        <nav class="hidden lg:flex items-center gap-6">
-          <a href="#" class="nav-link text-sm font-semibold text-gray-700 dark:text-gray-200 hover:text-phred transition" data-i18n="home">Home</a>
-          <a href="#menu" class="nav-link text-sm font-semibold text-gray-700 dark:text-gray-200 hover:text-phred transition" data-i18n="menu">Menu</a>
-          <a href="#deals" class="nav-link text-sm font-semibold text-gray-700 dark:text-gray-200 hover:text-phred transition" data-i18n="deals">Deals</a>
-          <a href="#" class="nav-link text-sm font-semibold text-gray-700 dark:text-gray-200 hover:text-phred transition" data-i18n="store_locations">Store Locations</a>
-          <a href="#" class="nav-link text-sm font-semibold text-gray-700 dark:text-gray-200 hover:text-phred transition" data-i18n="about_us">About Us</a>
+        <nav class="hidden lg:flex items-center gap-8">
+          <a href="#" class="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-phred transition-colors py-2" data-i18n="home">Home</a>
+          <a href="#menu" class="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-phred transition-colors py-2" data-i18n="menu">Menu</a>
+          <a href="#deals" class="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-phred transition-colors py-2" data-i18n="deals">Deals</a>
+          <a href="#" class="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-phred transition-colors py-2" data-i18n="store_locations">Store Locations</a>
+          <a href="#" class="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-phred transition-colors py-2" data-i18n="about_us">About Us</a>
         </nav>
 
-        <!-- Right Actions -->
-        <div class="flex items-center gap-2">
-          <!-- Dark Mode Toggle -->
-          <button onclick="toggleDarkMode()" id="dark-toggle" class="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition" title="Toggle Dark Mode">
-            <i class="fas fa-moon dark:hidden"></i>
-            <i class="fas fa-sun hidden dark:block"></i>
+        <div class="flex items-center gap-3">
+          <button onclick="toggleDarkMode()" id="dark-toggle" class="dark-toggle w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm">
+            <i class="fas fa-moon dark:hidden text-lg"></i>
+            <i class="fas fa-sun hidden dark:block text-lg"></i>
           </button>
-
-          <!-- Language Switcher -->
-          <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full p-0.5">
-            <button onclick="setLanguage('en')" id="lang-en" class="lang-btn active px-3 py-1 rounded-full text-xs font-bold">EN</button>
-            <button onclick="setLanguage('am')" id="lang-am" class="lang-btn px-3 py-1 rounded-full text-xs font-bold text-gray-600 dark:text-gray-300 hover:text-phred">AM</button>
+          <div class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full p-1 shadow-inner">
+            <button onclick="setLanguage('en')" id="lang-en" class="lang-btn active px-4 py-1.5 rounded-full text-xs font-bold">EN</button>
+            <button onclick="setLanguage('am')" id="lang-am" class="lang-btn px-4 py-1.5 rounded-full text-xs font-bold text-gray-600 dark:text-gray-300">AM</button>
           </div>
-
-          <button class="hidden md:flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-phred transition">
+          <button class="hidden md:flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-phred transition px-3 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
             <i class="far fa-user"></i> <span data-i18n="my_account">My Account</span>
           </button>
-          <button onclick="toggleCart()" class="relative bg-phred text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-phdark transition flex items-center gap-2">
+          <button onclick="toggleCart()" class="relative bg-phred text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-phdark transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-phred/30 hover:scale-105 active:scale-95">
             <i class="fas fa-shopping-bag"></i>
             <span class="hidden sm:inline" data-i18n="cart">Cart</span>
-            <span id="cart-badge" class="absolute -top-1 -right-1 bg-yellow-400 text-phred text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center hidden">0</span>
+            <span id="cart-badge" class="absolute -top-1.5 -right-1.5 bg-yellow-400 text-phred text-xs font-black w-5 h-5 rounded-full flex items-center justify-center hidden badge-pulse">0</span>
           </button>
-          <button onclick="toggleMobileMenu()" class="lg:hidden text-gray-700 dark:text-gray-200 text-xl p-2">
+          <button onclick="toggleMobileMenu()" class="lg:hidden text-gray-700 dark:text-gray-200 text-xl p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition">
             <i class="fas fa-bars"></i>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Mobile Menu -->
-    <div id="mobile-menu" class="lg:hidden hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700">
-      <div class="px-4 py-3 space-y-2">
-        <a href="#" class="block py-2 text-sm font-semibold text-gray-700 dark:text-gray-200" data-i18n="home">Home</a>
-        <a href="#menu" class="block py-2 text-sm font-semibold text-gray-700 dark:text-gray-200" data-i18n="menu">Menu</a>
-        <a href="#deals" class="block py-2 text-sm font-semibold text-gray-700 dark:text-gray-200" data-i18n="deals">Deals</a>
-        <a href="#" class="block py-2 text-sm font-semibold text-gray-700 dark:text-gray-200" data-i18n="store_locations">Store Locations</a>
-        <a href="#" class="block py-2 text-sm font-semibold text-gray-700 dark:text-gray-200" data-i18n="about_us">About Us</a>
-        <a href="#" class="block py-2 text-sm font-semibold text-gray-700 dark:text-gray-200" data-i18n="my_account">My Account</a>
+    <div id="mobile-menu" class="lg:hidden hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg">
+      <div class="px-4 py-4 space-y-1">
+        <a href="#" class="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred rounded-xl transition-all" data-i18n="home">Home</a>
+        <a href="#menu" class="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred rounded-xl transition-all" data-i18n="menu">Menu</a>
+        <a href="#deals" class="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred rounded-xl transition-all" data-i18n="deals">Deals</a>
+        <a href="#" class="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred rounded-xl transition-all" data-i18n="store_locations">Store Locations</a>
+        <a href="#" class="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred rounded-xl transition-all" data-i18n="about_us">About Us</a>
+        <a href="#" class="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred rounded-xl transition-all" data-i18n="my_account">My Account</a>
       </div>
     </div>
   </header>
 
   <!-- Hero Section -->
-  <section class="hero-gradient relative overflow-hidden">
-    <div class="absolute inset-0 opacity-10">
-      <div class="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
-      <div class="absolute bottom-10 right-10 w-48 h-48 bg-yellow-300 rounded-full blur-3xl"></div>
+  <section class="hero-gradient relative overflow-hidden min-h-[600px] flex items-center">
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div class="particle w-4 h-4 top-full left-[10%]" style="animation-delay: 0s; animation-duration: 12s;"></div>
+      <div class="particle w-3 h-3 top-full left-[30%]" style="animation-delay: 2s; animation-duration: 15s;"></div>
+      <div class="particle w-5 h-5 top-full left-[50%]" style="animation-delay: 4s; animation-duration: 10s;"></div>
+      <div class="particle w-2 h-2 top-full left-[70%]" style="animation-delay: 1s; animation-duration: 14s;"></div>
+      <div class="particle w-4 h-4 top-full left-[90%]" style="animation-delay: 3s; animation-duration: 11s;"></div>
     </div>
-    <div class="max-w-7xl mx-auto px-4 py-16 md:py-24 relative">
-      <div class="grid md:grid-cols-2 gap-8 items-center">
-        <div class="text-white">
-          <span class="inline-block bg-yellow-400 text-phred text-xs font-bold px-3 py-1 rounded-full mb-4" data-i18n="new_arrival">NEW ARRIVAL</span>
-          <h1 class="text-4xl md:text-6xl font-black mb-4 leading-tight" data-i18n="hero_title">
-            No One OutPizzas<br>the Hut!
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute top-20 left-10 w-64 h-64 bg-white rounded-full blur-[100px] animate-pulse"></div>
+      <div class="absolute bottom-20 right-20 w-80 h-80 bg-yellow-300 rounded-full blur-[100px] animate-pulse" style="animation-delay: 1s;"></div>
+      <div class="absolute top-1/2 left-1/2 w-96 h-96 bg-red-400 rounded-full blur-[120px] opacity-30 animate-pulse" style="animation-delay: 2s;"></div>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 py-20 md:py-28 relative z-10">
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+        <div class="text-white slide-up">
+          
+          <h1 class="text-5xl md:text-7xl font-black mb-6 leading-tight tracking-tight" data-i18n="hero_title">
+            <span class="block">No One OutPizzas</span>
+            <span class="block text-yellow-300">the Hut!</span>
           </h1>
-          <p class="text-lg md:text-xl text-red-100 mb-8 max-w-lg" data-i18n="hero_desc">
+          <p class="text-lg md:text-xl text-red-100 mb-10 max-w-lg leading-relaxed" data-i18n="hero_desc">
             Order your favorite pizza online from Pizza Hut Ethiopia. Explore delicious flavors and enjoy fast, reliable delivery to your doorstep in Addis Ababa.
           </p>
           <div class="flex flex-wrap gap-4">
-            <a href="#menu" class="bg-white text-phred px-8 py-3.5 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg">
-              <span data-i18n="order_now">Order Now</span> <i class="fas fa-arrow-right ml-2"></i>
+            <a href="#menu" class="group bg-white text-phred px-8 py-4 rounded-full font-black text-lg hover:bg-gray-100 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 flex items-center gap-2">
+              <span data-i18n="order_now">Order Now</span> 
+              <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
             </a>
-            <a href="#deals" class="border-2 border-white text-white px-8 py-3.5 rounded-full font-bold text-lg hover:bg-white hover:text-phred transition" data-i18n="view_deals">
+            <a href="#deals" class="group border-2 border-white text-white px-8 py-4 rounded-full font-black text-lg hover:bg-white hover:text-phred transition-all duration-300 flex items-center gap-2 backdrop-blur-sm" data-i18n="view_deals">
               View Deals
             </a>
           </div>
         </div>
         <div class="relative hidden md:block">
-          <img src="https://www.pizzahut.et/95e49adae4d362a79e4d4df4c7c1c62d04bf9250" alt="Pizza" class="w-full max-w-md mx-auto drop-shadow-2xl rounded-full">
-          <div class="absolute -bottom-4 -left-4 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-xl">
+          <div class="float">
+            <img src="https://www.pizzahut.et/95e49adae4d362a79e4d4df4c7c1c62d04bf9250" alt="Pizza" class="w-full max-w-lg mx-auto drop-shadow-2xl rounded-full hover:scale-105 transition-transform duration-500">
+          </div>
+          <div class="absolute -bottom-2 -left-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl hover:scale-105 transition-transform duration-300 cursor-pointer">
             <div class="flex items-center gap-3">
               <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                 <i class="fas fa-motorcycle text-green-600 text-xl"></i>
@@ -197,268 +403,196 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Category Section -->
-  <section class="py-12 bg-white dark:bg-gray-800 transition-colors duration-300">
-    <div class="max-w-7xl mx-auto px-4">
-      <h2 class="text-2xl md:text-3xl font-black text-center text-gray-800 dark:text-white mb-8" data-i18n="explore_menu">Explore Our Menu</h2>
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-
-        <div onclick="filterCategory('pizza')" class="category-card cursor-pointer checkered rounded-2xl p-4 text-center transition-all duration-300 border border-gray-100 dark:border-gray-700">
-          <img src="https://www.pizzahut.et/14f21833f06b806d66c7325669e39cf3e42dfdc9" alt="Pizzas" class="w-full h-28 object-contain mb-2">
-          <h3 class="text-phred font-black text-lg tracking-wide" data-i18n="cat_pizza">PIZZAS</h3>
-        </div>
-
-        <div onclick="filterCategory('sides')" class="category-card cursor-pointer checkered rounded-2xl p-4 text-center transition-all duration-300 border border-gray-100 dark:border-gray-700">
-          <img src="https://www.pizzahut.et/ef8bd19dee4eeb1b03c32c2f753d8cdac1028145" alt="Sides" class="w-full h-28 object-contain mb-2">
-          <h3 class="text-phred font-black text-lg tracking-wide" data-i18n="cat_sides">SIDES</h3>
-        </div>
-
-        <div onclick="filterCategory('melts')" class="category-card cursor-pointer checkered rounded-2xl p-4 text-center transition-all duration-300 border border-gray-100 dark:border-gray-700">
-          <img src="https://www.pizzahut.et/319a192f538b83d2e13e6164f56151366ae17ea7" alt="Melts" class="w-full h-28 object-contain mb-2">
-          <h3 class="text-phred font-black text-lg tracking-wide" data-i18n="cat_melts">MELTS</h3>
-        </div>
-
-        <div onclick="filterCategory('pasta')" class="category-card cursor-pointer checkered rounded-2xl p-4 text-center transition-all duration-300 border border-gray-100 dark:border-gray-700">
-          <img src="https://www.pizzahut.et/68927e46bbfc43b2bb5c9ff2fbde4406608bdfac" alt="Pasta" class="w-full h-28 object-contain mb-2">
-          <h3 class="text-phred font-black text-lg tracking-wide" data-i18n="cat_pasta">PASTA</h3>
-        </div>
-
-        <div onclick="filterCategory('drinks')" class="category-card cursor-pointer checkered rounded-2xl p-4 text-center transition-all duration-300 border border-gray-100 dark:border-gray-700">
-          <img src="https://www.pizzahut.et/86f922d8879d8bbc5e5edff271268f90e91102ae" alt="Soft Drinks" class="w-full h-28 object-contain mb-2">
-          <h3 class="text-phred font-black text-lg tracking-wide" data-i18n="cat_drinks">DRINKS</h3>
-        </div>
-
-        <div onclick="filterCategory('desserts')" class="category-card cursor-pointer checkered rounded-2xl p-4 text-center transition-all duration-300 border border-gray-100 dark:border-gray-700">
-          <img src="https://www.pizzahut.et/1891b6103046c4cd46f7eaaa4e979486b04aa1f7" alt="Desserts" class="w-full h-28 object-contain mb-2">
-          <h3 class="text-phred font-black text-lg tracking-wide" data-i18n="cat_desserts">DESSERTS</h3>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Deals Banner -->
-  <section id="deals" class="py-8 bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
-    <div class="max-w-7xl mx-auto px-4">
-      <div class="bg-phred rounded-3xl overflow-hidden relative">
-        <div class="absolute inset-0 opacity-20">
-          <div class="absolute top-0 right-0 w-64 h-64 bg-yellow-400 rounded-full blur-3xl"></div>
-        </div>
-        <div class="relative p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div class="text-white text-center md:text-left">
-            <span class="bg-yellow-400 text-phred text-xs font-bold px-3 py-1 rounded-full" data-i18n="hot_deal">HOT DEAL</span>
-            <h2 class="text-3xl md:text-4xl font-black mt-3 mb-2" data-i18n="deal_title">3 Personal Pan Pizzas</h2>
-            <p class="text-red-100 text-lg" data-i18n="deal_desc">Starting @ ETB 499 only! Save up to 35%</p>
+          <div class="absolute top-10 -right-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl hover:scale-105 transition-transform duration-300 cursor-pointer animate-bounce" style="animation-duration: 3s;">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-star text-yellow-600 text-xl"></i>
+              </div>
+              <div>
+                <p class="font-bold text-gray-800 dark:text-gray-100">4.9 Rating</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">10,000+ Reviews</p>
+              </div>
+            </div>
           </div>
-          <button onclick="filterCategory('pizza')" class="bg-white text-phred px-8 py-3 rounded-full font-bold hover:bg-gray-100 transition shadow-lg whitespace-nowrap" data-i18n="grab_deal">
-            Grab the Deal
-          </button>
         </div>
       </div>
     </div>
   </section>
+
+  
+
+  
 
   <!-- Menu Section -->
-  <section id="menu" class="py-12 bg-white dark:bg-gray-800 transition-colors duration-300">
+  <section id="menu" class="py-16 bg-white dark:bg-gray-800 transition-colors duration-500 reveal">
     <div class="max-w-7xl mx-auto px-4">
-      <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
         <div>
-          <h2 class="text-2xl md:text-3xl font-black text-gray-800 dark:text-white" data-i18n="our_menu">Our Menu</h2>
-          <p class="text-gray-500 dark:text-gray-400 mt-1" data-i18n="menu_subtitle">Freshly made, delivered hot to your door</p>
+          <h2 class="text-3xl md:text-4xl font-black text-gray-800 dark:text-white mb-2" data-i18n="our_menu">Our Menu</h2>
+          <div class="w-16 h-1 bg-phred rounded-full mb-2"></div>
+          <p class="text-gray-500 dark:text-gray-400" data-i18n="menu_subtitle">Freshly made, delivered hot to your door</p>
         </div>
         <div class="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-          <button onclick="filterCategory('all')" class="filter-btn active px-5 py-2 rounded-full text-sm font-semibold bg-phred text-white transition whitespace-nowrap" data-category="all" data-i18n="all">All</button>
-          <button onclick="filterCategory('pizza')" class="filter-btn px-5 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred transition whitespace-nowrap" data-category="pizza" data-i18n="cat_pizza">Pizza</button>
-          <button onclick="filterCategory('sides')" class="filter-btn px-5 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred transition whitespace-nowrap" data-category="sides" data-i18n="cat_sides">Sides</button>
-          <button onclick="filterCategory('melts')" class="filter-btn px-5 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred transition whitespace-nowrap" data-category="melts" data-i18n="cat_melts">Melts</button>
-          <button onclick="filterCategory('pasta')" class="filter-btn px-5 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred transition whitespace-nowrap" data-category="pasta" data-i18n="cat_pasta">Pasta</button>
-          <button onclick="filterCategory('drinks')" class="filter-btn px-5 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred transition whitespace-nowrap" data-category="drinks" data-i18n="cat_drinks">Drinks</button>
-          <button onclick="filterCategory('desserts')" class="filter-btn px-5 py-2 rounded-full text-sm font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred transition whitespace-nowrap" data-category="desserts" data-i18n="cat_desserts">Desserts</button>
+          <button onclick="filterCategory('all')" class="filter-btn active px-6 py-2.5 rounded-full text-sm font-bold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 transition whitespace-nowrap" data-category="all" data-i18n="all">All</button>
+          <button onclick="filterCategory('pizza')" class="filter-btn px-6 py-2.5 rounded-full text-sm font-bold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 transition whitespace-nowrap" data-category="pizza" data-i18n="cat_pizza">Pizza</button>
+          <button onclick="filterCategory('sides')" class="filter-btn px-6 py-2.5 rounded-full text-sm font-bold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 transition whitespace-nowrap" data-category="sides" data-i18n="cat_sides">Sides</button>
+          <button onclick="filterCategory('melts')" class="filter-btn px-6 py-2.5 rounded-full text-sm font-bold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 transition whitespace-nowrap" data-category="melts" data-i18n="cat_melts">Melts</button>
+          <button onclick="filterCategory('pasta')" class="filter-btn px-6 py-2.5 rounded-full text-sm font-bold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 transition whitespace-nowrap" data-category="pasta" data-i18n="cat_pasta">Pasta</button>
+          <button onclick="filterCategory('drinks')" class="filter-btn px-6 py-2.5 rounded-full text-sm font-bold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 transition whitespace-nowrap" data-category="drinks" data-i18n="cat_drinks">Drinks</button>
+          <button onclick="filterCategory('desserts')" class="filter-btn px-6 py-2.5 rounded-full text-sm font-bold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 transition whitespace-nowrap" data-category="desserts" data-i18n="cat_desserts">Desserts</button>
         </div>
       </div>
-
-      <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <!-- Menu items will be rendered by JS -->
-      </div>
+      <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-7"></div>
     </div>
   </section>
 
   <!-- Features Section -->
-  <section class="py-12 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+  <section class="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-500 reveal">
     <div class="max-w-7xl mx-auto px-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition">
-          <div class="w-16 h-16 bg-phlight rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-motorcycle text-phred text-2xl"></i>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="feature-card bg-white dark:bg-gray-800 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
+          <div class="feature-icon w-20 h-20 bg-phlight rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <i class="fas fa-motorcycle text-phred text-3xl"></i>
           </div>
-          <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-2" data-i18n="feat_delivery">Fast Delivery</h3>
-          <p class="text-gray-500 dark:text-gray-400 text-sm" data-i18n="feat_delivery_desc">Hot and fresh delivered to your doorstep in 30 minutes or less.</p>
+          <h3 class="font-black text-gray-800 dark:text-white text-xl mb-3" data-i18n="feat_delivery">Fast Delivery</h3>
+          <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed" data-i18n="feat_delivery_desc">Hot and fresh delivered to your doorstep in 30 minutes or less.</p>
         </div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition">
-          <div class="w-16 h-16 bg-phlight rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-utensils text-phred text-2xl"></i>
+        <div class="feature-card bg-white dark:bg-gray-800 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
+          <div class="feature-icon w-20 h-20 bg-phlight rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <i class="fas fa-utensils text-phred text-3xl"></i>
           </div>
-          <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-2" data-i18n="feat_quality">Quality Ingredients</h3>
-          <p class="text-gray-500 dark:text-gray-400 text-sm" data-i18n="feat_quality_desc">Only the freshest ingredients go into every pizza we make.</p>
+          <h3 class="font-black text-gray-800 dark:text-white text-xl mb-3" data-i18n="feat_quality">Quality Ingredients</h3>
+          <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed" data-i18n="feat_quality_desc">Only the freshest ingredients go into every pizza we make.</p>
         </div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition">
-          <div class="w-16 h-16 bg-phlight rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-tag text-phred text-2xl"></i>
+        <div class="feature-card bg-white dark:bg-gray-800 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
+          <div class="feature-icon w-20 h-20 bg-phlight rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <i class="fas fa-tag text-phred text-3xl"></i>
           </div>
-          <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-2" data-i18n="feat_deals">Best Deals</h3>
-          <p class="text-gray-500 dark:text-gray-400 text-sm" data-i18n="feat_deals_desc">Amazing combos and discounts every day of the week.</p>
+          <h3 class="font-black text-gray-800 dark:text-white text-xl mb-3" data-i18n="feat_deals">Best Deals</h3>
+          <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed" data-i18n="feat_deals_desc">Amazing combos and discounts every day of the week.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- App Download -->
-  <section class="py-12 bg-phred">
-    <div class="max-w-7xl mx-auto px-4">
-      <div class="flex flex-col md:flex-row items-center justify-between gap-8">
-        <div class="text-white text-center md:text-left">
-          <h2 class="text-3xl font-black mb-3" data-i18n="download_app">Download Our App</h2>
-          <p class="text-red-100 mb-6" data-i18n="download_app_desc">Order faster, track your delivery, and unlock exclusive app-only deals.</p>
-          <div class="flex gap-3 justify-center md:justify-start">
-            <button class="bg-black text-white px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-gray-900 transition">
-              <i class="fab fa-apple text-xl"></i>
-              <div class="text-left">
-                <div class="text-[10px] leading-none">Download on the</div>
-                <div class="text-sm font-bold leading-tight">App Store</div>
-              </div>
-            </button>
-            <button class="bg-black text-white px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-gray-900 transition">
-              <i class="fab fa-google-play text-xl"></i>
-              <div class="text-left">
-                <div class="text-[10px] leading-none">Get it on</div>
-                <div class="text-sm font-bold leading-tight">Google Play</div>
-              </div>
-            </button>
-          </div>
-        </div>
-        <div class="hidden md:block">
-          <div class="w-64 h-64 bg-white/10 rounded-full flex items-center justify-center">
-            <i class="fas fa-mobile-alt text-white/30 text-8xl"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+  
 
   <!-- Footer -->
-  <footer class="bg-gray-900 text-white pt-12 pb-6">
+  <footer class="bg-white dark:bg-gray-800 text-gray-800 dark:text-white pt-16 pb-8 relative overflow-hidden">
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-phred via-red-400 to-phred"></div>
     <div class="max-w-7xl mx-auto px-4">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
         <div>
-          <div class="flex items-center gap-2 mb-4">
-            <div class="w-8 h-8 bg-phred rounded-full flex items-center justify-center">
-              <svg viewBox="0 0 100 100" class="w-5 h-5" fill="white">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 bg-phred rounded-full flex items-center justify-center shadow-lg">
+              <svg viewBox="0 0 100 100" class="w-6 h-6" fill="white">
                 <path d="M50 5 L85 25 L85 35 L50 20 L15 35 L15 25 Z"/>
                 <path d="M20 35 L20 75 Q20 85 30 85 L40 85 L40 45 L35 45 L35 35 Z"/>
                 <path d="M45 35 L45 85 L55 85 L55 35 Z"/>
                 <path d="M60 35 L60 45 L65 45 L65 85 L70 85 Q80 85 80 75 L80 35 Z"/>
               </svg>
             </div>
-            <span class="text-lg font-black">Pizza Hut</span>
+            <span class="text-xl font-black">Pizza Hut</span>
           </div>
-          <p class="text-gray-400 text-sm leading-relaxed" data-i18n="footer_about">The Pizza Hut story begins in May 1958. Dan and Frank Carney opened their 550-square-foot pizza restaurant in Wichita, Kansas.</p>
+          <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed" data-i18n="footer_about">The Pizza Hut story begins in May 1958. Dan and Frank Carney opened their 550-square-foot pizza restaurant in Wichita, Kansas.</p>
         </div>
         <div>
-          <h4 class="font-bold mb-4" data-i18n="quick_links">Quick Links</h4>
-          <ul class="space-y-2 text-sm text-gray-400">
-            <li><a href="#" class="hover:text-white transition" data-i18n="home">Home</a></li>
-            <li><a href="#menu" class="hover:text-white transition" data-i18n="menu">Menu</a></li>
-            <li><a href="#deals" class="hover:text-white transition" data-i18n="deals">Deals</a></li>
-            <li><a href="#" class="hover:text-white transition" data-i18n="store_locations">Store Locations</a></li>
-            <li><a href="#" class="hover:text-white transition" data-i18n="about_us">About Us</a></li>
+          <h4 class="font-black mb-5 text-lg" data-i18n="quick_links">Quick Links</h4>
+          <ul class="space-y-3 text-sm text-gray-500 dark:text-gray-400">
+            <li><a href="#" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="home"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> Home</a></li>
+            <li><a href="#menu" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="menu"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> Menu</a></li>
+            <li><a href="#deals" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="deals"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> Deals</a></li>
+            <li><a href="#" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="store_locations"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> Store Locations</a></li>
+            <li><a href="#" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="about_us"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> About Us</a></li>
           </ul>
         </div>
         <div>
-          <h4 class="font-bold mb-4" data-i18n="help_support">Help & Support</h4>
-          <ul class="space-y-2 text-sm text-gray-400">
-            <li><a href="#" class="hover:text-white transition" data-i18n="contact_us">Contact Us</a></li>
-            <li><a href="#" class="hover:text-white transition" data-i18n="faqs">FAQs</a></li>
-            <li><a href="#" class="hover:text-white transition" data-i18n="terms">Terms & Conditions</a></li>
-            <li><a href="#" class="hover:text-white transition" data-i18n="privacy">Privacy Policy</a></li>
+          <h4 class="font-black mb-5 text-lg" data-i18n="help_support">Help & Support</h4>
+          <ul class="space-y-3 text-sm text-gray-500 dark:text-gray-400">
+            <li><a href="#" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="contact_us"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> Contact Us</a></li>
+            <li><a href="#" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="faqs"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> FAQs</a></li>
+            <li><a href="#" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="terms"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> Terms & Conditions</a></li>
+            <li><a href="#" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="privacy"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> Privacy Policy</a></li>
           </ul>
         </div>
         <div>
-          <h4 class="font-bold mb-4" data-i18n="contact">Contact</h4>
-          <ul class="space-y-2 text-sm text-gray-400">
-            <li><i class="fas fa-phone-alt mr-2 text-phred"></i> 8090</li>
-            <li><i class="fas fa-envelope mr-2 text-phred"></i> info@pizzahut.et</li>
-            <li><i class="fas fa-map-marker-alt mr-2 text-phred"></i> Addis Ababa, Ethiopia</li>
+          <h4 class="font-black mb-5 text-lg" data-i18n="contact">Contact</h4>
+          <ul class="space-y-3 text-sm text-gray-500 dark:text-gray-400">
+            <li class="flex items-center gap-3 hover:text-phred transition-colors cursor-pointer"><i class="fas fa-phone-alt text-phred"></i> 8090</li>
+            <li class="flex items-center gap-3 hover:text-phred transition-colors cursor-pointer"><i class="fas fa-envelope text-phred"></i> info@pizzahut.et</li>
+            <li class="flex items-center gap-3 hover:text-phred transition-colors"><i class="fas fa-map-marker-alt text-phred"></i> Addis Ababa, Ethiopia</li>
           </ul>
-          <div class="flex gap-3 mt-4">
-            <a href="#" class="w-9 h-9 bg-gray-800 rounded-full flex items-center justify-center hover:bg-phred transition"><i class="fab fa-facebook-f text-sm"></i></a>
-            <a href="#" class="w-9 h-9 bg-gray-800 rounded-full flex items-center justify-center hover:bg-phred transition"><i class="fab fa-instagram text-sm"></i></a>
-            <a href="#" class="w-9 h-9 bg-gray-800 rounded-full flex items-center justify-center hover:bg-phred transition"><i class="fab fa-twitter text-sm"></i></a>
+          <div class="flex gap-3 mt-6">
+            <a href="#" class="social-icon w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-phred transition"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" class="social-icon w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-phred transition"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="social-icon w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-phred transition"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="social-icon w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-phred transition"><i class="fab fa-tiktok"></i></a>
           </div>
         </div>
       </div>
-      <div class="border-t border-gray-800 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
-        <p class="text-gray-500 text-sm"> 2026 Pizza Hut (Pty) Ltd. <span data-i18n="rights">All rights reserved.</span></p>
+      <div class="border-t border-gray-200 dark:border-gray-700 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p class="text-gray-500 dark:text-gray-400 text-sm"> 2026 Pizza Hut (Pty) Ltd. <span data-i18n="rights">All rights reserved.</span></p>
         <div class="flex items-center gap-4 text-gray-500 text-sm">
           <span data-i18n="delivered_by">Delivered by:</span>
-          <span class="font-semibold text-white" data-i18n="ph_ethiopia">Pizza Hut Ethiopia</span>
+          <span class="font-black text-white bg-phred px-3 py-1 rounded-full text-xs" data-i18n="ph_ethiopia">Pizza Hut Ethiopia</span>
         </div>
       </div>
     </div>
   </footer>
 
   <!-- Cart Sidebar -->
-  <div id="cart-overlay" onclick="toggleCart()" class="fixed inset-0 bg-black/50 z-50 hidden transition-opacity opacity-0"></div>
+  <div id="cart-overlay" onclick="toggleCart()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden transition-all duration-300 opacity-0"></div>
   <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-gray-800 z-50 cart-slide cart-closed shadow-2xl flex flex-col">
-    <div class="p-4 border-b dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900">
-      <h3 class="font-bold text-lg text-gray-800 dark:text-white"><i class="fas fa-shopping-bag mr-2 text-phred"></i><span data-i18n="your_cart">Your Cart</span></h3>
-      <button onclick="toggleCart()" class="w-8 h-8 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition">
-        <i class="fas fa-times text-gray-600 dark:text-gray-300"></i>
+    <div class="p-5 border-b dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900">
+      <h3 class="font-black text-xl text-gray-800 dark:text-white flex items-center gap-2"><i class="fas fa-shopping-bag text-phred"></i><span data-i18n="your_cart">Your Cart</span></h3>
+      <button onclick="toggleCart()" class="w-10 h-10 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition hover:rotate-90 duration-300">
+        <i class="fas fa-times text-gray-600 dark:text-gray-300 text-lg"></i>
       </button>
     </div>
-    <div id="cart-items" class="flex-1 overflow-y-auto p-4">
-      <div id="cart-empty" class="text-center py-12">
-        <div class="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-          <i class="fas fa-shopping-basket text-gray-300 dark:text-gray-500 text-3xl"></i>
+    <div id="cart-items" class="flex-1 overflow-y-auto p-5">
+      <div id="cart-empty" class="text-center py-16">
+        <div class="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce" style="animation-duration: 3s;">
+          <i class="fas fa-shopping-basket text-gray-300 dark:text-gray-500 text-4xl"></i>
         </div>
-        <p class="text-gray-500 dark:text-gray-400" data-i18n="cart_empty">Your cart is empty</p>
-        <p class="text-gray-400 dark:text-gray-500 text-sm mt-1" data-i18n="cart_empty_desc">Add some delicious items!</p>
+        <p class="text-gray-500 dark:text-gray-400 font-bold text-lg" data-i18n="cart_empty">Your cart is empty</p>
+        <p class="text-gray-400 dark:text-gray-500 text-sm mt-2" data-i18n="cart_empty_desc">Add some delicious items!</p>
       </div>
-      <div id="cart-list" class="space-y-3 hidden"></div>
+      <div id="cart-list" class="space-y-4 hidden"></div>
     </div>
-    <div id="cart-footer" class="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hidden">
-      <div class="flex justify-between mb-2 text-sm">
+    <div id="cart-footer" class="p-5 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hidden">
+      <div class="flex justify-between mb-3 text-sm">
         <span class="text-gray-500 dark:text-gray-400" data-i18n="subtotal">Subtotal</span>
-        <span id="cart-subtotal" class="font-semibold text-gray-800 dark:text-white">ETB 0.00</span>
+        <span id="cart-subtotal" class="font-bold text-gray-800 dark:text-white">ETB 0.00</span>
       </div>
       <div class="flex justify-between mb-4 text-sm">
         <span class="text-gray-500 dark:text-gray-400" data-i18n="delivery">Delivery</span>
-        <span class="font-semibold text-green-600" data-i18n="free">Free</span>
+        <span class="font-bold text-green-600 flex items-center gap-1"><i class="fas fa-check-circle text-xs"></i> <span data-i18n="free">Free</span></span>
       </div>
-      <div class="flex justify-between mb-4 text-lg font-bold text-gray-800 dark:text-white">
+      <div class="flex justify-between mb-6 text-xl font-black text-gray-800 dark:text-white border-t dark:border-gray-700 pt-4">
         <span data-i18n="total">Total</span>
         <span id="cart-total">ETB 0.00</span>
       </div>
-      <button class="w-full bg-phred text-white py-3.5 rounded-xl font-bold hover:bg-phdark transition" data-i18n="checkout">
-        Checkout <i class="fas fa-arrow-right ml-2"></i>
+      <button class="w-full bg-phred text-white py-4 rounded-2xl font-black text-lg hover:bg-phdark transition-all duration-300 shadow-lg hover:shadow-phred/30 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2" data-i18n="checkout">
+        Checkout <i class="fas fa-arrow-right"></i>
       </button>
     </div>
   </div>
 
   <!-- Toast Notification -->
-  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-full shadow-xl z-50 hidden items-center gap-3">
-    <i class="fas fa-check-circle text-green-400 dark:text-green-600"></i>
-    <span id="toast-message" class="font-medium">Item added to cart!</span>
+  <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-4 rounded-2xl shadow-2xl z-50 hidden items-center gap-3 font-bold">
+    <i class="fas fa-check-circle text-green-400 dark:text-green-600 text-xl"></i>
+    <span id="toast-message">Item added to cart!</span>
   </div>
 
+  <!-- Scroll to top button -->
+  <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" id="scroll-top" class="fixed bottom-8 right-8 w-12 h-12 bg-phred text-white rounded-full shadow-xl hover:scale-110 transition-all duration-300 z-40 hidden items-center justify-center hover:shadow-phred/40">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
   <script>
-    // Translations
     const translations = {
       en: {
-        hours: '<i class="fas fa-clock mr-1"></i> Open 10:00 AM - 10:00 PM',
+        hours: '<i class="fas fa-clock mr-1.5"></i> Open 10:00 AM - 10:00 PM',
         store_locations: 'Store Locations',
         contact_us: 'Contact Us',
         home: 'Home',
@@ -468,7 +602,7 @@
         my_account: 'My Account',
         cart: 'Cart',
         new_arrival: 'NEW ARRIVAL',
-        hero_title: 'No One OutPizzas<br>the Hut!',
+        hero_title: 'No One OutPizzas the Hut!',
         hero_desc: 'Order your favorite pizza online from Pizza Hut Ethiopia. Explore delicious flavors and enjoy fast, reliable delivery to your doorstep in Addis Ababa.',
         order_now: 'Order Now',
         view_deals: 'View Deals',
@@ -518,7 +652,7 @@
         added_to_cart: 'added to cart!',
       },
       am: {
-        hours: '<i class="fas fa-clock mr-1"></i> ከጠዋት 10:00 - ከምሽት 10:00',
+        hours: '<i class="fas fa-clock mr-1.5"></i> ከጠዋት 10:00 - ከምሽት 10:00',
         store_locations: 'የሱቅ ቦታዎች',
         contact_us: 'አግኙን',
         home: 'መነሻ',
@@ -528,7 +662,7 @@
         my_account: 'የእኔ መለያ',
         cart: 'ተራማጅ',
         new_arrival: 'አዲስ መጥቶዋል',
-        hero_title: 'ማንም ሆቱን<br>አያሸንፍም!',
+        hero_title: 'ማንም ሆቱን አያሸንፍም!',
         hero_desc: 'የተወደደውን ፒዛ ከፒዛ ሆት ኢትዮጵያ በኦንላይን ይዘዙ። ጣፋጭ ጣዕሞችን ያስሱ እና በአዲስ አበባ ወደ ቤትዎ ፈጣን እና አስተማማኝ አቅርቦት ይደህኑ።',
         order_now: 'አሁን ይዘዙ',
         view_deals: 'ቅናሾችን ይመልከቱ',
@@ -584,8 +718,6 @@
     function setLanguage(lang) {
       currentLang = lang;
       document.documentElement.lang = lang;
-
-      // Update buttons
       document.getElementById('lang-en').classList.toggle('active', lang === 'en');
       document.getElementById('lang-am').classList.toggle('active', lang === 'am');
       if (lang === 'en') {
@@ -599,16 +731,12 @@
         document.getElementById('lang-en').classList.remove('bg-phred', 'text-white');
         document.getElementById('lang-en').classList.add('text-gray-600', 'dark:text-gray-300');
       }
-
-      // Update all elements with data-i18n
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (translations[lang][key]) {
           el.innerHTML = translations[lang][key];
         }
       });
-
-      // Re-render menu to update "Add" button text
       renderMenu(currentCategory);
       updateCart();
     }
@@ -618,12 +746,10 @@
       localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
     }
 
-    // Check saved preferences
     if (localStorage.getItem('darkMode') === 'true') {
       document.documentElement.classList.add('dark');
     }
 
-    // Menu Data
     const menuItems = [
       { id: 1, name: 'Cheese', nameAm: 'ቺዝ', category: 'pizza', price: 525, image: 'https://www.pizzahut.et/14f21833f06b806d66c7325669e39cf3e42dfdc9', desc: 'Classic cheese pizza with our signature tomato sauce', descAm: 'በራሳችን የሆነ የቲማቲም ሶስ ያለው ክላሲክ ቺዝ ፒዛ', badge: 'Best Seller', badgeAm: 'የተሸጠ ብዙ' },
       { id: 2, name: 'Margherita', nameAm: 'ማርገሪታ', category: 'pizza', price: 545, image: 'https://www.pizzahut.et/95e49adae4d362a79e4d4df4c7c1c62d04bf9250', desc: 'Fresh tomatoes, mozzarella, and basil on a classic crust', descAm: 'አዲስ ቲማቲም፣ ሞዘሬላ እና ቤዚል በክላሲክ ክሬስት ላይ' },
@@ -653,18 +779,18 @@
       const items = category === 'all' ? menuItems : menuItems.filter(i => i.category === category);
       const isAm = currentLang === 'am';
 
-      grid.innerHTML = items.map(item => `
-        <div class="menu-card bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 fade-in">
-          <div class="relative">
+      grid.innerHTML = items.map((item, index) => `
+        <div class="menu-card bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 fade-in" style="animation-delay: ${index * 0.05}s">
+          <div class="relative overflow-hidden">
             <img src="${item.image}" alt="${isAm ? item.nameAm : item.name}" class="w-full h-48 object-contain bg-gray-50 dark:bg-gray-900 p-4">
-            ${item.badge ? `<span class="absolute top-3 left-3 bg-phred text-white text-xs font-bold px-3 py-1 rounded-full">${isAm ? item.badgeAm : item.badge}</span>` : ''}
+            ${item.badge ? `<span class="absolute top-3 left-3 bg-phred text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">${isAm ? item.badgeAm : item.badge}</span>` : ''}
           </div>
           <div class="p-4">
             <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-1">${isAm ? item.nameAm : item.name}</h3>
             <p class="text-gray-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">${isAm ? item.descAm : item.desc}</p>
             <div class="flex items-center justify-between">
               <span class="text-phred font-black text-xl">ETB ${item.price.toFixed(2)}</span>
-              <button onclick="addToCart(${item.id})" class="bg-phred text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-phdark transition flex items-center gap-1.5 active:scale-95">
+              <button onclick="addToCart(${item.id})" class="add-btn bg-phred text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-phdark transition flex items-center gap-1.5 active:scale-95 shadow-lg">
                 <i class="fas fa-plus text-xs"></i> ${isAm ? translations.am.add : translations.en.add}
               </button>
             </div>
@@ -680,9 +806,9 @@
       document.querySelectorAll('.filter-btn').forEach(btn => {
         if (btn.dataset.category === category) {
           btn.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-200');
-          btn.classList.add('bg-phred', 'text-white');
+          btn.classList.add('active');
         } else {
-          btn.classList.remove('bg-phred', 'text-white');
+          btn.classList.remove('active');
           btn.classList.add('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-200');
         }
       });
@@ -743,18 +869,18 @@
         cartFooter.classList.remove('hidden');
 
         cartList.innerHTML = cart.map(item => `
-          <div class="flex gap-3 bg-gray-50 dark:bg-gray-700 rounded-xl p-3">
+          <div class="cart-item flex gap-3 bg-gray-50 dark:bg-gray-700 rounded-xl p-3">
             <img src="${item.image}" alt="${isAm ? item.nameAm : item.name}" class="w-16 h-16 object-contain rounded-lg bg-white dark:bg-gray-800">
             <div class="flex-1 min-w-0">
               <h4 class="font-semibold text-sm text-gray-800 dark:text-white truncate">${isAm ? item.nameAm : item.name}</h4>
               <p class="text-phred font-bold text-sm">ETB ${item.price.toFixed(2)}</p>
               <div class="flex items-center gap-2 mt-1">
-                <button onclick="updateQty(${item.id}, -1)" class="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white">-</button>
+                <button onclick="updateQty(${item.id}, -1)" class="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white transition">-</button>
                 <span class="text-sm font-semibold w-4 text-center text-gray-800 dark:text-white">${item.qty}</span>
-                <button onclick="updateQty(${item.id}, 1)" class="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white">+</button>
+                <button onclick="updateQty(${item.id}, 1)" class="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white transition">+</button>
               </div>
             </div>
-            <button onclick="removeFromCart(${item.id})" class="text-gray-400 hover:text-red-500 transition self-start">
+            <button onclick="removeFromCart(${item.id})" class="text-gray-400 hover:text-red-500 transition self-start hover:scale-110">
               <i class="fas fa-trash-alt text-sm"></i>
             </button>
           </div>
@@ -798,16 +924,65 @@
       const toast = document.getElementById('toast');
       document.getElementById('toast-message').textContent = message;
       toast.classList.remove('hidden');
-      toast.classList.add('flex');
+      toast.classList.add('flex', 'toast-enter');
 
       setTimeout(() => {
-        toast.classList.add('hidden');
-        toast.classList.remove('flex');
+        toast.classList.remove('toast-enter');
+        toast.classList.add('toast-exit');
+        setTimeout(() => {
+          toast.classList.add('hidden');
+          toast.classList.remove('flex', 'toast-exit');
+        }, 300);
       }, 2500);
     }
+
+    // Scroll reveal observer
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+          if (entry.target.classList.contains('stagger-children')) {
+            entry.target.classList.add('animate');
+          }
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.reveal, .stagger-children').forEach(el => {
+      observer.observe(el);
+    });
+
+    // Scroll to top button
+    const scrollTopBtn = document.getElementById('scroll-top');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 500) {
+        scrollTopBtn.classList.remove('hidden');
+        scrollTopBtn.classList.add('flex');
+      } else {
+        scrollTopBtn.classList.add('hidden');
+        scrollTopBtn.classList.remove('flex');
+      }
+    });
+
+    // Header shadow on scroll
+    const header = document.getElementById('main-header');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 10) {
+        header.classList.add('shadow-md');
+      } else {
+        header.classList.remove('shadow-md');
+      }
+    });
 
     // Initialize
     renderMenu();
   </script>
 </body>
 </html>
+
+
