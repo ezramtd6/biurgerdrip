@@ -986,3 +986,19 @@
 </html>
 
 
+
+
+remove fast delivery card, free delivery and 4.9 rating and in Navbar and Footer remove Home
+Menu
+Deals
+Store Locations and in footer remove Help & Support with its entire block and lastly create About us page upper from footer
+
+And can u do more animation and stylish
+
+I have already menu so can u create 
+Login page
+Register page
+Forgot Password page
+Reset Password page
+Set Password page
+
