@@ -12,7 +12,7 @@ import { Loading } from "@/components/common/Loading";
 
 const schema = z
   .object({
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    password: z.string().min(1, "Password is required"),
     confirm_password: z.string(),
   })
   .refine((data) => data.password === data.confirm_password, {

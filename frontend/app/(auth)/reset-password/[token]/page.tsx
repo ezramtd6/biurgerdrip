@@ -10,7 +10,7 @@ import { Button, Input } from "@/components/ui";
 import api from "@/services/api";
 
 const schema = z.object({
-  new_password: z.string().min(8, "Password must be at least 8 characters"),
+  new_password: z.string().min(1, "Password is required"),
 });
 
 type ResetPasswordForm = z.infer<typeof schema>;

@@ -13,7 +13,7 @@ const schema = z
     last_name: z.string().min(1, "Last name is required"),
     email: z.string().email("Invalid email"),
     phone: z.string().optional(),
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    password: z.string().min(1, "Password is required"),
     confirm_password: z.string(),
   })
   .refine((data) => data.password === data.confirm_password, {

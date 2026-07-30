@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import api from "@/services/api";
-import { Category, Product } from "@/types";
+import { Category, Product, RestaurantInfo } from "@/types";
 
 export function useCategories() {
   return useQuery<Category[]>({
@@ -31,6 +31,16 @@ export function useProduct(id: number) {
     queryFn: async () => {
       const res = await api.get(`/products/${id}/`);
       return res.data;
+    },
+  });
+}
+
+export function useRestaurant() {
+  return useQuery<RestaurantInfo[]>({
+    queryKey: ["restaurant"],
+    queryFn: async () => {
+      const res = await api.get("/restaurant/");
+      return res.data.results || res.data;
     },
   });
 }

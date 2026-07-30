@@ -310,9 +310,7 @@
         </a>
 
         <nav class="hidden lg:flex items-center gap-8">
-          <a href="#" class="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-phred transition-colors py-2" data-i18n="home">Home</a>
           <a href="#menu" class="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-phred transition-colors py-2" data-i18n="menu">Menu</a>
-          <a href="#deals" class="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-phred transition-colors py-2" data-i18n="deals">Deals</a>
           <a href="#" class="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-phred transition-colors py-2" data-i18n="store_locations">Store Locations</a>
           <a href="#" class="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-phred transition-colors py-2" data-i18n="about_us">About Us</a>
         </nav>
@@ -343,9 +341,7 @@
 
     <div id="mobile-menu" class="lg:hidden hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg">
       <div class="px-4 py-4 space-y-1">
-        <a href="#" class="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred rounded-xl transition-all" data-i18n="home">Home</a>
         <a href="#menu" class="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred rounded-xl transition-all" data-i18n="menu">Menu</a>
-        <a href="#deals" class="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred rounded-xl transition-all" data-i18n="deals">Deals</a>
         <a href="#" class="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred rounded-xl transition-all" data-i18n="store_locations">Store Locations</a>
         <a href="#" class="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred rounded-xl transition-all" data-i18n="about_us">About Us</a>
         <a href="#" class="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-phlight hover:text-phred rounded-xl transition-all" data-i18n="my_account">My Account</a>
@@ -481,7 +477,7 @@
   <footer class="bg-white dark:bg-gray-800 text-gray-800 dark:text-white pt-16 pb-8 relative overflow-hidden">
     <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-phred via-red-400 to-phred"></div>
     <div class="max-w-7xl mx-auto px-4">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-10 mb-12">
         <div>
           <div class="flex items-center gap-3 mb-5">
             <div class="w-10 h-10 bg-phred rounded-full flex items-center justify-center shadow-lg">
@@ -496,16 +492,7 @@
           </div>
           <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed" data-i18n="footer_about">The Pizza Hut story begins in May 1958. Dan and Frank Carney opened their 550-square-foot pizza restaurant in Wichita, Kansas.</p>
         </div>
-        <div>
-          <h4 class="font-black mb-5 text-lg" data-i18n="quick_links">Quick Links</h4>
-          <ul class="space-y-3 text-sm text-gray-500 dark:text-gray-400">
-            <li><a href="#" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="home"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> Home</a></li>
-            <li><a href="#menu" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="menu"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> Menu</a></li>
-            <li><a href="#deals" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="deals"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> Deals</a></li>
-            <li><a href="#" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="store_locations"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> Store Locations</a></li>
-            <li><a href="#" class="hover:text-phred hover:pl-2 transition-all duration-300 flex items-center gap-2" data-i18n="about_us"><i class="fas fa-chevron-right text-xs text-phred opacity-0 hover:opacity-100 transition-opacity"></i> About Us</a></li>
-          </ul>
-        </div>
+
         <div>
           <h4 class="font-black mb-5 text-lg" data-i18n="help_support">Help & Support</h4>
           <ul class="space-y-3 text-sm text-gray-500 dark:text-gray-400">
@@ -595,9 +582,7 @@
         hours: '<i class="fas fa-clock mr-1.5"></i> Open 10:00 AM - 10:00 PM',
         store_locations: 'Store Locations',
         contact_us: 'Contact Us',
-        home: 'Home',
         menu: 'Menu',
-        deals: 'Deals',
         about_us: 'About Us',
         my_account: 'My Account',
         cart: 'Cart',
@@ -631,7 +616,6 @@
         download_app: 'Download Our App',
         download_app_desc: 'Order faster, track your delivery, and unlock exclusive app-only deals.',
         footer_about: 'The Pizza Hut story begins in May 1958. Dan and Frank Carney opened their 550-square-foot pizza restaurant in Wichita, Kansas.',
-        quick_links: 'Quick Links',
         help_support: 'Help & Support',
         faqs: 'FAQs',
         terms: 'Terms & Conditions',
@@ -655,9 +639,7 @@
         hours: '<i class="fas fa-clock mr-1.5"></i> ከጠዋት 10:00 - ከምሽት 10:00',
         store_locations: 'የሱቅ ቦታዎች',
         contact_us: 'አግኙን',
-        home: 'መነሻ',
         menu: 'ምናሌ',
-        deals: 'ቅናሾች',
         about_us: 'ስለ እኛ',
         my_account: 'የእኔ መለያ',
         cart: 'ተራማጅ',
@@ -691,7 +673,6 @@
         download_app: 'መተግበሪያችንን ያውርዱ',
         download_app_desc: 'ይበልጥ ፈጣን ይዘዙ፣ አቅርቦትዎን ይከታተሉ እና ለመተግበሪያ ብቻ የሆኑ ቅናሾችን ይክፈቱ።',
         footer_about: 'የፒዛ ሆት ታሪክ በሚያዚያ 1958 ጀመረ። ዳን እና ፍራንክ ካርኒ በዊቺታ፣ ካንሳስ 550 ካሬ ጫማ የሆነውን የፒዛ ሬስቶራንት ከፈቱ።',
-        quick_links: 'ፈጣን አገናኞች',
         help_support: 'እገዛ እና ድጋፍ',
         faqs: 'ተደጋጋሚ ጥያቄዎች',
         terms: 'ደንቦች እና ሁኔታዎች',

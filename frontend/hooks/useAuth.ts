@@ -44,10 +44,6 @@ export function useAuth() {
       if (data.access) setAccessToken(data.access);
       if (data.user) setUser(data.user);
       queryClient.setQueryData(["user"], data.user);
-      const role = data.user?.role;
-      if (role === "MANAGER" || role === "ADMIN") router.push("/dashboard");
-      else if (role === "CASHIER") router.push("/cashier");
-      else router.push("/menu");
     },
   });
 

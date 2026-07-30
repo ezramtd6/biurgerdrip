@@ -48,20 +48,21 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             access_token = response.data["access"]
             refresh_token = response.data["refresh"]
             
+            is_secure = not settings.DEBUG
             response.set_cookie(
                 "access_token",
                 access_token,
-                max_age=15 * 60,  # 15 minutes
+                max_age=15 * 60,
                 httponly=True,
-                secure=True,
+                secure=is_secure,
                 samesite="Lax",
             )
             response.set_cookie(
                 "refresh_token",
                 refresh_token,
-                max_age=7 * 24 * 60 * 60,  # 7 days
+                max_age=7 * 24 * 60 * 60,
                 httponly=True,
-                secure=True,
+                secure=is_secure,
                 samesite="Lax",
             )
             
@@ -96,7 +97,7 @@ class CustomTokenRefreshView(APIView):
                 access_token,
                 max_age=15 * 60,
                 httponly=True,
-                secure=True,
+                secure=not settings.DEBUG,
                 samesite="Lax",
             )
             
@@ -185,6 +186,13 @@ class ResetPasswordView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        import re
+        if not re.match(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$", new_password):
+            return Response(
+                {"error": "Password must be 8-20 characters with uppercase, lowercase, number, and special character (@$!%*?&)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
             reset_token = PasswordResetToken.objects.get(token=token, is_used=False)
         except PasswordResetToken.DoesNotExist:
@@ -267,6 +275,13 @@ class SetPasswordView(APIView):
         if len(password) < 8:
             return Response(
                 {"error": "Password must be at least 8 characters."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        import re
+        if not re.match(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$", password):
+            return Response(
+                {"error": "Password must be 8-20 characters with uppercase, lowercase, number, and special character (@$!%*?&)."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

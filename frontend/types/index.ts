@@ -22,6 +22,7 @@ export interface Product {
   category: number;
   name: string;
   description: string;
+  price: number;
   image: string | null;
   option_groups: OptionGroup[];
   created_at: string;
