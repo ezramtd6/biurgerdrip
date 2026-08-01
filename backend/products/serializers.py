@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework import serializers
 from .models import Category, Product, OptionGroup, OptionValue, RestaurantInfo
 
@@ -7,11 +8,42 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = "__all__"
 
+    def create(self, validated_data):
+        if "restaurant" not in validated_data or validated_data["restaurant"] is None:
+            restaurant = RestaurantInfo.objects.first()
+            if restaurant:
+                validated_data["restaurant"] = restaurant
+        return super().create(validated_data)
+
 
 class ProductSerializer(serializers.ModelSerializer):
+    price = serializers.DecimalField(max_digits=8, decimal_places=2, min_value=Decimal("0"), required=False)
+
     class Meta:
         model = Product
         fields = "__all__"
+
+    def _ensure_size_group(self, instance):
+        if not instance.has_sizes:
+            return
+        OptionGroup.objects.get_or_create(
+            product=instance,
+            name="Size",
+            defaults={"name_amharic": "መጠን"},
+        )
+
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        self._ensure_size_group(instance)
+        return instance
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        if instance.has_sizes:
+            self._ensure_size_group(instance)
+        else:
+            instance.option_groups.filter(name="Size").delete()
+        return instance
 
 
 class OptionGroupSerializer(serializers.ModelSerializer):

@@ -10,7 +10,7 @@ import { Button, Input } from "@/components/ui";
 import api from "@/services/api";
 
 const schema = z.object({
-  new_password: z.string().min(1, "Password is required"),
+  new_password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, "Password must be at least 8 characters with an uppercase letter, lowercase letter, number, and special character"),
 });
 
 type ResetPasswordForm = z.infer<typeof schema>;

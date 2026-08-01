@@ -4,7 +4,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { Button, Input } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import FormField from "@/components/ui/FormField";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const schema = z
@@ -13,7 +15,7 @@ const schema = z
     last_name: z.string().min(1, "Last name is required"),
     email: z.string().email("Invalid email"),
     phone: z.string().optional(),
-    password: z.string().min(1, "Password is required"),
+    password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, "Password must be at least 8 characters with an uppercase letter, lowercase letter, number, and special character"),
     confirm_password: z.string(),
   })
   .refine((data) => data.password === data.confirm_password, {
@@ -42,8 +44,7 @@ export default function RegisterPage() {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Burger House</h1>
-        <p className="text-sm text-gray-500 mt-1">Create your account</p>
+        <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
       </div>
 
       {registerUser.isError && (
@@ -61,13 +62,13 @@ export default function RegisterPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <Input
+          <FormField
             label="First Name"
             placeholder="John"
             error={errors.first_name?.message}
             {...register("first_name")}
           />
-          <Input
+          <FormField
             label="Last Name"
             placeholder="Doe"
             error={errors.last_name?.message}
@@ -75,7 +76,7 @@ export default function RegisterPage() {
           />
         </div>
 
-        <Input
+        <FormField
           label="Email"
           type="email"
           placeholder="you@example.com"
@@ -83,7 +84,7 @@ export default function RegisterPage() {
           {...register("email")}
         />
 
-        <Input
+        <FormField
           label="Phone (optional)"
           type="tel"
           placeholder="+1234567890"
@@ -91,7 +92,7 @@ export default function RegisterPage() {
           {...register("phone")}
         />
 
-        <Input
+        <FormField
           label="Password"
           type="password"
           placeholder="Min 8 characters"
@@ -99,7 +100,7 @@ export default function RegisterPage() {
           {...register("password")}
         />
 
-        <Input
+        <FormField
           label="Confirm Password"
           type="password"
           placeholder="Re-enter password"
@@ -107,14 +108,15 @@ export default function RegisterPage() {
           {...register("confirm_password")}
         />
 
-        <Button type="submit" className="w-full" loading={registerUser.isPending}>
+        <Button type="submit" variant="brand" className="w-full" disabled={registerUser.isPending}>
+          {registerUser.isPending && <Loader2 className="animate-spin" />}
           Create Account
         </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-500">
         Already have an account?{" "}
-        <Link href="/login" className="text-orange-500 hover:text-orange-600 font-medium">
+        <Link href="/login" className="text-brand hover:text-brand-dark font-medium">
           Sign In
         </Link>
       </p>

@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from .models import Category, Product, OptionGroup, OptionValue, RestaurantInfo
 from .serializers import (
@@ -12,7 +12,7 @@ from .serializers import (
 
 class IsManager(permissions.BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == "MANAGER"
+        return request.user.is_authenticated and request.user.role in ("MANAGER", "ADMIN")
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -55,3 +55,11 @@ class RestaurantInfoViewSet(viewsets.ModelViewSet):
         if self.action in ("list", "retrieve"):
             return [permissions.AllowAny()]
         return [IsManager()]
+
+    def create(self, request, *args, **kwargs):
+        if RestaurantInfo.objects.exists():
+            return Response(
+                {"detail": "A restaurant already exists. Update or delete it instead."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().create(request, *args, **kwargs)

@@ -7,7 +7,7 @@ import { Button, Input } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { Loading } from "@/components/common/Loading";
 import api from "@/services/api";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const schema = z.object({
   first_name: z.string().min(1, "First name is required"),
@@ -20,6 +20,11 @@ type ProfileForm = z.infer<typeof schema>;
 export default function ProfilePage() {
   const { user, isLoading } = useAuth();
   const [success, setSuccess] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const {
     register,
@@ -42,7 +47,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (isLoading) return <Loading />;
+  if (!mounted || isLoading) return <Loading />;
   if (!user) return null;
 
   return (

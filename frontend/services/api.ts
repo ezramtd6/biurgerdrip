@@ -40,7 +40,8 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch {
         localStorage.removeItem("access_token");
-        if (typeof window !== "undefined") {
+        const url = originalRequest.url || "";
+        if (typeof window !== "undefined" && !url.includes("/auth/logout/") && !url.includes("/auth/login/")) {
           window.location.href = "/login";
         }
       }

@@ -4,7 +4,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
 from .models import User
 
-PASSWORD_REGEX = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$")
+PASSWORD_REGEX = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$")
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -20,7 +20,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate_password(self, value):
         if not PASSWORD_REGEX.match(value):
             raise serializers.ValidationError(
-                "Password must be 8-20 characters with uppercase, lowercase, number, and special character (@$!%*?&)."
+                "Password must be at least 8 characters with an uppercase letter, lowercase letter, number, and special character (@$!%*?&)."
             )
         return value
     

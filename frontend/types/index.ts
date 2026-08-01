@@ -11,6 +11,7 @@ export interface User {
 export interface Category {
   id: number;
   name: string;
+  name_amharic: string;
   image: string | null;
   description: string;
   created_at: string;
@@ -21,8 +22,11 @@ export interface Product {
   id: number;
   category: number;
   name: string;
+  name_amharic: string;
   description: string;
+  description_amharic: string;
   price: number;
+  has_sizes: boolean;
   image: string | null;
   option_groups: OptionGroup[];
   created_at: string;
@@ -33,6 +37,8 @@ export interface OptionGroup {
   id: number;
   product: number;
   name: string;
+  name_amharic: string;
+  price: string;
   required: boolean;
   multiple_choice: boolean;
   display_order: number;
@@ -43,6 +49,7 @@ export interface OptionValue {
   id: number;
   option_group: number;
   name: string;
+  name_amharic: string;
   price_adjustment: number;
   available: boolean;
   display_order: number;
@@ -55,6 +62,8 @@ export interface RestaurantInfo {
   address: string;
   phone: string;
   opening_hours: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface Order {

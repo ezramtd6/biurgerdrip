@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const links = [
   { href: "/cashier", label: "Dashboard", icon: "📊" },
@@ -15,14 +15,19 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
   const { user, isLoading, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && (!user || user.role !== "CASHIER")) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !isLoading && (!user || user.role !== "CASHIER")) {
       router.push("/login");
     }
-  }, [user, isLoading, router]);
+  }, [mounted, user, isLoading, router]);
 
-  if (isLoading)
+  if (!mounted || isLoading)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" />

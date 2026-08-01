@@ -12,7 +12,7 @@ import { Loading } from "@/components/common/Loading";
 
 const schema = z
   .object({
-    password: z.string().min(1, "Password is required"),
+    password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, "Password must be at least 8 characters with an uppercase letter, lowercase letter, number, and special character"),
     confirm_password: z.string(),
   })
   .refine((data) => data.password === data.confirm_password, {

@@ -71,7 +71,7 @@ export function useAuth() {
       removeAccessToken();
       removeUser();
       queryClient.clear();
-      router.push("/login");
+      router.push("/");
     },
   });
 

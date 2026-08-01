@@ -3,10 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 export function useTheme() {
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return document.documentElement.classList.contains("dark") || localStorage.getItem("darkMode") === "true";
-  });
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     const updateThemeState = () => {

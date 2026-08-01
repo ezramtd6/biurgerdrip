@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,6 +12,11 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isActive = (path: string) => pathname === path;
 
@@ -44,7 +49,7 @@ export default function Navbar() {
             <Link href="/menu" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-orange-500 transition-colors py-2">
               Menu
             </Link>
-            {user && (
+            {user && mounted && (
               <>
                 <Link href="/orders" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-orange-500 transition-colors py-2">
                   My Orders
@@ -72,7 +77,7 @@ export default function Navbar() {
               )}
             </button>
 
-            {user ? (
+            {user && mounted ? (
               <div className="hidden md:flex items-center gap-3">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                   {user.first_name}
@@ -114,7 +119,7 @@ export default function Navbar() {
             <Link href="/menu" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-500 rounded-xl transition-all">
               Menu
             </Link>
-            {user && (
+            {user && mounted && (
               <>
                 <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-500 rounded-xl transition-all">
                   My Orders
@@ -124,7 +129,7 @@ export default function Navbar() {
                 </Link>
               </>
             )}
-            {user ? (
+            {user && mounted ? (
               <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="block w-full text-left py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">
                 Logout
               </button>

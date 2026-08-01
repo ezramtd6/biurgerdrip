@@ -1,5 +1,5 @@
-export { default as Button } from "./Button";
-export { default as Input } from "./Input";
-export { default as Select } from "./Select";
-export { default as Modal } from "./Modal";
-export { default as Table } from "./Table";
+export { default as Button } from "./AppButton";
+export { default as Input } from "./AppInput";
+export { default as Select } from "./AppSelect";
+export { default as Modal } from "./AppModal";
+export { default as Table } from "./AppTable";

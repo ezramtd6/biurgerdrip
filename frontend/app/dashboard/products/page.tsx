@@ -11,11 +11,21 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-const schema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
-  category: z.string().min(1, "Category is required"),
-});
+const schema = z
+  .object({
+    name: z.string().min(1, "Name is required"),
+    name_amharic: z.string().min(1, "Name in Amharic is required"),
+    description: z.string().min(1, "Description is required"),
+    description_amharic: z.string().min(1, "Description in Amharic is required"),
+    price: z.coerce.number().min(0),
+    category: z.string().min(1, "Category is required"),
+    has_sizes: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.has_sizes && data.price <= 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["price"], message: "Amount is required" });
+    }
+  });
 
 type ProductForm = z.infer<typeof schema>;
 
@@ -25,6 +35,7 @@ export default function ProductsPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: products, isLoading: loadingProducts } = useQuery<Product[]>({
@@ -47,47 +58,63 @@ export default function ProductsPage() {
     mutationFn: (data: ProductForm) => {
       const fd = new FormData();
       fd.append("name", data.name);
+      fd.append("name_amharic", data.name_amharic);
       fd.append("description", data.description);
+      fd.append("description_amharic", data.description_amharic);
+      fd.append("price", String(data.price));
+      fd.append("has_sizes", data.has_sizes ? "true" : "false");
       fd.append("category", data.category);
       if (imageFile) fd.append("image", imageFile);
       return api.post("/products/", fd, { headers: { "Content-Type": "multipart/form-data" } });
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-products"] }); setIsOpen(false); resetForm(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-products"] }); queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }); setIsOpen(false); resetForm(); },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: ProductForm }) => {
       const fd = new FormData();
       fd.append("name", data.name);
+      fd.append("name_amharic", data.name_amharic);
       fd.append("description", data.description);
+      fd.append("description_amharic", data.description_amharic);
+      fd.append("price", String(data.price));
+      fd.append("has_sizes", data.has_sizes ? "true" : "false");
       fd.append("category", data.category);
       if (imageFile) fd.append("image", imageFile);
       return api.put(`/products/${id}/`, fd, { headers: { "Content-Type": "multipart/form-data" } });
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-products"] }); setIsOpen(false); setEditing(null); resetForm(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-products"] }); queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }); setIsOpen(false); setEditing(null); resetForm(); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/products/${id}/`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-products"] }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-products"] }); queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }); },
   });
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<ProductForm>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<ProductForm>({
     resolver: zodResolver(schema),
   });
 
-  const resetForm = () => { reset({ name: "", description: "", category: "" }); setImageFile(null); setImagePreview(null); };
+  const hasSizes = watch("has_sizes");
+
+  const resetForm = () => { reset({ name: "", name_amharic: "", description: "", description_amharic: "", price: 0, category: "", has_sizes: false }); setImageFile(null); setImagePreview(null); setImageError(null); };
 
   const openCreate = () => { setEditing(null); resetForm(); setIsOpen(true); };
   const openEdit = (p: Product) => {
     setEditing(p);
-    reset({ name: p.name, description: p.description, category: String(p.category) });
+    reset({ name: p.name, name_amharic: p.name_amharic, description: p.description, description_amharic: p.description_amharic, price: Number(p.price), category: String(p.category), has_sizes: p.has_sizes });
     setImageFile(null);
     setImagePreview(p.image || null);
+    setImageError(null);
     setIsOpen(true);
   };
 
   const onSubmit = (data: ProductForm) => {
+    if (!imageFile && !editing?.image) {
+      setImageError("Image is required");
+      return;
+    }
+    setImageError(null);
     if (editing) updateMutation.mutate({ id: editing.id, data });
     else createMutation.mutate(data);
   };
@@ -123,6 +150,7 @@ export default function ProductsPage() {
               },
             },
             { key: "category", header: "Category", render: (item: Record<string, unknown>) => getCategoryName(item.category as number) },
+            { key: "price", header: "Amount (ETB)", render: (item: Record<string, unknown>) => <span className="font-semibold text-gray-900">ETB {Number(item.price).toFixed(2)}</span> },
             { key: "description", header: "Description", render: (item: Record<string, unknown>) => <span className="text-gray-500 truncate max-w-xs block">{item.description as string}</span> },
             {
               key: "actions",
@@ -141,13 +169,36 @@ export default function ProductsPage() {
 
       <Modal isOpen={isOpen} onClose={() => { setIsOpen(false); setEditing(null); }} title={editing ? "Edit Product" : "Add Product"}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input label="Name" error={errors.name?.message} {...register("name")} />
-          <Input label="Description" error={errors.description?.message} {...register("description")} />
+          <Input label="Name (English)" error={errors.name?.message} {...register("name")} />
+          <Input label="Name (Amharic)" error={errors.name_amharic?.message} {...register("name_amharic")} />
+          <Input label="Description (English)" error={errors.description?.message} {...register("description")} />
+          <Input label="Description (Amharic)" error={errors.description_amharic?.message} {...register("description_amharic")} />
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="rounded"
+              {...register("has_sizes", {
+                onChange: (e) => { if (e.target.checked) setValue("price", 0); },
+              })}
+            />
+            Is there sizes
+          </label>
+          <Input
+            label="Amount (ETB)"
+            type="number"
+            min={0}
+            step="0.01"
+            disabled={hasSizes}
+            placeholder={hasSizes ? "Amount comes from option groups" : "Optional if option groups set the price"}
+            error={errors.price?.message}
+            {...register("price")}
+          />
           <Select
             label="Category"
             placeholder="Select category"
             error={errors.category?.message}
             options={categories?.map((c) => ({ value: c.id, label: c.name })) || []}
+            required
             {...register("category")}
           />
 
@@ -158,6 +209,7 @@ export default function ProductsPage() {
               type="file"
               accept="image/*"
               className="hidden"
+              required={!imagePreview}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
@@ -183,6 +235,7 @@ export default function ProductsPage() {
                 </div>
               )}
             </button>
+            {imageError && <p className="mt-1 text-sm text-red-500">{imageError}</p>}
           </div>
 
           <div className="flex gap-3 justify-end">

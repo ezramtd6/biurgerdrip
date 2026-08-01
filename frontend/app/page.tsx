@@ -1,10 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import api from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { RestaurantInfo, Category, Product } from "@/types";
 
 const translations: Record<string, Record<string, string>> = {
   en: {
@@ -12,7 +24,7 @@ const translations: Record<string, Record<string, string>> = {
     contact_us: "Contact Us",
     menu: "Menu",
     about_us: "About Us",
-    my_account: "My Account",
+    my_account: "Login",
     cart: "Cart",
     hero_title: "No One OutPizzas the Hut!",
     hero_desc: "Order your favorite pizza online from Pizza Hut Ethiopia. Explore delicious flavors and enjoy fast, reliable delivery to your doorstep in Addis Ababa.",
@@ -113,40 +125,6 @@ const translations: Record<string, Record<string, string>> = {
   },
 };
 
-interface MenuItem {
-  id: number;
-  name: string;
-  nameAm: string;
-  category: string;
-  price: number;
-  image: string;
-  desc: string;
-  descAm: string;
-  badge?: string;
-  badgeAm?: string;
-}
-
-const menuItems: MenuItem[] = [
-  { id: 1, name: "Cheese", nameAm: "ቺዝ", category: "pizza", price: 525, image: "https://www.pizzahut.et/14f21833f06b806d66c7325669e39cf3e42dfdc9", desc: "Classic cheese pizza with our signature tomato sauce", descAm: "በራሳችን የሆነ የቲማቲም ሶስ ያለው ክላሲክ ቺዝ ፒዛ", badge: "Best Seller", badgeAm: "የተሸጠ ብዙ" },
-  { id: 2, name: "Margherita", nameAm: "ማርገሪታ", category: "pizza", price: 545, image: "https://www.pizzahut.et/95e49adae4d362a79e4d4df4c7c1c62d04bf9250", desc: "Fresh tomatoes, mozzarella, and basil on a classic crust", descAm: "አዲስ ቲማቲም፣ ሞዘሬላ እና ቤዚል በክላሲክ ክሬስት ላይ" },
-  { id: 3, name: "Veggie Supreme", nameAm: "ቬጂ ሱፕሪም", category: "pizza", price: 595, image: "https://www.pizzahut.et/14f21833f06b806d66c7325669e39cf3e42dfdc9", desc: "Loaded with peppers, onions, mushrooms, and olives", descAm: "በፈረፈራ፣ ሽንኩርት፣ እንጉዳይ እና ዘይቶች የተሞላ" },
-  { id: 4, name: "Hot Veg", nameAm: "ሆት ቬጅ", category: "pizza", price: 605, image: "https://www.pizzahut.et/95e49adae4d362a79e4d4df4c7c1c62d04bf9250", desc: "Spicy veggie blend with jalapeños and hot sauce", descAm: "በጃላፔኖ እና ሆት ሶስ የተቀላቀለ ቀፋፊ አትክልት" },
-  { id: 5, name: "Chicken", nameAm: "ዶሮ", category: "pizza", price: 730, image: "https://www.pizzahut.et/14f21833f06b806d66c7325669e39cf3e42dfdc9", desc: "Grilled chicken with BBQ sauce and red onions", descAm: "በቢቢኪው ሶስ እና ቀይ ሽንኩርት የተደረደረ ዶሮ", badge: "Popular", badgeAm: "ታዋቂ" },
-  { id: 6, name: "Super Supreme", nameAm: "ሱፐር ሱፕሪም", category: "pizza", price: 875, image: "https://www.pizzahut.et/95e49adae4d362a79e4d4df4c7c1c62d04bf9250", desc: "The ultimate loaded pizza with all your favorite toppings", descAm: "በሁሉም የምትወዷቸው ንጥረ ነገሮች የተሞላ የመጨረሻ ፒዛ" },
-  { id: 7, name: "Tuna Pizza", nameAm: "የጦና ፒዛ", category: "pizza", price: 750, image: "https://www.pizzahut.et/14f21833f06b806d66c7325669e39cf3e42dfdc9", desc: "Tender tuna with melted cheese and special seasoning", descAm: "በየቀረው ቺዝ እና ልዩ ቅመም የተደረደረ ጦና" },
-  { id: 8, name: "Crispy Fries", nameAm: "ክሪስፒ ፍራይስ", category: "sides", price: 490, image: "https://www.pizzahut.et/ef8bd19dee4eeb1b03c32c2f753d8cdac1028145", desc: "Golden crispy fries, perfectly seasoned", descAm: "የወርቅ ቀለም ያላቸው ክሪስፒ ፍራይስ፣ በትክክል የቀመሙ" },
-  { id: 9, name: "Garlic Bread", nameAm: "የነጭ ሽንኩርት ዳቦ", category: "sides", price: 350, image: "https://www.pizzahut.et/ef8bd19dee4eeb1b03c32c2f753d8cdac1028145", desc: "Toasted garlic bread with herb butter", descAm: "በሐብሐብ ቅቤ የተቀረቀረ የነጭ ሽንኩርት ዳቦ" },
-  { id: 10, name: "Chicken Nuggets", nameAm: "የዶሮ ናጌትስ", category: "sides", price: 450, image: "https://www.pizzahut.et/ef8bd19dee4eeb1b03c32c2f753d8cdac1028145", desc: "Crispy chicken nuggets with dipping sauce", descAm: "ክሪስፒ የዶሮ ናጌትስ ከዲፕ ሶስ ጋር" },
-  { id: 11, name: "Pepperoni Melt", nameAm: "ፔፐሮኒ ሜልት", category: "melts", price: 550, image: "https://www.pizzahut.et/319a192f538b83d2e13e6164f56151366ae17ea7", desc: "Folded pizza pocket with pepperoni and cheese", descAm: "በፔፐሮኒ እና ቺዝ የተሞላ የተቦጨቀ ፒዛ ጆሮ" },
-  { id: 12, name: "Chicken Melt", nameAm: "የዶሮ ሜልት", category: "melts", price: 580, image: "https://www.pizzahut.et/319a192f538b83d2e13e6164f56151366ae17ea7", desc: "Grilled chicken melt with melted mozzarella", descAm: "በየቀረው ሞዘሬላ የተሞላ የተቦጨቀ ዶሮ", badge: "New", badgeAm: "አዲስ" },
-  { id: 13, name: "Alfredo Pasta", nameAm: "አልፍሬዶ ፓስታ", category: "pasta", price: 520, image: "https://www.pizzahut.et/68927e46bbfc43b2bb5c9ff2fbde4406608bdfac", desc: "Creamy alfredo sauce over penne pasta", descAm: "ክሬሚ አልፍሬዶ ሶስ በፔኔ ፓስታ ላይ" },
-  { id: 14, name: "Bolognese Pasta", nameAm: "ቦሎኔዝ ፓስታ", category: "pasta", price: 550, image: "https://www.pizzahut.et/68927e46bbfc43b2bb5c9ff2fbde4406608bdfac", desc: "Rich meat sauce with Italian herbs", descAm: "በጣም ብዙ ስጋ ሶስ ከጣሊያን ሐብሐብ ጋር" },
-  { id: 15, name: "Pepsi 1L", nameAm: "ፔፕሲ 1ሊ", category: "drinks", price: 180, image: "https://www.pizzahut.et/86f922d8879d8bbc5e5edff271268f90e91102ae", desc: "Refreshing Pepsi, 1 liter bottle", descAm: "አዲስ አድርጎ የሚያድን ፔፕሲ፣ 1 ሊትር ብርጭቆ" },
-  { id: 16, name: "7UP 1L", nameAm: "7አፕ 1ሊ", category: "drinks", price: 180, image: "https://www.pizzahut.et/86f922d8879d8bbc5e5edff271268f90e91102ae", desc: "Crisp and refreshing 7UP, 1 liter", descAm: "ክሪስፕ እና አዲስ አድርጎ የሚያድን 7አፕ፣ 1 ሊትር" },
-  { id: 17, name: "Chocolate Cake", nameAm: "ቸኮሌት ኬክ", category: "desserts", price: 420, image: "https://www.pizzahut.et/1891b6103046c4cd46f7eaaa4e979486b04aa1f7", desc: "Rich chocolate cake with fudge frosting", descAm: "በፋጅ ፍሮስቲንግ የተሞላ ብዙ ቸኮሌት ኬክ" },
-  { id: 18, name: "Cookie Dough", nameAm: "ኩኪ ዶ", category: "desserts", price: 390, image: "https://www.pizzahut.et/1891b6103046c4cd46f7eaaa4e979486b04aa1f7", desc: "Warm cookie dough with vanilla ice cream", descAm: "በቫኒላ አይስ ክሬም የተሞላ ሞቃታማ ኩኪ ዶ", badge: "Sweet", badgeAm: "ጣፋጭ" },
-];
-
 interface CartItem {
   id: number;
   name: string;
@@ -158,26 +136,61 @@ interface CartItem {
 
 export default function Home() {
   const { user, logout } = useAuth();
+  const router = useRouter();
   const { isDark, toggleDarkMode } = useTheme();
   const [restaurantReady, setRestaurantReady] = useState(true);
   const [checkingRestaurant, setCheckingRestaurant] = useState(true);
+  const [restaurant, setRestaurant] = useState<RestaurantInfo | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [currentLang, setCurrentLang] = useState("en");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
-  const [currentCategory, setCurrentCategory] = useState("all");
+  const [currentCategory, setCurrentCategory] = useState<string | number>("all");
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: "", visible: false });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === "CASHIER") router.replace("/cashier");
+      else if (user.role === "MANAGER" || user.role === "ADMIN") router.replace("/dashboard");
+    }
+  }, [user, router]);
 
   useEffect(() => {
     api.get("/restaurant/")
       .then((res) => {
         const data = res.data.results || res.data;
+        setRestaurant(data && data.length > 0 ? data[0] : null);
         setRestaurantReady(data && data.length > 0);
       })
       .catch(() => setRestaurantReady(false))
       .finally(() => setCheckingRestaurant(false));
+  }, []);
+
+  useEffect(() => {
+    api.get("/categories/")
+      .then((res) => {
+        const data = res.data.results || res.data;
+        setCategories(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setCategories([]));
+  }, []);
+
+  useEffect(() => {
+    api.get("/products/")
+      .then((res) => {
+        const data = res.data.results || res.data;
+        setProducts(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setProducts([]));
   }, []);
 
   useEffect(() => {
@@ -191,13 +204,13 @@ export default function Home() {
 
   const t = (key: string) => translations[currentLang]?.[key] || translations.en[key] || key;
 
-  const addToCart = (item: MenuItem) => {
+  const addToCart = (item: Product) => {
     setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) return prev.map((i) => (i.id === item.id ? { ...i, qty: i.qty + 1 } : i));
-      return [{ id: item.id, name: item.name, nameAm: item.nameAm, price: item.price, image: item.image, qty: 1 }, ...prev];
+      return [{ id: item.id, name: item.name, nameAm: item.name_amharic || item.name, price: Number(item.price), image: item.image || "", qty: 1 }, ...prev];
     });
-    showToast(`${currentLang === "am" ? item.nameAm : item.name} ${t("added_to_cart")}`);
+    showToast(`${currentLang === "am" ? item.name_amharic || item.name : item.name} ${t("added_to_cart")}`);
   };
 
   const removeFromCart = (id: number) => setCart((prev) => prev.filter((i) => i.id !== id));
@@ -211,19 +224,9 @@ export default function Home() {
     setTimeout(() => setToast({ message: "", visible: false }), 2500);
   };
 
-  const filteredItems = currentCategory === "all" ? menuItems : menuItems.filter((i) => i.category === currentCategory);
+  const filteredItems = currentCategory === "all" ? products : products.filter((i) => i.category === currentCategory);
   const totalQty = cart.reduce((sum, i) => sum + i.qty, 0);
   const totalCartPrice = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
-
-  const categories = ["pizza", "sides", "melts", "pasta", "drinks", "desserts"];
-  const tCat: Record<string, string> = {
-    pizza: t("cat_pizza"),
-    sides: t("cat_sides"),
-    melts: t("cat_melts"),
-    pasta: t("cat_pasta"),
-    drinks: t("cat_drinks"),
-    desserts: t("cat_desserts"),
-  };
 
   const menuAvailable = !checkingRestaurant && restaurantReady;
 
@@ -256,12 +259,26 @@ export default function Home() {
                 <button onClick={() => setCurrentLang("en")} className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${currentLang === "en" ? "bg-red-600 text-white shadow" : "text-gray-600 dark:text-gray-300"}`}>EN</button>
                 <button onClick={() => setCurrentLang("am")} className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${currentLang === "am" ? "bg-red-600 text-white shadow" : "text-gray-600 dark:text-gray-300"}`}>AM</button>
               </div>
-              {user ? (
+              {user && mounted ? (
                 <div className="hidden md:flex items-center gap-3">
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{user.first_name}</span>
-                  <button onClick={() => logout.mutate()} className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 transition-colors">
-                    Logout
-                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors cursor-pointer outline-none">
+                      {user.first_name} {user.last_name}
+                      <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
+                      </DropdownMenuGroup>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => router.push("/change-password")}>
+                        Change Password
+                      </DropdownMenuItem>
+                      <DropdownMenuItem variant="destructive" onClick={() => logout.mutate()}>
+                        Logout
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ) : (
                 <Link href="/login" className="hidden md:flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 transition px-3 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -284,7 +301,7 @@ export default function Home() {
             <a href="#menu" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("menu")}</a>
             <a href="#store-locations" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("store_locations")}</a>
             <a href="#about-us" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("about_us")}</a>
-            {user ? (
+            {user && mounted ? (
               <button onClick={() => { logout.mutate(); setMobileMenuOpen(false); }} className="block w-full text-left py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">Logout</button>
             ) : (
               <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("my_account")}</Link>
@@ -379,12 +396,14 @@ export default function Home() {
               <div className="w-16 h-1 bg-red-600 rounded-full mb-2" />
               <p className="text-gray-500 dark:text-gray-400">{t("menu_subtitle")}</p>
             </div>
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-              <button onClick={() => setCurrentCategory("all")} className={`filter-btn flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition whitespace-nowrap ${currentCategory === "all" ? "active" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"}`}>{t("all")}</button>
-              {categories.map((cat) => (
-                <button key={cat} onClick={() => setCurrentCategory(cat)} className={`filter-btn flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition whitespace-nowrap ${currentCategory === cat ? "active" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"}`}>{tCat[cat]}</button>
-              ))}
-            </div>
+            {menuAvailable && (
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+                <button onClick={() => setCurrentCategory("all")} className={`filter-btn flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition whitespace-nowrap ${currentCategory === "all" ? "active brand-selected" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"}`}>{t("all")}</button>
+                {categories.map((cat) => (
+                  <button key={cat.id} onClick={() => setCurrentCategory(cat.id)} className={`filter-btn flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition whitespace-nowrap ${currentCategory === cat.id ? "active brand-selected" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"}`}>{currentLang === "am" ? cat.name_amharic || cat.name : cat.name}</button>
+                ))}
+              </div>
+            )}
           </div>
           {!menuAvailable && checkingRestaurant && (
             <div className="flex items-center justify-center py-20">
@@ -403,60 +422,37 @@ export default function Home() {
             </div>
           )}
           {menuAvailable && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-7">
-              {filteredItems.map((item, index) => {
-                const itemName = currentLang === "am" ? item.nameAm : item.name;
-                const itemDesc = currentLang === "am" ? item.descAm : item.desc;
-                const itemBadge = currentLang === "am" ? item.badgeAm : item.badge;
-                return (
-                  <div key={item.id} className="menu-card bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300" style={{ animationDelay: `${index * 0.05}s` }}>
-                    <div className="relative overflow-hidden">
-                      <img src={item.image} alt={itemName} className="w-full h-48 object-contain bg-gray-50 dark:bg-gray-900 p-4" />
-                      {itemBadge && <span className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">{itemBadge}</span>}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-1">{itemName}</h3>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">{itemDesc}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-red-600 font-black text-xl">ETB {item.price.toFixed(2)}</span>
-                        <button onClick={() => addToCart(item)} className="add-btn bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700 transition flex items-center gap-1.5 active:scale-95 shadow-lg">
-                          <i className="fas fa-plus text-xs"></i> {t("add")}
-                        </button>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-7">
+                {filteredItems.map((item, index) => {
+                  const itemName = currentLang === "am" ? item.name_amharic || item.name : item.name;
+                  const itemDesc = currentLang === "am" ? item.description_amharic || item.description : item.description;
+                  return (
+                    <div key={item.id} className="menu-card bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300" style={{ animationDelay: `${index * 0.05}s` }}>
+                      <div className="relative overflow-hidden">
+                        <img src={item.image || ""} alt={itemName} className="w-full h-48 object-contain bg-gray-50 dark:bg-gray-900 p-4" />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-1">{itemName}</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">{itemDesc}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-red-600 font-black text-xl">ETB {Number(item.price).toFixed(2)}</span>
+                          <button onClick={() => addToCart(item)} className="add-btn bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700 transition flex items-center gap-1.5 active:scale-95 shadow-lg">
+                            <i className="fas fa-plus text-xs"></i> {t("add")}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+              {filteredItems.length === 0 && (
+                <div className="text-center py-16">
+                  <p className="text-gray-500 dark:text-gray-400">No products in this category yet</p>
+                </div>
+              )}
+            </>
           )}
-        </div>
-      </section>
-
-      <section className="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-500">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="feature-card bg-white dark:bg-gray-800 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
-              <div className="feature-icon w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <i className="fas fa-motorcycle text-red-600 text-3xl"></i>
-              </div>
-              <h3 className="font-black text-gray-800 dark:text-white text-xl mb-3">{t("feat_delivery")}</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{t("feat_delivery_desc")}</p>
-            </div>
-            <div className="feature-card bg-white dark:bg-gray-800 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
-              <div className="feature-icon w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <i className="fas fa-utensils text-red-600 text-3xl"></i>
-              </div>
-              <h3 className="font-black text-gray-800 dark:text-white text-xl mb-3">{t("feat_quality")}</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{t("feat_quality_desc")}</p>
-            </div>
-            <div className="feature-card bg-white dark:bg-gray-800 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
-              <div className="feature-icon w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <i className="fas fa-tag text-red-600 text-3xl"></i>
-              </div>
-              <h3 className="font-black text-gray-800 dark:text-white text-xl mb-3">{t("feat_deals")}</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{t("feat_deals_desc")}</p>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -496,6 +492,46 @@ export default function Home() {
               </div>
               <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-2">Bambis</h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm">Bambis Area<br />Addis Ababa</p>
+            </div>
+          </div>
+          {restaurant?.latitude != null && restaurant.longitude != null && (
+            <div className="mt-10 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
+              <iframe
+                title="Store Location Map"
+                src={`https://www.google.com/maps?q=${restaurant.latitude},${restaurant.longitude}&z=15&output=embed`}
+                className="w-full h-[400px]"
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-500">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="feature-card bg-white dark:bg-gray-800 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
+              <div className="feature-icon w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <i className="fas fa-motorcycle text-red-600 text-3xl"></i>
+              </div>
+              <h3 className="font-black text-gray-800 dark:text-white text-xl mb-3">{t("feat_delivery")}</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{t("feat_delivery_desc")}</p>
+            </div>
+            <div className="feature-card bg-white dark:bg-gray-800 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
+              <div className="feature-icon w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <i className="fas fa-utensils text-red-600 text-3xl"></i>
+              </div>
+              <h3 className="font-black text-gray-800 dark:text-white text-xl mb-3">{t("feat_quality")}</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{t("feat_quality_desc")}</p>
+            </div>
+            <div className="feature-card bg-white dark:bg-gray-800 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
+              <div className="feature-icon w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <i className="fas fa-tag text-red-600 text-3xl"></i>
+              </div>
+              <h3 className="font-black text-gray-800 dark:text-white text-xl mb-3">{t("feat_deals")}</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{t("feat_deals_desc")}</p>
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+import re
 from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -66,9 +67,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 samesite="Lax",
             )
             
-            del response.data["access"]
-            del response.data["refresh"]
-            
             user = User.objects.get(email=request.data["email"])
             response.data["user"] = UserSerializer(user).data
         
@@ -133,6 +131,39 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
+class ChangePasswordView(APIView):
+    def post(self, request):
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+
+        if not current_password or not new_password:
+            return Response(
+                {"error": "Current and new passwords are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = request.user
+        if not user.check_password(current_password):
+            return Response(
+                {"error": "Current password is incorrect."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not re.match(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", new_password):
+            return Response(
+                {"error": "Password must be at least 8 characters with an uppercase letter, lowercase letter, number, and special character (@$!%*?&)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response(
+            {"message": "Password changed successfully."},
+            status=status.HTTP_200_OK,
+        )
+
+
 class ForgotPasswordView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -187,9 +218,9 @@ class ResetPasswordView(APIView):
             )
 
         import re
-        if not re.match(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$", new_password):
+        if not re.match(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", new_password):
             return Response(
-                {"error": "Password must be 8-20 characters with uppercase, lowercase, number, and special character (@$!%*?&)."},
+                {"error": "Password must be at least 8 characters with an uppercase letter, lowercase letter, number, and special character (@$!%*?&)."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -279,9 +310,9 @@ class SetPasswordView(APIView):
             )
 
         import re
-        if not re.match(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$", password):
+        if not re.match(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
             return Response(
-                {"error": "Password must be 8-20 characters with uppercase, lowercase, number, and special character (@$!%*?&)."},
+                {"error": "Password must be at least 8 characters with an uppercase letter, lowercase letter, number, and special character (@$!%*?&)."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

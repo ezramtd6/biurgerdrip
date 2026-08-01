@@ -6,7 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button, Input } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import FormField from "@/components/ui/FormField";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const schema = z.object({
@@ -27,7 +29,7 @@ const roleRedirects: Record<string, string> = {
   ADMIN: "/dashboard",
   MANAGER: "/dashboard",
   CASHIER: "/cashier",
-  CUSTOMER: "/menu",
+  CUSTOMER: "/",
 };
 
 export default function LoginPage() {
@@ -68,7 +70,7 @@ export default function LoginPage() {
             </svg>
           </div>
           <h2 className="text-xl font-bold text-gray-900">Signed in successfully</h2>
-          <p className="text-lg text-orange-500 font-semibold mt-2">{roleMessage}</p>
+          <p className="text-lg text-brand font-semibold mt-2">{roleMessage}</p>
           <p className="text-sm text-gray-400 mt-4">Redirecting...</p>
         </div>
       </div>
@@ -78,8 +80,7 @@ export default function LoginPage() {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Burger House</h1>
-        <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
+        <h1 className="text-2xl font-bold text-gray-900">Sign in to your account</h1>
       </div>
 
       {login.isError && (
@@ -90,7 +91,7 @@ export default function LoginPage() {
       )}
 
       <div className="space-y-4">
-        <Input
+        <FormField
           label="Email"
           type="email"
           placeholder="you@example.com"
@@ -99,7 +100,7 @@ export default function LoginPage() {
           onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(onSubmit)(); }}
         />
 
-        <Input
+        <FormField
           label="Password"
           type="password"
           placeholder="Enter your password"
@@ -109,19 +110,20 @@ export default function LoginPage() {
         />
 
         <div className="text-right">
-          <Link href="/forgot-password" className="text-sm text-orange-500 hover:text-orange-600">
+          <Link href="/forgot-password" className="text-sm text-brand hover:text-brand-dark">
             Forgot password?
           </Link>
         </div>
 
-        <Button onClick={() => handleSubmit(onSubmit)()} className="w-full" loading={login.isPending}>
+        <Button onClick={() => handleSubmit(onSubmit)()} variant="brand" className="w-full" disabled={login.isPending}>
+          {login.isPending && <Loader2 className="animate-spin" />}
           Sign In
         </Button>
       </div>
 
       <p className="mt-6 text-center text-sm text-gray-500">
         Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-orange-500 hover:text-orange-600 font-medium">
+        <Link href="/register" className="text-brand hover:text-brand-dark font-medium">
           Register
         </Link>
       </p>
