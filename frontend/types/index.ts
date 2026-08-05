@@ -14,6 +14,7 @@ export interface Category {
   name_amharic: string;
   image: string | null;
   description: string;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -27,6 +28,7 @@ export interface Product {
   description_amharic: string;
   price: number;
   has_sizes: boolean;
+  is_active: boolean;
   image: string | null;
   option_groups: OptionGroup[];
   created_at: string;
@@ -39,6 +41,7 @@ export interface OptionGroup {
   name: string;
   name_amharic: string;
   price: string;
+  is_active: boolean;
   required: boolean;
   multiple_choice: boolean;
   display_order: number;
@@ -62,8 +65,40 @@ export interface RestaurantInfo {
   address: string;
   phone: string;
   opening_hours: string;
+  is_active: boolean;
   latitude: number | null;
   longitude: number | null;
+}
+
+export interface Branch {
+  id: number;
+  restaurant: number;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export type SocialPlatform =
+  | "facebook"
+  | "instagram"
+  | "twitter"
+  | "tiktok"
+  | "youtube"
+  | "telegram";
+
+export interface SocialLink {
+  id: number;
+  restaurant: number;
+  platform: SocialPlatform;
+  url: string;
+  created_at?: string;
+}
+
+export interface Contact {
+  id: number;
+  phone: string;
+  email: string;
+  location: string;
+  created_at?: string;
 }
 
 export interface Order {

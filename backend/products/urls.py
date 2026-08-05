@@ -6,6 +6,9 @@ from .views import (
     OptionGroupViewSet,
     OptionValueViewSet,
     RestaurantInfoViewSet,
+    BranchViewSet,
+    SocialLinkViewSet,
+    ContactViewSet,
 )
 
 router = DefaultRouter()
@@ -14,6 +17,9 @@ router.register(r"products", ProductViewSet)
 router.register(r"option-groups", OptionGroupViewSet)
 router.register(r"option-values", OptionValueViewSet)
 router.register(r"restaurant", RestaurantInfoViewSet)
+router.register(r"branches", BranchViewSet)
+router.register(r"social-links", SocialLinkViewSet)
+router.register(r"contacts", ContactViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),

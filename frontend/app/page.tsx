@@ -16,7 +16,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { RestaurantInfo, Category, Product } from "@/types";
+import { RestaurantInfo, Category, Product, Branch, SocialLink, Contact } from "@/types";
+import dynamic from "next/dynamic";
+
+const BranchMap = dynamic(() => import("@/components/BranchMap"), { ssr: false });
 
 const translations: Record<string, Record<string, string>> = {
   en: {
@@ -125,6 +128,15 @@ const translations: Record<string, Record<string, string>> = {
   },
 };
 
+const socialIconMap: Record<string, string> = {
+  facebook: "fab fa-facebook-f",
+  instagram: "fab fa-instagram",
+  twitter: "fab fa-twitter",
+  tiktok: "fab fa-tiktok",
+  youtube: "fab fa-youtube",
+  telegram: "fab fa-telegram-plane",
+};
+
 interface CartItem {
   id: number;
   name: string;
@@ -141,6 +153,9 @@ export default function Home() {
   const [restaurantReady, setRestaurantReady] = useState(true);
   const [checkingRestaurant, setCheckingRestaurant] = useState(true);
   const [restaurant, setRestaurant] = useState<RestaurantInfo | null>(null);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [currentLang, setCurrentLang] = useState("en");
@@ -191,6 +206,33 @@ export default function Home() {
         setProducts(Array.isArray(data) ? data : []);
       })
       .catch(() => setProducts([]));
+  }, []);
+
+  useEffect(() => {
+    api.get("/branches/")
+      .then((res) => {
+        const data = res.data.results || res.data;
+        setBranches(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setBranches([]));
+  }, []);
+
+  useEffect(() => {
+    api.get("/social-links/")
+      .then((res) => {
+        const data = res.data.results || res.data;
+        setSocialLinks(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setSocialLinks([]));
+  }, []);
+
+  useEffect(() => {
+    api.get("/contacts/")
+      .then((res) => {
+        const data = res.data.results || res.data;
+        setContacts(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setContacts([]));
   }, []);
 
   useEffect(() => {
@@ -465,47 +507,48 @@ export default function Home() {
             <p className="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">Find us at these locations in Addis Ababa</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-                <i className="fas fa-store text-red-600 text-xl"></i>
+            {restaurant?.latitude != null && restaurant.longitude != null && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm border border-red-200 dark:border-red-800 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                <div className="w-14 h-14 bg-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <i className="fas fa-star text-white text-xl"></i>
+                </div>
+                <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-2">{restaurant.name || "Main Branch"}</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                  {Number(restaurant.latitude).toFixed(5)}, {Number(restaurant.longitude).toFixed(5)}<br />Addis Ababa
+                </p>
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${Number(restaurant.latitude)},${Number(restaurant.longitude)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-red-700 transition"
+                >
+                  <i className="fas fa-directions text-xs"></i> Get Directions
+                </a>
               </div>
-              <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-2">Bole Atlas</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Wollo Sefer, Bole<br />Addis Ababa</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-                <i className="fas fa-store text-red-600 text-xl"></i>
+            )}
+            {branches.filter((b) => b.latitude != null && b.longitude != null).map((b, index) => (
+              <div key={b.id} className="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <i className="fas fa-store text-red-600 text-xl"></i>
+                </div>
+                <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-2">Branch {index + 1}</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                  {Number(b.latitude).toFixed(5)}, {Number(b.longitude).toFixed(5)}<br />Addis Ababa
+                </p>
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${Number(b.latitude)},${Number(b.longitude)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-red-700 transition"
+                >
+                  <i className="fas fa-directions text-xs"></i> Get Directions
+                </a>
               </div>
-              <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-2">Bisrate Gabriel</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Bisrate Gabriel Area<br />Addis Ababa</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-                <i className="fas fa-store text-red-600 text-xl"></i>
-              </div>
-              <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-2">22 Mazoria</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">22 Mazoria<br />Addis Ababa</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-                <i className="fas fa-store text-red-600 text-xl"></i>
-              </div>
-              <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-2">Bambis</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Bambis Area<br />Addis Ababa</p>
-            </div>
+            ))}
           </div>
-          {restaurant?.latitude != null && restaurant.longitude != null && (
-            <div className="mt-10 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
-              <iframe
-                title="Store Location Map"
-                src={`https://www.google.com/maps?q=${restaurant.latitude},${restaurant.longitude}&z=15&output=embed`}
-                className="w-full h-[400px]"
-                loading="lazy"
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            </div>
-          )}
+          <div className="mt-10 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg">
+            <BranchMap restaurant={restaurant} branches={branches} />
+          </div>
         </div>
       </section>
 
@@ -589,15 +632,35 @@ export default function Home() {
             <div>
               <h4 className="font-black mb-5 text-lg">{t("contact")}</h4>
               <ul className="space-y-3 text-sm text-gray-500 dark:text-gray-400">
-                <li className="flex items-center gap-3 hover:text-red-600 transition-colors cursor-pointer"><i className="fas fa-phone-alt text-red-600"></i> 8090</li>
-                <li className="flex items-center gap-3 hover:text-red-600 transition-colors cursor-pointer"><i className="fas fa-envelope text-red-600"></i> info@pizzahut.et</li>
-                <li className="flex items-center gap-3 hover:text-red-600 transition-colors"><i className="fas fa-map-marker-alt text-red-600"></i> Addis Ababa, Ethiopia</li>
+                {contacts.length > 0 ? (
+                  contacts.map((c) => (
+                    <div key={c.id} className="space-y-3">
+                      <li className="flex items-center gap-3 hover:text-red-600 transition-colors cursor-pointer"><i className="fas fa-phone-alt text-red-600"></i> {c.phone}</li>
+                      <li className="flex items-center gap-3 hover:text-red-600 transition-colors cursor-pointer"><i className="fas fa-envelope text-red-600"></i> {c.email}</li>
+                      <li className="flex items-center gap-3 hover:text-red-600 transition-colors"><i className="fas fa-map-marker-alt text-red-600"></i> {c.location}</li>
+                    </div>
+                  ))
+                ) : (
+                  <li className="text-gray-400 dark:text-gray-500">No contact info yet</li>
+                )}
               </ul>
               <div className="flex gap-3 mt-6">
-                <a href="#" className="social-icon w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i className="fab fa-facebook-f"></i></a>
-                <a href="#" className="social-icon w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i className="fab fa-instagram"></i></a>
-                <a href="#" className="social-icon w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i className="fab fa-twitter"></i></a>
-                <a href="#" className="social-icon w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-red-600 hover:text-white transition"><i className="fab fa-tiktok"></i></a>
+                {socialLinks.length > 0 ? (
+                  socialLinks.map((link) => (
+                    <a
+                      key={link.id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={link.platform}
+                      className="social-icon w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-red-600 hover:text-white transition"
+                    >
+                      <i className={socialIconMap[link.platform] || "fas fa-link"}></i>
+                    </a>
+                  ))
+                ) : (
+                  <span className="text-sm text-gray-400 dark:text-gray-500">No social media links yet</span>
+                )}
               </div>
             </div>
           </div>

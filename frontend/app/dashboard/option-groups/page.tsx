@@ -7,6 +7,8 @@ import { Button, Input, Select, Modal, Table } from "@/components/ui";
 import { OptionGroup, Product } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import ErrorDialog from "@/components/common/ErrorDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,6 +30,8 @@ export default function OptionGroupsPage() {
   const [editing, setEditing] = useState<OptionGroup | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<OptionGroup | null>(null);
   const [valueModalOpen, setValueModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<OptionGroup | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data: groups, isLoading } = useQuery<OptionGroup[]>({
     queryKey: ["admin-option-groups"],
@@ -76,6 +80,12 @@ export default function OptionGroupsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }),
   });
 
+  const toggleMutation = useMutation({
+    mutationFn: (g: OptionGroup) => api.patch(`/option-groups/${g.id}/`, { is_active: !g.is_active }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }),
+    onError: (e: unknown) => setErrorMessage((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Failed to update status"),
+  });
+
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<OptionGroupForm>({
     resolver: zodResolver(schema),
   });
@@ -113,15 +123,30 @@ export default function OptionGroupsPage() {
             { key: "required", header: "Required", render: (item: Record<string, unknown>) => (item.required as boolean) ? "✓" : "—" },
             { key: "multiple_choice", header: "Multi", render: (item: Record<string, unknown>) => (item.multiple_choice as boolean) ? "✓" : "—" },
             {
+              key: "is_active",
+              header: "Status",
+              render: (item: Record<string, unknown>) => (
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${item.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                  {item.is_active ? "Active" : "Frozen"}
+                </span>
+              ),
+            },
+            {
               key: "actions",
               header: "",
-              render: (item: Record<string, unknown>) => (
-                <div className="flex gap-2 justify-end">
-                  <Button variant="ghost" size="sm" onClick={() => { setSelectedGroup(item as unknown as OptionGroup); setValueModalOpen(true); }}>Values</Button>
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(item as unknown as OptionGroup)}>Edit</Button>
-                  <Button variant="danger" size="sm" onClick={() => { if (confirm("Delete?")) deleteMutation.mutate((item as unknown as OptionGroup).id); }}>Delete</Button>
-                </div>
-              ),
+              render: (item: Record<string, unknown>) => {
+                const group = item as unknown as OptionGroup;
+                return (
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="ghost" size="sm" onClick={() => { setSelectedGroup(group); setValueModalOpen(true); }}>Values</Button>
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(group)}>Edit</Button>
+                    <Button variant={group.is_active ? "secondary" : "brand"} size="sm" loading={toggleMutation.isPending && toggleMutation.variables === group} onClick={() => toggleMutation.mutate(group)}>
+                      {group.is_active ? "Freeze" : "Unfreeze"}
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={() => setDeleteTarget(group)}>Delete</Button>
+                  </div>
+                );
+              },
             },
           ]}
           data={groups as unknown as Record<string, unknown>[]}
@@ -166,6 +191,17 @@ export default function OptionGroupsPage() {
           group={selectedGroup}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => { if (deleteTarget) deleteMutation.mutate(deleteTarget.id); setDeleteTarget(null); }}
+        title="Delete option group"
+        description={`Are you sure you want to delete "${deleteTarget?.name}"?`}
+        confirmLabel="Delete"
+        destructive
+      />
+      <ErrorDialog open={!!errorMessage} onClose={() => setErrorMessage(null)} message={errorMessage || ""} />
     </div>
   );
 }

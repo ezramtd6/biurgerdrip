@@ -7,6 +7,8 @@ import { Button, Input, Select, Modal, Table } from "@/components/ui";
 import { Product, Category } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import ErrorDialog from "@/components/common/ErrorDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -36,6 +38,8 @@ export default function ProductsPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: products, isLoading: loadingProducts } = useQuery<Product[]>({
@@ -89,6 +93,12 @@ export default function ProductsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/products/${id}/`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-products"] }); queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }); },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: (p: Product) => api.patch(`/products/${p.id}/`, { is_active: !p.is_active }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-products"] }),
+    onError: (e: unknown) => setErrorMessage((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Failed to update status"),
   });
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<ProductForm>({
@@ -153,14 +163,29 @@ export default function ProductsPage() {
             { key: "price", header: "Amount (ETB)", render: (item: Record<string, unknown>) => <span className="font-semibold text-gray-900">ETB {Number(item.price).toFixed(2)}</span> },
             { key: "description", header: "Description", render: (item: Record<string, unknown>) => <span className="text-gray-500 truncate max-w-xs block">{item.description as string}</span> },
             {
+              key: "is_active",
+              header: "Status",
+              render: (item: Record<string, unknown>) => (
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${item.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                  {item.is_active ? "Active" : "Frozen"}
+                </span>
+              ),
+            },
+            {
               key: "actions",
               header: "",
-              render: (item: Record<string, unknown>) => (
-                <div className="flex gap-2 justify-end">
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(item as unknown as Product)}>Edit</Button>
-                  <Button variant="danger" size="sm" onClick={() => { if (confirm("Delete this product?")) deleteMutation.mutate((item as unknown as Product).id); }}>Delete</Button>
-                </div>
-              ),
+              render: (item: Record<string, unknown>) => {
+                const prod = item as unknown as Product;
+                return (
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(prod)}>Edit</Button>
+                    <Button variant={prod.is_active ? "secondary" : "brand"} size="sm" loading={toggleMutation.isPending && toggleMutation.variables === prod} onClick={() => toggleMutation.mutate(prod)}>
+                      {prod.is_active ? "Freeze" : "Unfreeze"}
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={() => setDeleteTarget(prod)}>Delete</Button>
+                  </div>
+                );
+              },
             },
           ]}
           data={products as unknown as Record<string, unknown>[]}
@@ -246,6 +271,17 @@ export default function ProductsPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => { if (deleteTarget) deleteMutation.mutate(deleteTarget.id); setDeleteTarget(null); }}
+        title="Delete product"
+        description={`Are you sure you want to delete "${deleteTarget?.name}"?`}
+        confirmLabel="Delete"
+        destructive
+      />
+      <ErrorDialog open={!!errorMessage} onClose={() => setErrorMessage(null)} message={errorMessage || ""} />
     </div>
   );
 }

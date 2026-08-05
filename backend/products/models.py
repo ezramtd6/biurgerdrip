@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import RegexValidator
 
 # Create your models here.
 class Category(models.Model):
@@ -14,6 +15,8 @@ class Category(models.Model):
     name_amharic = models.CharField(max_length=100, blank=True)
     image = models.ImageField(upload_to="categories/", blank=True, null=True)
     description = models.TextField(blank=True)
+
+    is_active = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -36,6 +39,8 @@ class Product(models.Model):
 
     has_sizes = models.BooleanField(default=False)
 
+    is_active = models.BooleanField(default=True)
+
     image = models.ImageField(upload_to="products/", blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -56,6 +61,8 @@ class OptionGroup(models.Model):
     name_amharic = models.CharField(max_length=100, blank=True)
 
     price = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+
+    is_active = models.BooleanField(default=True)
 
     required = models.BooleanField(default=False)
 
@@ -101,6 +108,8 @@ class RestaurantInfo(models.Model):
 
     opening_hours = models.CharField(max_length=100)
 
+    is_active = models.BooleanField(default=True)
+
     latitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,
@@ -117,3 +126,81 @@ class RestaurantInfo(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Branch(models.Model):
+    restaurant = models.ForeignKey(
+        RestaurantInfo,
+        on_delete=models.CASCADE,
+        related_name="branches"
+    )
+
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        blank=True,
+        null=True
+    )
+
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        blank=True,
+        null=True
+    )
+
+    def __str__(self):
+        return f"{self.restaurant.name} - {self.latitude}, {self.longitude}"
+
+
+class SocialLink(models.Model):
+    class Platform(models.TextChoices):
+        FACEBOOK = "facebook", "Facebook"
+        INSTAGRAM = "instagram", "Instagram"
+        TWITTER = "twitter", "Twitter / X"
+        TIKTOK = "tiktok", "TikTok"
+        YOUTUBE = "youtube", "YouTube"
+        TELEGRAM = "telegram", "Telegram"
+
+    restaurant = models.ForeignKey(
+        RestaurantInfo,
+        on_delete=models.CASCADE,
+        related_name="social_links"
+    )
+
+    platform = models.CharField(
+        max_length=20,
+        choices=Platform.choices
+    )
+
+    url = models.URLField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["restaurant", "platform"],
+                name="unique_social_platform_per_restaurant",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.platform}: {self.url}"
+
+
+class Contact(models.Model):
+    phone_regex = RegexValidator(
+        regex=r"^\+251(?:\s?\d{3}\s?\d{3}\s?\d{3})$",
+        message="Phone must start with +251 followed by 9 digits, e.g. +251 911 234 567",
+    )
+    phone = models.CharField(max_length=20, validators=[phone_regex])
+
+    email = models.EmailField()
+
+    location = models.CharField(max_length=200)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.phone} - {self.email}"

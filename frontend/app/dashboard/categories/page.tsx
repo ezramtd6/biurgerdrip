@@ -7,6 +7,8 @@ import { Button, Input, Modal, Table } from "@/components/ui";
 import { Category } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
+import ErrorDialog from "@/components/common/ErrorDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,6 +24,8 @@ export default function CategoriesPage() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["admin-categories"],
@@ -44,6 +48,12 @@ export default function CategoriesPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/categories/${id}/`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] }),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: (cat: Category) => api.patch(`/categories/${cat.id}/`, { is_active: !cat.is_active }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] }),
+    onError: (e: unknown) => setErrorMessage((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Failed to update status"),
   });
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<CategoryForm>({
@@ -82,14 +92,29 @@ export default function CategoriesPage() {
             { key: "name", header: "Name (English)" },
             { key: "name_amharic", header: "Name (Amharic)", render: (item: Record<string, unknown>) => <span className="text-gray-500">{item.name_amharic as string}</span> },
             {
+              key: "is_active",
+              header: "Status",
+              render: (item: Record<string, unknown>) => (
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${item.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                  {item.is_active ? "Active" : "Frozen"}
+                </span>
+              ),
+            },
+            {
               key: "actions",
               header: "",
-              render: (item: Record<string, unknown>) => (
-                <div className="flex gap-2 justify-end">
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(item as unknown as Category)}>Edit</Button>
-                  <Button variant="danger" size="sm" onClick={() => { if (confirm("Delete this category?")) deleteMutation.mutate((item as unknown as Category).id); }}>Delete</Button>
-                </div>
-              ),
+              render: (item: Record<string, unknown>) => {
+                const cat = item as unknown as Category;
+                return (
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(cat)}>Edit</Button>
+                    <Button variant={cat.is_active ? "secondary" : "brand"} size="sm" loading={toggleMutation.isPending && toggleMutation.variables === cat} onClick={() => toggleMutation.mutate(cat)}>
+                      {cat.is_active ? "Freeze" : "Unfreeze"}
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={() => setDeleteTarget(cat)}>Delete</Button>
+                  </div>
+                );
+              },
             },
           ]}
           data={categories as unknown as Record<string, unknown>[]}
@@ -109,6 +134,17 @@ export default function CategoriesPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => { if (deleteTarget) deleteMutation.mutate(deleteTarget.id); setDeleteTarget(null); }}
+        title="Delete category"
+        description={`Are you sure you want to delete "${deleteTarget?.name}"?`}
+        confirmLabel="Delete"
+        destructive
+      />
+      <ErrorDialog open={!!errorMessage} onClose={() => setErrorMessage(null)} message={errorMessage || ""} />
     </div>
   );
 }

@@ -1,14 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
 import { Button, Table } from "@/components/ui";
 import { User } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 export default function CustomersPage() {
   const queryClient = useQueryClient();
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 
   const { data: customers, isLoading } = useQuery<User[]>({
     queryKey: ["admin-customers"],
@@ -82,11 +85,7 @@ export default function CustomersPage() {
                   <Button
                     variant="danger"
                     size="sm"
-                    onClick={() => {
-                      if (confirm("Are you sure you want to delete this customer?")) {
-                        deleteMutation.mutate(item.id as number);
-                      }
-                    }}
+                    onClick={() => setDeleteTarget(item as unknown as User)}
                   >
                     Delete
                   </Button>
@@ -97,6 +96,16 @@ export default function CustomersPage() {
           data={customers as unknown as Record<string, unknown>[]}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => { if (deleteTarget) deleteMutation.mutate(deleteTarget.id); setDeleteTarget(null); }}
+        title="Delete customer"
+        description={`Are you sure you want to delete "${deleteTarget?.email}"?`}
+        confirmLabel="Delete"
+        destructive
+      />
     </div>
   );
 }

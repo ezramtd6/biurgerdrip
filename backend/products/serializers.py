@@ -1,6 +1,6 @@
 from decimal import Decimal
 from rest_framework import serializers
-from .models import Category, Product, OptionGroup, OptionValue, RestaurantInfo
+from .models import Category, Product, OptionGroup, OptionValue, RestaurantInfo, Branch, SocialLink, Contact
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -61,4 +61,48 @@ class OptionValueSerializer(serializers.ModelSerializer):
 class RestaurantInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = RestaurantInfo
+        fields = "__all__"
+
+
+class BranchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Branch
+        fields = "__all__"
+
+
+class SocialLinkSerializer(serializers.ModelSerializer):
+    restaurant = serializers.PrimaryKeyRelatedField(
+        queryset=RestaurantInfo.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+
+    class Meta:
+        model = SocialLink
+        fields = "__all__"
+        validators = []
+
+    def validate(self, attrs):
+        restaurant = attrs.get("restaurant") or (
+            self.instance.restaurant if self.instance else None
+        )
+        if not restaurant:
+            restaurant = RestaurantInfo.objects.first()
+        platform = attrs.get("platform") or (
+            self.instance.platform if self.instance else None
+        )
+        if restaurant and platform:
+            qs = SocialLink.objects.filter(restaurant=restaurant, platform=platform)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError(
+                    {"platform": f"This restaurant already has a {platform} link."}
+                )
+        return attrs
+
+
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
         fields = "__all__"

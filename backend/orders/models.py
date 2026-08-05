@@ -67,14 +67,17 @@ class OrderItem(models.Model):
     )
     product = models.ForeignKey(
         Product,
-        on_delete=models.CASCADE
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="order_items"
     )
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f"{self.quantity}x {self.product.name}"
+        return f"{self.quantity}x {self.product.name if self.product else 'Deleted product'}"
 
 
 class OrderItemOption(models.Model):
@@ -85,9 +88,12 @@ class OrderItemOption(models.Model):
     )
     option_value = models.ForeignKey(
         OptionValue,
-        on_delete=models.CASCADE
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="order_item_options"
     )
     price_adjustment = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
-        return f"{self.option_value.name} (+{self.price_adjustment})"
+        return f"{self.option_value.name if self.option_value else 'Deleted option'} (+{self.price_adjustment})"

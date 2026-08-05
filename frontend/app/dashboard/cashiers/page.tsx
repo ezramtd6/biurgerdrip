@@ -7,6 +7,7 @@ import { Button, Input, Modal, Table } from "@/components/ui";
 import { User } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,6 +25,7 @@ export default function CashiersPage() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [createdToken, setCreatedToken] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 
   const { data: cashiers, isLoading } = useQuery<User[]>({
     queryKey: ["admin-cashiers"],
@@ -77,6 +79,7 @@ export default function CashiersPage() {
             { key: "email", header: "Email" },
             { key: "first_name", header: "First Name" },
             { key: "last_name", header: "Last Name" },
+            { key: "phone", header: "Phone" },
             { key: "is_active", header: "Status", render: (item: Record<string, unknown>) => (
               <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                 {item.is_active ? "Active" : "Inactive"}
@@ -97,11 +100,7 @@ export default function CashiersPage() {
                   <Button
                     variant="danger"
                     size="sm"
-                    onClick={() => {
-                      if (confirm("Are you sure you want to delete this cashier?")) {
-                        deleteMutation.mutate(item.id as number);
-                      }
-                    }}
+                    onClick={() => setDeleteTarget(item as unknown as User)}
                   >
                     Delete
                   </Button>
@@ -142,6 +141,16 @@ export default function CashiersPage() {
           </form>
         )}
       </Modal>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => { if (deleteTarget) deleteMutation.mutate(deleteTarget.id); setDeleteTarget(null); }}
+        title="Delete cashier"
+        description={`Are you sure you want to delete "${deleteTarget?.email}"?`}
+        confirmLabel="Delete"
+        destructive
+      />
     </div>
   );
 }

@@ -2,8 +2,10 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.0
--- Dumped by pg_dump version 17.0
+\restrict ouG0ncSfDHuopgWai2fv5dvhHAEo0kDXO1xXmRja5Q5exaN4eZBcfHyMUpC10MX
+
+-- Dumped from database version 18.4
+-- Dumped by pg_dump version 18.4
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -17,107 +19,6 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
-ALTER TABLE IF EXISTS ONLY public.token_blacklist_outstandingtoken DROP CONSTRAINT IF EXISTS token_blacklist_outs_user_id_83bc629a_fk_accounts_;
-ALTER TABLE IF EXISTS ONLY public.token_blacklist_blacklistedtoken DROP CONSTRAINT IF EXISTS token_blacklist_blacklistedtoken_token_id_3cc7fe56_fk;
-ALTER TABLE IF EXISTS ONLY public.products_product DROP CONSTRAINT IF EXISTS products_product_category_id_9b594869_fk_products_category_id;
-ALTER TABLE IF EXISTS ONLY public.products_optionvalue DROP CONSTRAINT IF EXISTS products_optionvalue_option_group_id_ac3cf26c_fk_products_;
-ALTER TABLE IF EXISTS ONLY public.products_optiongroup DROP CONSTRAINT IF EXISTS products_optiongroup_product_id_a9165078_fk_products_product_id;
-ALTER TABLE IF EXISTS ONLY public.orders_orderitemoption DROP CONSTRAINT IF EXISTS orders_orderitemopti_order_item_id_a1d4ccec_fk_orders_or;
-ALTER TABLE IF EXISTS ONLY public.orders_orderitemoption DROP CONSTRAINT IF EXISTS orders_orderitemopti_option_value_id_1fd73d94_fk_products_;
-ALTER TABLE IF EXISTS ONLY public.orders_orderitem DROP CONSTRAINT IF EXISTS orders_orderitem_product_id_afe4254a_fk_products_product_id;
-ALTER TABLE IF EXISTS ONLY public.orders_orderitem DROP CONSTRAINT IF EXISTS orders_orderitem_order_id_fe61a34d_fk_orders_order_id;
-ALTER TABLE IF EXISTS ONLY public.orders_order DROP CONSTRAINT IF EXISTS orders_order_customer_id_0b76f6a4_fk_accounts_user_id;
-ALTER TABLE IF EXISTS ONLY public.orders_order DROP CONSTRAINT IF EXISTS orders_order_cashier_id_bb86c6ee_fk_accounts_user_id;
-ALTER TABLE IF EXISTS ONLY public.django_admin_log DROP CONSTRAINT IF EXISTS django_admin_log_user_id_c564eba6_fk_accounts_user_id;
-ALTER TABLE IF EXISTS ONLY public.django_admin_log DROP CONSTRAINT IF EXISTS django_admin_log_content_type_id_c4bce8eb_fk_django_co;
-ALTER TABLE IF EXISTS ONLY public.auth_permission DROP CONSTRAINT IF EXISTS auth_permission_content_type_id_2f476e4b_fk_django_co;
-ALTER TABLE IF EXISTS ONLY public.auth_group_permissions DROP CONSTRAINT IF EXISTS auth_group_permissions_group_id_b120cbf9_fk_auth_group_id;
-ALTER TABLE IF EXISTS ONLY public.auth_group_permissions DROP CONSTRAINT IF EXISTS auth_group_permissio_permission_id_84c5c92e_fk_auth_perm;
-ALTER TABLE IF EXISTS ONLY public.accounts_user_user_permissions DROP CONSTRAINT IF EXISTS accounts_user_user_p_user_id_e4f0a161_fk_accounts_;
-ALTER TABLE IF EXISTS ONLY public.accounts_user_user_permissions DROP CONSTRAINT IF EXISTS accounts_user_user_p_permission_id_113bb443_fk_auth_perm;
-ALTER TABLE IF EXISTS ONLY public.accounts_user_groups DROP CONSTRAINT IF EXISTS accounts_user_groups_user_id_52b62117_fk_accounts_user_id;
-ALTER TABLE IF EXISTS ONLY public.accounts_user_groups DROP CONSTRAINT IF EXISTS accounts_user_groups_group_id_bd11a704_fk_auth_group_id;
-ALTER TABLE IF EXISTS ONLY public.accounts_passwordresettoken DROP CONSTRAINT IF EXISTS accounts_passwordres_user_id_2789bc5c_fk_accounts_;
-DROP INDEX IF EXISTS public.token_blacklist_outstandingtoken_user_id_83bc629a;
-DROP INDEX IF EXISTS public.token_blacklist_outstandingtoken_jti_hex_d9bdf6f7_like;
-DROP INDEX IF EXISTS public.products_product_category_id_9b594869;
-DROP INDEX IF EXISTS public.products_optionvalue_option_group_id_ac3cf26c;
-DROP INDEX IF EXISTS public.products_optiongroup_product_id_a9165078;
-DROP INDEX IF EXISTS public.orders_orderitemoption_order_item_id_a1d4ccec;
-DROP INDEX IF EXISTS public.orders_orderitemoption_option_value_id_1fd73d94;
-DROP INDEX IF EXISTS public.orders_orderitem_product_id_afe4254a;
-DROP INDEX IF EXISTS public.orders_orderitem_order_id_fe61a34d;
-DROP INDEX IF EXISTS public.orders_order_order_number_4e985f70_like;
-DROP INDEX IF EXISTS public.orders_order_customer_id_0b76f6a4;
-DROP INDEX IF EXISTS public.orders_order_cashier_id_bb86c6ee;
-DROP INDEX IF EXISTS public.django_session_session_key_c0390e0f_like;
-DROP INDEX IF EXISTS public.django_session_expire_date_a5c62663;
-DROP INDEX IF EXISTS public.django_admin_log_user_id_c564eba6;
-DROP INDEX IF EXISTS public.django_admin_log_content_type_id_c4bce8eb;
-DROP INDEX IF EXISTS public.auth_permission_content_type_id_2f476e4b;
-DROP INDEX IF EXISTS public.auth_group_permissions_permission_id_84c5c92e;
-DROP INDEX IF EXISTS public.auth_group_permissions_group_id_b120cbf9;
-DROP INDEX IF EXISTS public.auth_group_name_a6ea08ec_like;
-DROP INDEX IF EXISTS public.accounts_user_user_permissions_user_id_e4f0a161;
-DROP INDEX IF EXISTS public.accounts_user_user_permissions_permission_id_113bb443;
-DROP INDEX IF EXISTS public.accounts_user_groups_user_id_52b62117;
-DROP INDEX IF EXISTS public.accounts_user_groups_group_id_bd11a704;
-DROP INDEX IF EXISTS public.accounts_user_email_b2644a56_like;
-DROP INDEX IF EXISTS public.accounts_passwordresettoken_user_id_2789bc5c;
-DROP INDEX IF EXISTS public.accounts_passwordresettoken_token_f38bb86f_like;
-ALTER TABLE IF EXISTS ONLY public.token_blacklist_outstandingtoken DROP CONSTRAINT IF EXISTS token_blacklist_outstandingtoken_pkey;
-ALTER TABLE IF EXISTS ONLY public.token_blacklist_outstandingtoken DROP CONSTRAINT IF EXISTS token_blacklist_outstandingtoken_jti_hex_d9bdf6f7_uniq;
-ALTER TABLE IF EXISTS ONLY public.token_blacklist_blacklistedtoken DROP CONSTRAINT IF EXISTS token_blacklist_blacklistedtoken_token_id_key;
-ALTER TABLE IF EXISTS ONLY public.token_blacklist_blacklistedtoken DROP CONSTRAINT IF EXISTS token_blacklist_blacklistedtoken_pkey;
-ALTER TABLE IF EXISTS ONLY public.products_restaurantinfo DROP CONSTRAINT IF EXISTS products_restaurantinfo_pkey;
-ALTER TABLE IF EXISTS ONLY public.products_product DROP CONSTRAINT IF EXISTS products_product_pkey;
-ALTER TABLE IF EXISTS ONLY public.products_optionvalue DROP CONSTRAINT IF EXISTS products_optionvalue_pkey;
-ALTER TABLE IF EXISTS ONLY public.products_optiongroup DROP CONSTRAINT IF EXISTS products_optiongroup_pkey;
-ALTER TABLE IF EXISTS ONLY public.products_category DROP CONSTRAINT IF EXISTS products_category_pkey;
-ALTER TABLE IF EXISTS ONLY public.orders_orderitemoption DROP CONSTRAINT IF EXISTS orders_orderitemoption_pkey;
-ALTER TABLE IF EXISTS ONLY public.orders_orderitem DROP CONSTRAINT IF EXISTS orders_orderitem_pkey;
-ALTER TABLE IF EXISTS ONLY public.orders_order DROP CONSTRAINT IF EXISTS orders_order_pkey;
-ALTER TABLE IF EXISTS ONLY public.orders_order DROP CONSTRAINT IF EXISTS orders_order_order_number_key;
-ALTER TABLE IF EXISTS ONLY public.django_session DROP CONSTRAINT IF EXISTS django_session_pkey;
-ALTER TABLE IF EXISTS ONLY public.django_migrations DROP CONSTRAINT IF EXISTS django_migrations_pkey;
-ALTER TABLE IF EXISTS ONLY public.django_content_type DROP CONSTRAINT IF EXISTS django_content_type_pkey;
-ALTER TABLE IF EXISTS ONLY public.django_content_type DROP CONSTRAINT IF EXISTS django_content_type_app_label_model_76bd3d3b_uniq;
-ALTER TABLE IF EXISTS ONLY public.django_admin_log DROP CONSTRAINT IF EXISTS django_admin_log_pkey;
-ALTER TABLE IF EXISTS ONLY public.auth_permission DROP CONSTRAINT IF EXISTS auth_permission_pkey;
-ALTER TABLE IF EXISTS ONLY public.auth_permission DROP CONSTRAINT IF EXISTS auth_permission_content_type_id_codename_01ab375a_uniq;
-ALTER TABLE IF EXISTS ONLY public.auth_group DROP CONSTRAINT IF EXISTS auth_group_pkey;
-ALTER TABLE IF EXISTS ONLY public.auth_group_permissions DROP CONSTRAINT IF EXISTS auth_group_permissions_pkey;
-ALTER TABLE IF EXISTS ONLY public.auth_group_permissions DROP CONSTRAINT IF EXISTS auth_group_permissions_group_id_permission_id_0cd325b0_uniq;
-ALTER TABLE IF EXISTS ONLY public.auth_group DROP CONSTRAINT IF EXISTS auth_group_name_key;
-ALTER TABLE IF EXISTS ONLY public.accounts_user_user_permissions DROP CONSTRAINT IF EXISTS accounts_user_user_permissions_pkey;
-ALTER TABLE IF EXISTS ONLY public.accounts_user_user_permissions DROP CONSTRAINT IF EXISTS accounts_user_user_permi_user_id_permission_id_2ab516c2_uniq;
-ALTER TABLE IF EXISTS ONLY public.accounts_user DROP CONSTRAINT IF EXISTS accounts_user_pkey;
-ALTER TABLE IF EXISTS ONLY public.accounts_user_groups DROP CONSTRAINT IF EXISTS accounts_user_groups_user_id_group_id_59c0b32f_uniq;
-ALTER TABLE IF EXISTS ONLY public.accounts_user_groups DROP CONSTRAINT IF EXISTS accounts_user_groups_pkey;
-ALTER TABLE IF EXISTS ONLY public.accounts_user DROP CONSTRAINT IF EXISTS accounts_user_email_key;
-ALTER TABLE IF EXISTS ONLY public.accounts_passwordresettoken DROP CONSTRAINT IF EXISTS accounts_passwordresettoken_token_key;
-ALTER TABLE IF EXISTS ONLY public.accounts_passwordresettoken DROP CONSTRAINT IF EXISTS accounts_passwordresettoken_pkey;
-DROP TABLE IF EXISTS public.token_blacklist_outstandingtoken;
-DROP TABLE IF EXISTS public.token_blacklist_blacklistedtoken;
-DROP TABLE IF EXISTS public.products_restaurantinfo;
-DROP TABLE IF EXISTS public.products_product;
-DROP TABLE IF EXISTS public.products_optionvalue;
-DROP TABLE IF EXISTS public.products_optiongroup;
-DROP TABLE IF EXISTS public.products_category;
-DROP TABLE IF EXISTS public.orders_orderitemoption;
-DROP TABLE IF EXISTS public.orders_orderitem;
-DROP TABLE IF EXISTS public.orders_order;
-DROP TABLE IF EXISTS public.django_session;
-DROP TABLE IF EXISTS public.django_migrations;
-DROP TABLE IF EXISTS public.django_content_type;
-DROP TABLE IF EXISTS public.django_admin_log;
-DROP TABLE IF EXISTS public.auth_permission;
-DROP TABLE IF EXISTS public.auth_group_permissions;
-DROP TABLE IF EXISTS public.auth_group;
-DROP TABLE IF EXISTS public.accounts_user_user_permissions;
-DROP TABLE IF EXISTS public.accounts_user_groups;
-DROP TABLE IF EXISTS public.accounts_user;
-DROP TABLE IF EXISTS public.accounts_passwordresettoken;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -469,7 +370,7 @@ CREATE TABLE public.orders_orderitem (
     unit_price numeric(10,2) NOT NULL,
     total_price numeric(10,2) NOT NULL,
     order_id bigint NOT NULL,
-    product_id bigint NOT NULL,
+    product_id bigint,
     CONSTRAINT orders_orderitem_quantity_check CHECK ((quantity >= 0))
 );
 
@@ -497,7 +398,7 @@ ALTER TABLE public.orders_orderitem ALTER COLUMN id ADD GENERATED BY DEFAULT AS 
 CREATE TABLE public.orders_orderitemoption (
     id bigint NOT NULL,
     price_adjustment numeric(10,2) NOT NULL,
-    option_value_id bigint NOT NULL,
+    option_value_id bigint,
     order_item_id bigint NOT NULL
 );
 
@@ -519,6 +420,34 @@ ALTER TABLE public.orders_orderitemoption ALTER COLUMN id ADD GENERATED BY DEFAU
 
 
 --
+-- Name: products_branch; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.products_branch (
+    id bigint NOT NULL,
+    latitude numeric(9,6),
+    longitude numeric(9,6),
+    restaurant_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.products_branch OWNER TO postgres;
+
+--
+-- Name: products_branch_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.products_branch ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.products_branch_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
 -- Name: products_category; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -528,7 +457,10 @@ CREATE TABLE public.products_category (
     image character varying(100),
     description text NOT NULL,
     created_at timestamp with time zone NOT NULL,
-    updated_at timestamp with time zone NOT NULL
+    updated_at timestamp with time zone NOT NULL,
+    name_amharic character varying(100) NOT NULL,
+    restaurant_id bigint,
+    is_active boolean NOT NULL
 );
 
 
@@ -549,6 +481,35 @@ ALTER TABLE public.products_category ALTER COLUMN id ADD GENERATED BY DEFAULT AS
 
 
 --
+-- Name: products_contact; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.products_contact (
+    id bigint NOT NULL,
+    phone character varying(20) NOT NULL,
+    email character varying(254) NOT NULL,
+    location character varying(200) NOT NULL,
+    created_at timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.products_contact OWNER TO postgres;
+
+--
+-- Name: products_contact_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.products_contact ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.products_contact_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
 -- Name: products_optiongroup; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -559,6 +520,9 @@ CREATE TABLE public.products_optiongroup (
     multiple_choice boolean NOT NULL,
     display_order integer NOT NULL,
     product_id bigint NOT NULL,
+    name_amharic character varying(100) NOT NULL,
+    price numeric(8,2) NOT NULL,
+    is_active boolean NOT NULL,
     CONSTRAINT products_optiongroup_display_order_check CHECK ((display_order >= 0))
 );
 
@@ -590,6 +554,7 @@ CREATE TABLE public.products_optionvalue (
     available boolean NOT NULL,
     display_order integer NOT NULL,
     option_group_id bigint NOT NULL,
+    name_amharic character varying(100) NOT NULL,
     CONSTRAINT products_optionvalue_display_order_check CHECK ((display_order >= 0))
 );
 
@@ -621,7 +586,12 @@ CREATE TABLE public.products_product (
     image character varying(100),
     created_at timestamp with time zone NOT NULL,
     updated_at timestamp with time zone NOT NULL,
-    category_id bigint NOT NULL
+    category_id bigint NOT NULL,
+    price numeric(8,2) NOT NULL,
+    description_amharic text NOT NULL,
+    name_amharic character varying(100) NOT NULL,
+    has_sizes boolean NOT NULL,
+    is_active boolean NOT NULL
 );
 
 
@@ -651,7 +621,10 @@ CREATE TABLE public.products_restaurantinfo (
     logo character varying(100),
     address character varying(255) NOT NULL,
     phone character varying(20) NOT NULL,
-    opening_hours character varying(100) NOT NULL
+    opening_hours character varying(100) NOT NULL,
+    latitude numeric(9,6),
+    longitude numeric(9,6),
+    is_active boolean NOT NULL
 );
 
 
@@ -663,6 +636,35 @@ ALTER TABLE public.products_restaurantinfo OWNER TO postgres;
 
 ALTER TABLE public.products_restaurantinfo ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
     SEQUENCE NAME public.products_restaurantinfo_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: products_sociallink; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.products_sociallink (
+    id bigint NOT NULL,
+    platform character varying(20) NOT NULL,
+    url character varying(200) NOT NULL,
+    created_at timestamp with time zone NOT NULL,
+    restaurant_id bigint NOT NULL
+);
+
+
+ALTER TABLE public.products_sociallink OWNER TO postgres;
+
+--
+-- Name: products_sociallink_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.products_sociallink ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.products_sociallink_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -735,6 +737,7 @@ ALTER TABLE public.token_blacklist_outstandingtoken ALTER COLUMN id ADD GENERATE
 COPY public.accounts_passwordresettoken (id, token, created_at, is_used, user_id) FROM stdin;
 2	jxShHcfanYTY7Zk3egyldnPdDI2eV-_kBNyyqB-YRVbX53x2V0reB7YLBZqhnLdgVPOw-8RFyhVMcy-vGYDQ_g	2026-07-26 21:06:43.11899+03	f	7
 9	eJlYZPPvcShXYFWGzYKo8SYwVC9dvd98ozHItpsCN_MCGcQQIzVNxxY7BAtuarvJK_hzFh2VC0fgF_GeK2pFXg	2026-07-26 21:46:18.934013+03	f	14
+10	HFKFdX6R01c_qrREBBAKIwKrBkKlkkoVGlwKlCbqZZFf5p12ljUVryWPn9NOAi_Fcrgbt1tCmFBLxLyMylSTDQ	2026-07-30 11:54:57.763155+03	f	1
 \.
 
 
@@ -743,11 +746,12 @@ COPY public.accounts_passwordresettoken (id, token, created_at, is_used, user_id
 --
 
 COPY public.accounts_user (id, password, last_login, is_superuser, first_name, last_name, is_staff, is_active, date_joined, email, phone, role) FROM stdin;
-1	pbkdf2_sha256$1200000$LWsXxhi2ZCK8BBzcJFO7EV$CqK1ae4PmqqculaR2YaBJTN8y6FJ/j/k7BNo6F9F8Pw=	\N	f	Ezra	Mekuria	f	t	2026-07-26 07:33:58.513197+03	ezramtd36@gmail.com	0945762877	CUSTOMER
-4	pbkdf2_sha256$1200000$O1Bg2ILhftqoCp0CaxJXN5$R+7uUF1/HJllDBYcrhBCJC7FPF75yFUWjt6CcNcnMeU=	\N	f	Amiel	Tadele	f	t	2026-07-26 08:11:49.423644+03	nopoy@gmail.com	0945762877	MANAGER
-2	pbkdf2_sha256$1200000$bs85xorIEiXtdBBOzsdBJU$zNZSPqT0cE5mwSUI5s6Ia/o+ZHP/Vv0iLXhf42qjtPc=	2026-07-26 19:04:21.101102+03	t	Admin	Admin	t	t	2026-07-26 07:42:51.603159+03	burgerdrip@gmail.com		ADMIN
-7	!1pq6mB9nfGf7JI6l9cEhBgPtew2bcYzicEF0dQSf	\N	f	Amiel	Tadele	f	f	2026-07-26 21:06:43.040019+03	ezramekuriatessema@gmail.com	0945762877	MANAGER
-14	!XrkJXmY40M6U6Yo1OvRnaVduAiCoAjHcKpXEUdGD	\N	f	Amiel	Tadele	f	f	2026-07-26 21:46:18.883792+03	bmebme658@gmail.com	0945762877	MANAGER
+2	pbkdf2_sha256$1200000$5Rcr0XEsTx4H8IUhy1iDPW$0VxGDoVwKv2BND9eBuNmphw3nvIEsDu6ND4EJEN9LrA=	2026-07-28 15:18:46.097352+03	t	Admin	Admin	t	t	2026-07-26 07:42:51.603159+03	burgerdrip@gmail.com		ADMIN
+4	pbkdf2_sha256$1200000$Iw8gBTEn6wG8QY70iMNqZt$B8t0Wxzp2sNFRbqykT+CMbStpKEk65fOv5zYgfkwj58=	\N	f	Amiel	Tadele	f	t	2026-07-26 08:11:49.423644+03	nopoy@gmail.com	0945762877	MANAGER
+14	pbkdf2_sha256$1200000$tBmrWTaOv2XS2aiAvPK1gB$mc1MuK+jO/PD8xq1EMAXMgOsIFz07T1tN5aC+2kMaXM=	\N	f	Amiel	Tadele	f	t	2026-07-26 21:46:18.883792+03	bmebme658@gmail.com	0945762877	MANAGER
+34	pbkdf2_sha256$1200000$kAz9nnNZiqAOMhhIDt82gK$bzbx8+1qcJ8QiZv9LwepAL1ltfRBqU3JQY2erOJB440=	\N	f			f	t	2026-07-31 21:06:26.446754+03	vtest@x.com	0000	MANAGER
+7	pbkdf2_sha256$1200000$OXMMxNrc6mog0S2VGTOmly$JmlkmZ8rc/jnV1V0IIhYmmt73FZ4wRHpD6DlWl1aXGM=	\N	f	Amiel	Tadele	f	t	2026-07-26 21:06:43.040019+03	ezramekuriatessema@gmail.com	0945762877	CASHIER
+1	pbkdf2_sha256$1200000$Kp3WMomxGpP95e1wdC9AzV$1wGW/2hi1m3DU+SDiRcPoSL+78sRg3wHACumjUuYLvU=	\N	f	Ezra	Mekuria	f	t	2026-07-26 07:33:58.513197+03	ezramtd36@gmail.com	0945762877	CUSTOMER
 \.
 
 
@@ -856,6 +860,18 @@ COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
 66	Can change password reset token	17	change_passwordresettoken
 67	Can delete password reset token	17	delete_passwordresettoken
 68	Can view password reset token	17	view_passwordresettoken
+69	Can add branch	18	add_branch
+70	Can change branch	18	change_branch
+71	Can delete branch	18	delete_branch
+72	Can view branch	18	view_branch
+73	Can add social link	19	add_sociallink
+74	Can change social link	19	change_sociallink
+75	Can delete social link	19	delete_sociallink
+76	Can view social link	19	view_sociallink
+77	Can add contact	20	add_contact
+78	Can change contact	20	change_contact
+79	Can delete contact	20	delete_contact
+80	Can view contact	20	view_contact
 \.
 
 
@@ -900,6 +916,9 @@ COPY public.django_content_type (id, app_label, model) FROM stdin;
 15	orders	orderitem
 16	orders	orderitemoption
 17	accounts	passwordresettoken
+18	products	branch
+19	products	sociallink
+20	products	contact
 \.
 
 
@@ -944,6 +963,22 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 34	orders	0001_initial	2026-07-26 07:56:43.312826+03
 35	accounts	0003_alter_user_role	2026-07-26 08:13:59.765162+03
 36	accounts	0004_passwordresettoken	2026-07-26 20:38:25.660042+03
+37	products	0002_add_product_price	2026-07-28 14:50:30.684499+03
+38	products	0003_restaurantinfo_latitude_restaurantinfo_longitude	2026-07-31 11:46:56.056354+03
+39	products	0004_category_name_amharic	2026-07-31 19:40:01.584158+03
+40	products	0005_product_description_amharic_product_name_amharic	2026-07-31 20:27:01.992091+03
+41	products	0006_optiongroup_name_amharic	2026-07-31 20:52:14.774504+03
+42	products	0007_optiongroup_price	2026-07-31 20:56:50.19597+03
+43	products	0008_optionvalue_name_amharic	2026-07-31 21:05:40.779003+03
+44	products	0009_product_has_sizes	2026-07-31 21:24:14.49704+03
+45	products	0010_category_restaurant	2026-07-31 21:55:52.092451+03
+46	products	0011_branch	2026-08-05 16:02:33.006765+03
+47	products	0012_category_is_active_optiongroup_is_active_and_more	2026-08-05 16:08:36.289778+03
+48	orders	0002_alter_orderitem_product_and_more	2026-08-05 16:39:27.122569+03
+49	products	0013_sociallink	2026-08-05 17:28:17.553761+03
+50	products	0014_sociallink_unique_social_platform_per_restaurant	2026-08-05 17:36:32.248265+03
+51	products	0015_contact	2026-08-05 17:48:17.412567+03
+52	products	0016_alter_contact_phone	2026-08-05 18:04:57.81097+03
 \.
 
 
@@ -953,6 +988,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 
 COPY public.django_session (session_key, session_data, expire_date) FROM stdin;
 au4h3d6rq4lonvj1clj4ce3ql7wdqm0q	.eJxVjEEOgjAQRe_StWnKQJni0j1naKbTqUVNSSisjHcXEha6fe_9_1aetjX7rcrip6iuCtTllwXip5RDxAeV-6x5LusyBX0k-rRVj3OU1-1s_w4y1byvG2ddRGRjkQXYmN7soGlTsl1nBkkRjaWWkSABhIQUHYrthWUAIFCfL9CnN9U:1wo1Kv:rHaFk5aDq3q8FZ36bC635NAYe7NYJgy20G83-_MdvqU	2026-08-09 19:04:21.108041+03
+vmz3kpogypwkab0aj7gp9iptv2l3qi62	.eJxVjEEOgjAQRe_StWnKQJni0j1naKbTqUVNSSisjHcXEha6fe_9_1aetjX7rcrip6iuCtTllwXip5RDxAeV-6x5LusyBX0k-rRVj3OU1-1s_w4y1byvG2ddRGRjkQXYmN7soGlTsl1nBkkRjaWWkSABhIQUHYrthWUAIFCfL9CnN9U:1woLgG:f6J42lxplx71n-vKIc8qxkpL177y0Daor9qZmoQG31s	2026-08-10 16:47:44.743773+03
+6zbuk357txwplu2gn4izrfisxe479o19	.eJxVjEEOwiAQRe_C2pDCYAGX7j0DmWFAqgaS0q6Md7dNutDtf-_9twi4LiWsPc1hYnERWpx-N8L4THUH_MB6bzK2uswTyV2RB-3y1ji9rof7d1Cwl61WFnDQ0dKIoIzVCgZwNkdg7zZAbFzO7BVYNonOhMkbGDl776wC58XnC8iqN1I:1wogli:HVPKY5XFy3P3oMD43ui8IphuPoRGOoAR9aYCaaEsleo	2026-08-11 15:18:46.103027+03
 \.
 
 
@@ -961,6 +998,8 @@ au4h3d6rq4lonvj1clj4ce3ql7wdqm0q	.eJxVjEEOgjAQRe_StWnKQJni0j1naKbTqUVNSSisjHcXEh
 --
 
 COPY public.orders_order (id, order_number, subtotal, discount, tax, total, payment_method, status, created_at, updated_at, cashier_id, customer_id) FROM stdin;
+1	ORD-C77B44E9	5.00	0.00	0.00	5.00	\N	PENDING	2026-08-05 16:38:54.247888+03	2026-08-05 16:38:54.247916+03	\N	\N
+2	ORD-12B643EE	5.00	0.00	0.00	5.00	\N	PENDING	2026-08-05 16:39:33.716497+03	2026-08-05 16:39:33.716531+03	\N	\N
 \.
 
 
@@ -969,6 +1008,7 @@ COPY public.orders_order (id, order_number, subtotal, discount, tax, total, paym
 --
 
 COPY public.orders_orderitem (id, quantity, unit_price, total_price, order_id, product_id) FROM stdin;
+2	1	5.00	5.00	2	\N
 \.
 
 
@@ -981,10 +1021,32 @@ COPY public.orders_orderitemoption (id, price_adjustment, option_value_id, order
 
 
 --
+-- Data for Name: products_branch; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.products_branch (id, latitude, longitude, restaurant_id) FROM stdin;
+7	9.010000	38.750000	7
+\.
+
+
+--
 -- Data for Name: products_category; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.products_category (id, name, image, description, created_at, updated_at) FROM stdin;
+COPY public.products_category (id, name, image, description, created_at, updated_at, name_amharic, restaurant_id, is_active) FROM stdin;
+8	Drinks			2026-07-31 20:48:23.143268+03	2026-08-05 16:36:18.443886+03	መጠጦች	7	t
+18	Burger			2026-08-05 16:42:33.180646+03	2026-08-05 16:45:48.345632+03	በርገር	7	t
+7	Pizza			2026-07-31 20:47:59.741741+03	2026-08-05 16:53:18.848981+03	ፒዛ	7	t
+19	Test			2026-08-05 16:56:51.965319+03	2026-08-05 16:56:51.965357+03	መጠን	7	t
+\.
+
+
+--
+-- Data for Name: products_contact; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.products_contact (id, phone, email, location, created_at) FROM stdin;
+6	+251987654355	ezramtd36@gmail.com	Mekelle	2026-08-05 18:10:21.971152+03
 \.
 
 
@@ -992,7 +1054,8 @@ COPY public.products_category (id, name, image, description, created_at, updated
 -- Data for Name: products_optiongroup; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.products_optiongroup (id, name, required, multiple_choice, display_order, product_id) FROM stdin;
+COPY public.products_optiongroup (id, name, required, multiple_choice, display_order, product_id, name_amharic, price, is_active) FROM stdin;
+37	Size	f	f	0	29	መጠን	0.00	t
 \.
 
 
@@ -1000,7 +1063,7 @@ COPY public.products_optiongroup (id, name, required, multiple_choice, display_o
 -- Data for Name: products_optionvalue; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.products_optionvalue (id, name, price_adjustment, available, display_order, option_group_id) FROM stdin;
+COPY public.products_optionvalue (id, name, price_adjustment, available, display_order, option_group_id, name_amharic) FROM stdin;
 \.
 
 
@@ -1008,7 +1071,8 @@ COPY public.products_optionvalue (id, name, price_adjustment, available, display
 -- Data for Name: products_product; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.products_product (id, name, description, image, created_at, updated_at, category_id) FROM stdin;
+COPY public.products_product (id, name, description, image, created_at, updated_at, category_id, price, description_amharic, name_amharic, has_sizes, is_active) FROM stdin;
+29	BuirgerDrip	Cheese	products/new.jpg	2026-08-05 16:47:09.461692+03	2026-08-05 16:53:42.263181+03	7	0.00	ቺዝ	መጠን	t	t
 \.
 
 
@@ -1016,7 +1080,19 @@ COPY public.products_product (id, name, description, image, created_at, updated_
 -- Data for Name: products_restaurantinfo; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.products_restaurantinfo (id, name, logo, address, phone, opening_hours) FROM stdin;
+COPY public.products_restaurantinfo (id, name, logo, address, phone, opening_hours, latitude, longitude, is_active) FROM stdin;
+7	BuirgerDrip		Addisu Gebeya	09876543320	07-19	8.950020	38.823033	t
+\.
+
+
+--
+-- Data for Name: products_sociallink; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.products_sociallink (id, platform, url, created_at, restaurant_id) FROM stdin;
+2	instagram	https://instagram.com/ezramtd6	2026-08-05 17:30:31.129474+03	7
+8	tiktok	https://www.tiktok.com/ezramtd6	2026-08-05 17:44:00.347616+03	7
+6	facebook	https://facebook.com/ezramtd6	2026-08-05 17:32:40.378701+03	7
 \.
 
 
@@ -1037,6 +1113,109 @@ COPY public.token_blacklist_outstandingtoken (id, token, created_at, expires_at,
 2	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTY0NTQzNiwiaWF0IjoxNzg1MDQwNjM2LCJqdGkiOiJkNGY3ZmU1NTQxYjc0NmRlOTAzODY4ZmZkYmY5YmJiOSIsInVzZXJfaWQiOiIxIn0.W1u9MgpEr5ZmKMDOD5dtw-_b_rRPui433GBm0btZk_A	2026-07-26 07:37:16.641414+03	2026-08-02 07:37:16+03	1	d4f7fe5541b746de903868ffdbf9bbb9
 3	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTY0NTQ2MywiaWF0IjoxNzg1MDQwNjYzLCJqdGkiOiI0ZWM1MWZiZmNkNmU0OGU5ODYwZWU3MzY0ZjhiNWE4ZSIsInVzZXJfaWQiOiIxIn0.2u0gdXYvtEytEqmXGBU-s_rMA2ISVKL6cXJLPF4XSxA	2026-07-26 07:37:43.904717+03	2026-08-02 07:37:43+03	1	4ec51fbfcd6e48e9860ee7364f8b5a8e
 4	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTcwMTgxOCwiaWF0IjoxNzg1MDk3MDE4LCJqdGkiOiIwZGIxYWRlOWFmZTY0ZmU3YmViNGQ3ZWFmNGE3YTMzZCIsInVzZXJfaWQiOiIxIn0.kovu_jhU764TxjvhOQORfd-_TyX0M3YUH4-XtvKkqtc	2026-07-26 23:16:58.735391+03	2026-08-02 23:16:58+03	1	0db1ade9afe64fe7beb4d7eaf4a7a33d
+5	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NjE0MCwiaWF0IjoxNzg1MjQxMzQwLCJqdGkiOiIwMGE5NjE3NjVkY2I0Y2ZjYjE4ZjViNDI5NDc5OWViMSIsInVzZXJfaWQiOiI0In0.DmWn5SCSSJAVLcsj5MLf96BeJEatD-UM9GsCn6Vx_Bs	2026-07-28 15:22:20.152044+03	2026-08-04 15:22:20+03	4	00a961765dcb4cfcb18f5b4294799eb1
+6	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NjI3OCwiaWF0IjoxNzg1MjQxNDc4LCJqdGkiOiJhZDFkMTI2NGZlYmQ0Y2UwODAyZWVkODBiNzhhMDI2ZCIsInVzZXJfaWQiOiI0In0.UwgxQ3lQI0SJHydrPa0B_OxdX6MtauuqzOUlG2HmvNQ	2026-07-28 15:24:38.479645+03	2026-08-04 15:24:38+03	4	ad1d1264febd4ce0802eed80b78a026d
+7	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NjI4MSwiaWF0IjoxNzg1MjQxNDgxLCJqdGkiOiI5MjU3NjYzYjc4NmM0OWQxOTg3YjZmZGY3NzQyMzlhNiIsInVzZXJfaWQiOiI0In0.tSPs4ULr7x2F15nWFzvNDi9j3cIjl9x4NIso3TtRhOw	2026-07-28 15:24:41.093596+03	2026-08-04 15:24:41+03	4	9257663b786c49d1987b6fdf774239a6
+8	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NjM5OSwiaWF0IjoxNzg1MjQxNTk5LCJqdGkiOiI2M2IxYzcwY2VjMDA0MGIyYTI2MjE4ZDc1NWZhNmQ2ZCIsInVzZXJfaWQiOiI0In0.wa3nwo4wppK4dDPWEHij3m8dxBKwoDp_Dy-bb6e2mn4	2026-07-28 15:26:39.565227+03	2026-08-04 15:26:39+03	4	63b1c70cec0040b2a26218d755fa6d6d
+9	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NjU5NCwiaWF0IjoxNzg1MjQxNzk0LCJqdGkiOiIzNTlmZTNhYzU1ZWU0ZTBmODE4OTRiZmFlOWM1NDlhNSIsInVzZXJfaWQiOiI3In0.Nodk0Ml5bqyvXQHsXFGo86qqqqZ4cSXrsn9imlMEAb0	2026-07-28 15:29:54.856195+03	2026-08-04 15:29:54+03	7	359fe3ac55ee4e0f81894bfae9c549a5
+10	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NjU5NywiaWF0IjoxNzg1MjQxNzk3LCJqdGkiOiIyMTBlOTQ4OWJmNjY0YjEwYWQxNzI0NGQ1OTJlMmFiOSIsInVzZXJfaWQiOiI3In0.g13OHe45kfQUJ_xaPP57sv5NeCJ05T9Nz9Wx5ty_5Q0	2026-07-28 15:29:57.396591+03	2026-08-04 15:29:57+03	7	210e9489bf664b10ad17244d592e2ab9
+11	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NjU5OCwiaWF0IjoxNzg1MjQxNzk4LCJqdGkiOiIxOGMyZWYwNTRlYTE0ZGZhOTc0ZDM4ZTg0NjkzYmY1ZCIsInVzZXJfaWQiOiI3In0.Cey9Ybx80WoVWHZYM-05qQshcSV-y9iRdrqEbwUSpuQ	2026-07-28 15:29:58.682021+03	2026-08-04 15:29:58+03	7	18c2ef054ea14dfa974d38e84693bf5d
+12	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NjU5OSwiaWF0IjoxNzg1MjQxNzk5LCJqdGkiOiI2MzQ2M2I1MGM1ODk0ODQxOTg0YTlhNjhhNDQ5Y2U4NSIsInVzZXJfaWQiOiI3In0.XsUzF8nd22oeXxl1w5mQtMO3jnDc6xalrWjTTZpSMRk	2026-07-28 15:29:59.922151+03	2026-08-04 15:29:59+03	7	63463b50c5894841984a9a68a449ce85
+13	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NjYxNiwiaWF0IjoxNzg1MjQxODE2LCJqdGkiOiJhNDY5YzE3YTRlMjY0YjE0YjQwOGRmN2ZlZTE0OTI5NSIsInVzZXJfaWQiOiI3In0.5Aag5P3jwltF0ZW_G1GjWITO533brdOdWqC6MNkHwO8	2026-07-28 15:30:16.624233+03	2026-08-04 15:30:16+03	7	a469c17a4e264b14b408df7fee149295
+14	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NjYzOCwiaWF0IjoxNzg1MjQxODM4LCJqdGkiOiI0Y2NhMGE2YTJlZjU0MTQwYTk2NGUzYzk4ODI3MWI4MCIsInVzZXJfaWQiOiIxNCJ9.KLsVNbfrVKcSJhYs65vgDtaokfgE6gJAjiQ29xT5T2c	2026-07-28 15:30:38.05899+03	2026-08-04 15:30:38+03	14	4cca0a6a2ef54140a964e3c988271b80
+15	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NjY0NiwiaWF0IjoxNzg1MjQxODQ2LCJqdGkiOiJkM2VjM2YwOTM0ODk0MzRjODMxYjc2NGM3MGU2MmM5MCIsInVzZXJfaWQiOiI0In0.SGeAhqWoMgmWdVXN8qX30COfutgmEEDL-DbgWR3lZKk	2026-07-28 15:30:46.700977+03	2026-08-04 15:30:46+03	4	d3ec3f093489434c831b764c70e62c90
+16	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0Njc5MywiaWF0IjoxNzg1MjQxOTkzLCJqdGkiOiIyNTNlOTNjZmQxYTk0ODY1OWRjMjI4NjYyZjMzZGY2ZiIsInVzZXJfaWQiOiI3In0.kUeuQ6DlWerxDIvUPRAffcOcCzjMZ46Wqxoh-GDDdpY	2026-07-28 15:33:13.266012+03	2026-08-04 15:33:13+03	7	253e93cfd1a948659dc228662f33df6f
+17	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0Njk2MCwiaWF0IjoxNzg1MjQyMTYwLCJqdGkiOiJiNTI2NjIxMjk0MjY0ZTQyOGE4M2YyZTdkZTU0YTc0YyIsInVzZXJfaWQiOiIxIn0.N37dvrXIkIjhZwcXbcFDaIPsRap3fTMSHGUtvb_9snQ	2026-07-28 15:36:00.833682+03	2026-08-04 15:36:00+03	1	b526621294264e428a83f2e7de54a74c
+18	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0Njk4MSwiaWF0IjoxNzg1MjQyMTgxLCJqdGkiOiJlNTkzY2Y1MzdjOWQ0NzRmOGNiMjM5N2NjZDlhMjIwZSIsInVzZXJfaWQiOiIxNCJ9.UevMQV_hqz4GlxEu48qdxJawibPJbxeMKEvCo9Hf1VA	2026-07-28 15:36:21.770698+03	2026-08-04 15:36:21+03	14	e593cf537c9d474f8cb2397ccd9a220e
+19	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NzA4MywiaWF0IjoxNzg1MjQyMjgzLCJqdGkiOiIxMmRlMzg4NzY3NGM0MzM1OGU2Nzk5NTk3OTllZjFmMyIsInVzZXJfaWQiOiIxNCJ9.j8TYDiUkiDHK-1zSmDstAhzzZSvvd22iJnsLwON3KC4	2026-07-28 15:38:03.27243+03	2026-08-04 15:38:03+03	14	12de3887674c43358e679959799ef1f3
+20	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NzE4NywiaWF0IjoxNzg1MjQyMzg3LCJqdGkiOiI5NjE4ODlmMjc1ZTY0NjRkYmZkMzNjMjUwZGExMDllYSIsInVzZXJfaWQiOiI0In0.poy4IB6fM9U9O4IAnol_Y1aq_ilEKwhxWZgoSD0wbBA	2026-07-28 15:39:47.210985+03	2026-08-04 15:39:47+03	4	961889f275e6464dbfd33c250da109ea
+21	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NzQwMiwiaWF0IjoxNzg1MjQyNjAyLCJqdGkiOiJjODk5MDQ0YWM2MjE0ZmQ1YTAzMDE2NTAwYWJhMDg2NyIsInVzZXJfaWQiOiIxNCJ9.YRkqUpxc0-feWgWqU0N0LapsqlfZcSG7OZu37uPoo9Q	2026-07-28 15:43:22.324979+03	2026-08-04 15:43:22+03	14	c899044ac6214fd5a03016500aba0867
+22	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NzQ1NiwiaWF0IjoxNzg1MjQyNjU2LCJqdGkiOiI2NDZmZGEwZjUxOWY0NmJhOGRhZGZiOGVlNzY1OTIzNyIsInVzZXJfaWQiOiIxNCJ9.slFkkWtsD3WVUY8e76IODbcQl5alaFTxcbxOvoS0Hjs	2026-07-28 15:44:16.895532+03	2026-08-04 15:44:16+03	14	646fda0f519f46ba8dadfb8ee7659237
+23	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTg0NzUxNSwiaWF0IjoxNzg1MjQyNzE1LCJqdGkiOiIxNTEyZDUyNTc3MDI0NTVkOTA2MmM3ODU1YWQ2MmFlMyIsInVzZXJfaWQiOiIxIn0.HXUahUvrVfMT9qEfh5lqmBPokECY_QeixR9-8AdUYVY	2026-07-28 15:45:15.135062+03	2026-08-04 15:45:15+03	1	1512d5257702455d9062c7855ad62ae3
+24	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTkzNjU3MiwiaWF0IjoxNzg1MzMxNzcyLCJqdGkiOiI3YjQ2ZjcyMTEzZjM0OTJmYTU3N2E5OTNkYjUxOTE0MiIsInVzZXJfaWQiOiIyIn0.BkAG5V4n_rjMWzNnbn_U_TNDxt-vwrl5T1rLONnvVqI	2026-07-29 16:29:32.271233+03	2026-08-05 16:29:32+03	2	7b46f72113f3492fa577a993db519142
+25	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTkzNjgxOCwiaWF0IjoxNzg1MzMyMDE4LCJqdGkiOiJhZjExMTc4OTNhYjg0NGJiOTY5YmIwZjA4ZGJjN2ZmOSIsInVzZXJfaWQiOiIyIn0.-aSajzlJAar-S0Cphu8cqkWSzPYaUNk5h8YfApyEfxY	2026-07-29 16:33:38.848523+03	2026-08-05 16:33:38+03	2	af1117893ab844bb969bb0f08dbc7ff9
+26	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTkzNjgyNywiaWF0IjoxNzg1MzMyMDI3LCJqdGkiOiI2NmE5NDU3ODhlZDc0NTMzYjUxNGNlMTRhNzM4MDAxZiIsInVzZXJfaWQiOiIyIn0.plQBw_K2rDrs6hgC87yTH3dgp7eyG1gL3EFvQ1GnFqk	2026-07-29 16:33:47.654816+03	2026-08-05 16:33:47+03	2	66a945788ed74533b514ce14a738001f
+27	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NTkzNzA0NywiaWF0IjoxNzg1MzMyMjQ3LCJqdGkiOiJhNzIwNTIwOThjY2U0ZWJkYjc5MWE3ZDcwZGMwYzBkMCIsInVzZXJfaWQiOiIyIn0.G3FJ2CVETlal80oxWoQCUkda6_VhYe_dkFD1k5-QeiY	2026-07-29 16:37:27.269074+03	2026-08-05 16:37:27+03	2	a72052098cce4ebdb791a7d70dc0c0d0
+28	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5MzUzNSwiaWF0IjoxNzg1NDg4NzM1LCJqdGkiOiI2MTNkNTE0MjU1YTg0MjgzOTY2NTFkZjVkMmY4MDdkZiIsInVzZXJfaWQiOiIxIn0.PNk263LQoYZ35BoYXZEvqV6mwUj0DbsqSS4fpRNI0Iw	2026-07-31 12:05:35.996688+03	2026-08-07 12:05:35+03	1	613d514255a8428396651df5d2f807df
+29	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5MzY1NywiaWF0IjoxNzg1NDg4ODU3LCJqdGkiOiIxYTMyYTk2MjdkOWQ0YWVlYTMzODBjYjdhNWVmMTkxNSIsInVzZXJfaWQiOiIxIn0.53PNSilugeVBOv4tdVEELmjD5ef9Hl2Jf2gX9LRd-hY	2026-07-31 12:07:37.517116+03	2026-08-07 12:07:37+03	1	1a32a9627d9d4aeea3380cb7a5ef1915
+30	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5Mzc3NiwiaWF0IjoxNzg1NDg4OTc2LCJqdGkiOiIxNTY2MTMzY2I0NTQ0ODQ3OWNhZTVmMmZmMDBkZWZlYiIsInVzZXJfaWQiOiI3In0.9bal8LRp68tc-Mqoc-N-RF-r4ppzUKMZGIf84_HBZ5c	2026-07-31 12:09:36.343963+03	2026-08-07 12:09:36+03	7	1566133cb45448479cae5f2ff00defeb
+31	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5Mzg3MiwiaWF0IjoxNzg1NDg5MDcyLCJqdGkiOiI5YzliZTE4M2FmZWI0MWViODdhOTkzYWM1ZWU3NTc2ZiIsInVzZXJfaWQiOiIxIn0.OjcFcIingDGcY99l5EfeL6saOmvk_yAjZWo2D6gcs74	2026-07-31 12:11:12.16282+03	2026-08-07 12:11:12+03	1	9c9be183afeb41eb87a993ac5ee7576f
+32	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NDA3OSwiaWF0IjoxNzg1NDg5Mjc5LCJqdGkiOiIwYWI4NmMwOTVkNTk0ODM0YjMzYWJjOTNhOTc1Mzc3ZiIsInVzZXJfaWQiOiIxIn0.SGGOCA2z5ZDoje1N20V3cj9aBvctJZnkWuy9vYHsxLw	2026-07-31 12:14:39.866377+03	2026-08-07 12:14:39+03	1	0ab86c095d594834b33abc93a975377f
+33	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NDEwNiwiaWF0IjoxNzg1NDg5MzA2LCJqdGkiOiJkMzQ5NjcyNWY2YmE0OTFiOWU3ODZkYzIwYzcyNWQ3NCIsInVzZXJfaWQiOiI3In0.mkX2TEoTWhvHfVIrb232LfTzBYYnJJqjn7hZpyHsM2U	2026-07-31 12:15:06.164781+03	2026-08-07 12:15:06+03	7	d3496725f6ba491b9e786dc20c725d74
+34	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NDM1NSwiaWF0IjoxNzg1NDg5NTU1LCJqdGkiOiJjZTliYzZiNTY4ZDU0NWQ0OGY1YzRjMzg2MzFhOWIzNCIsInVzZXJfaWQiOiIxIn0.CR6RdaqYYvzcvzS20H5SnkzRMdIt8Pjzp33xHI1OHRk	2026-07-31 12:19:15.546968+03	2026-08-07 12:19:15+03	1	ce9bc6b568d545d48f5c4c38631a9b34
+35	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NDQwMywiaWF0IjoxNzg1NDg5NjAzLCJqdGkiOiI1YjU2MzhkN2VjMTE0ZTBhYjczODIwMTVlNjMxMTljZiIsInVzZXJfaWQiOiIxIn0.v2XbGrPMnUOBepfYzg3P7hNaRZ4Nl1spiINaU0yzQR4	2026-07-31 12:20:03.751421+03	2026-08-07 12:20:03+03	1	5b5638d7ec114e0ab7382015e63119cf
+36	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NDQxMSwiaWF0IjoxNzg1NDg5NjExLCJqdGkiOiI1MmNiZTZjZThkOTY0YTdmYmM5MmI0NGRkNWM4MDkxMyIsInVzZXJfaWQiOiIxIn0.NLa9L6Ol6yJGHvH2wKOjtj4QgD-jliVdD7Ye2KFTzOU	2026-07-31 12:20:11.639048+03	2026-08-07 12:20:11+03	1	52cbe6ce8d964a7fbc92b44dd5c80913
+37	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NDQxNiwiaWF0IjoxNzg1NDg5NjE2LCJqdGkiOiJhMTA0MjQ1NDFkYWM0NGNlODc1NWVhZGM4YjE2MGYzYyIsInVzZXJfaWQiOiIxIn0.ncMGCx8M_d67v8LXeh3NHxZKPaVUIFWVSn4BQPeZVNU	2026-07-31 12:20:16.853653+03	2026-08-07 12:20:16+03	1	a10424541dac44ce8755eadc8b160f3c
+38	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NDQzMSwiaWF0IjoxNzg1NDg5NjMxLCJqdGkiOiI4YzgwZTJhMzhiODk0ZTE4Yjg0YmViM2E0OGM0ZGZkZSIsInVzZXJfaWQiOiIxIn0.zGipOzwZvsNEhYy86lWP7vP_Hb9Hdhm0NpUu74jCEuk	2026-07-31 12:20:31.648633+03	2026-08-07 12:20:31+03	1	8c80e2a38b894e18b84beb3a48c4dfde
+39	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NDYwMSwiaWF0IjoxNzg1NDg5ODAxLCJqdGkiOiI3OTFmM2ZlNDhmY2Y0NTE3YjJmNzE3ODM0NzNiYWNiOSIsInVzZXJfaWQiOiIxIn0.X2WRq3WDd6z5NIwgnsy55tdoly3U4VLPqAaPfy2Yiro	2026-07-31 12:23:21.637789+03	2026-08-07 12:23:21+03	1	791f3fe48fcf4517b2f71783473bacb9
+40	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NDcyNiwiaWF0IjoxNzg1NDg5OTI2LCJqdGkiOiI1NTFkZTVmYzEyMjU0OTY5YTIyYzQ1NTdhZjM1Y2RiYiIsInVzZXJfaWQiOiIxIn0.sUyZQHDruc7jVT2DMzDkGwmT8UKGPohJFuKvj6LTPpA	2026-07-31 12:25:26.763731+03	2026-08-07 12:25:26+03	1	551de5fc12254969a22c4557af35cdbb
+41	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NDc1MSwiaWF0IjoxNzg1NDg5OTUxLCJqdGkiOiJkZTJhNzA1ZGY4YTk0ZThiYWIwMGU3NDNiZDUwY2ZhMiIsInVzZXJfaWQiOiIxIn0.iLN8aOz0o6OHo9rbgO0Bk-Dpc5-67-0e3sZHa44tw-M	2026-07-31 12:25:51.461106+03	2026-08-07 12:25:51+03	1	de2a705df8a94e8bab00e743bd50cfa2
+42	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NDc2NSwiaWF0IjoxNzg1NDg5OTY1LCJqdGkiOiI2YWU1OWM1NWMzMDE0NzFhYmM3MjgwNmZkMzA1OGE2NiIsInVzZXJfaWQiOiIxIn0.VMMsJz8G9x0T_IXqQa-kL7nPvwikbB2qI7Uhy7yMI3o	2026-07-31 12:26:05.305005+03	2026-08-07 12:26:05+03	1	6ae59c55c301471abc72806fd3058a66
+43	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NDk4MiwiaWF0IjoxNzg1NDkwMTgyLCJqdGkiOiJmNTAzYjJlYzc3YTI0OTA4YmM0MzY1MzgyOTYwZTUyMyIsInVzZXJfaWQiOiIxIn0.RLbWJ_i9ZaT78sV2m_zH2cdVa8EUiQEO9YoKlQ07x-4	2026-07-31 12:29:42.461942+03	2026-08-07 12:29:42+03	1	f503b2ec77a24908bc4365382960e523
+44	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NTAxNCwiaWF0IjoxNzg1NDkwMjE0LCJqdGkiOiIzYjBkZTMzNDg4YzQ0YjI4ODgwMDdkNjE0MDQ2YTMxNSIsInVzZXJfaWQiOiI3In0.YvZJScDJWg2DDA1u_oaK2s5_giVSZZWWVVkVocQ0QOs	2026-07-31 12:30:14.734705+03	2026-08-07 12:30:14+03	7	3b0de33488c44b2888007d614046a315
+45	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NTEwNCwiaWF0IjoxNzg1NDkwMzA0LCJqdGkiOiIyZTdjMzBiZDM2NDY0NTMxOGEzZmI3ZDIyOTc2NTVlMCIsInVzZXJfaWQiOiI3In0.4pCMDwUDCghHrQtQLOTS8cqeZ16hV6FuN5cvHOXTkVY	2026-07-31 12:31:44.880991+03	2026-08-07 12:31:44+03	7	2e7c30bd364645318a3fb7d2297655e0
+46	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NTE1NiwiaWF0IjoxNzg1NDkwMzU2LCJqdGkiOiI3ZDY3ZGMxOGJkY2E0MWNmOGJkNjdiNmY5MjRlYjFhYSIsInVzZXJfaWQiOiIxIn0.n52EXshRgkM_ZtcAY_5Ce73YPc-OYiwtjy8gXcijvI0	2026-07-31 12:32:36.098796+03	2026-08-07 12:32:36+03	1	7d67dc18bdca41cf8bd67b6f924eb1aa
+47	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NTQ4OCwiaWF0IjoxNzg1NDkwNjg4LCJqdGkiOiJhMjM3NjdlZTg4OGI0NjMwYWYxMjViODNkNWJiMWI5MiIsInVzZXJfaWQiOiIxIn0.-6wfqPWXTvOidBhuxrjCBKuLUy8K4yhST_n8YkLKJtQ	2026-07-31 12:38:08.923872+03	2026-08-07 12:38:08+03	1	a23767ee888b4630af125b83d5bb1b92
+48	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NTY1NywiaWF0IjoxNzg1NDkwODU3LCJqdGkiOiJlZWVmMTk4NWYwNDE0YThlOTE5MjQ4OWE5ZTBhZDhkMSIsInVzZXJfaWQiOiIxIn0.BCALhgny-jSMK_-6lqktrvIQMazWNt6PLDA6pDo89wA	2026-07-31 12:40:57.209295+03	2026-08-07 12:40:57+03	1	eeef1985f0414a8e9192489a9e0ad8d1
+49	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NTgwMCwiaWF0IjoxNzg1NDkxMDAwLCJqdGkiOiJiYjk5OWU3MWNlMDQ0NzdmOWZkMWM2ZmNlNjYxZjBiMiIsInVzZXJfaWQiOiIxIn0.0R82yMsyBsqDb6Yeh1m08C36cms2QYVtMY8Oft-7DYw	2026-07-31 12:43:20.275453+03	2026-08-07 12:43:20+03	1	bb999e71ce04477f9fd1c6fce661f0b2
+50	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NjA1NSwiaWF0IjoxNzg1NDkxMjU1LCJqdGkiOiJiYzBiODk3YmM4MWY0YTdhYWYzMGFmZjIyMjRlYjczMiIsInVzZXJfaWQiOiIxIn0.I6JM1kgY0XX8tomGX1sBYDogRSzzXN6yO5z_ILjqGAc	2026-07-31 12:47:35.258694+03	2026-08-07 12:47:35+03	1	bc0b897bc81f4a7aaf30aff2224eb732
+51	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NjUzMiwiaWF0IjoxNzg1NDkxNzMyLCJqdGkiOiI5MzU0NTAyMTk3M2U0NzkxYmJmMDgyZjQ3YmZhODdmMyIsInVzZXJfaWQiOiIxIn0.YnEJCE1MzBgQKluRUhWRGwAA0zNXZs0r7Wu-VIc6dRE	2026-07-31 12:55:32.273982+03	2026-08-07 12:55:32+03	1	93545021973e4791bbf082f47bfa87f3
+52	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NjY2OSwiaWF0IjoxNzg1NDkxODY5LCJqdGkiOiI5NmI4YzVjMDM5ZWI0NjUxYTMzYTQwMjQ3YzVjZTVjMiIsInVzZXJfaWQiOiIxIn0.2bWdT0qfWinMwwBRCuAQy0Vr-wl4klGgy9tVBfXo4OM	2026-07-31 12:57:49.335859+03	2026-08-07 12:57:49+03	1	96b8c5c039eb4651a33a40247c5ce5c2
+53	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NjY3NCwiaWF0IjoxNzg1NDkxODc0LCJqdGkiOiIyYzNkZWE2YjA2Mzg0OWJmOWFlOWQ0NzU4NzRlMTkwYyIsInVzZXJfaWQiOiIxIn0.8qICzoEQft1uiLefNe0lwARjcHGOMFm4T4Zk_l4mPFI	2026-07-31 12:57:54.804309+03	2026-08-07 12:57:54+03	1	2c3dea6b063849bf9ae9d475874e190c
+54	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NjcxMiwiaWF0IjoxNzg1NDkxOTEyLCJqdGkiOiI4Zjk1NWVjNGUxNmM0MzYxODZmNTVhNDRmNjM1ZGVmOCIsInVzZXJfaWQiOiIxIn0.S0YXXFRPUykfAyRt_6Ea4dJHETKARVC2LVgW2RIOBCA	2026-07-31 12:58:32.894999+03	2026-08-07 12:58:32+03	1	8f955ec4e16c436186f55a44f635def8
+55	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NjgxMywiaWF0IjoxNzg1NDkyMDEzLCJqdGkiOiIwNTYyZDY0YmExM2I0NDJjYjVlMGJmNjY0MDhhZDRmZSIsInVzZXJfaWQiOiIxIn0.ejYwzge4aZMcICyNI0awbCdbs0xW7kR8YHYJ6w9xLsw	2026-07-31 13:00:13.499826+03	2026-08-07 13:00:13+03	1	0562d64ba13b442cb5e0bf66408ad4fe
+56	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NjgzOSwiaWF0IjoxNzg1NDkyMDM5LCJqdGkiOiJlNjE3ZTcxOGMxNTA0NGFkOTA1MWVmMmQ3ZDk1ZmY5NCIsInVzZXJfaWQiOiIxIn0.W3zEj9BrY-Do1M5qH6CUyorD3vHACp5IbhjRwHigOI4	2026-07-31 13:00:39.108353+03	2026-08-07 13:00:39+03	1	e617e718c15044ad9051ef2d7d95ff94
+57	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5Njg2NiwiaWF0IjoxNzg1NDkyMDY2LCJqdGkiOiI2MDVlZDFhZDEyZGY0MzBmODUxNmJkZTZjMDJkODk0ZCIsInVzZXJfaWQiOiIxIn0.AvXWuriDG3dGxFb6GjI1SPjVrtrQfilKTEH-QLLknlk	2026-07-31 13:01:06.602513+03	2026-08-07 13:01:06+03	1	605ed1ad12df430f8516bde6c02d894d
+58	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NzA0NiwiaWF0IjoxNzg1NDkyMjQ2LCJqdGkiOiJjZDM1ZTgzNGYwMjY0Zjk5ODI4NWNiNjBjMjc5ZGRjZiIsInVzZXJfaWQiOiIxIn0.d7XQ-mM56xO1EG-CdjlCst6VzWH8lbh8ZC1oDJ_ZSAc	2026-07-31 13:04:06.917819+03	2026-08-07 13:04:06+03	1	cd35e834f0264f998285cb60c279ddcf
+59	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NzUwOCwiaWF0IjoxNzg1NDkyNzA4LCJqdGkiOiI5MGU0YTExOGRhNDM0NGNmYjkxODVlOTY5OTY5NzBkNyIsInVzZXJfaWQiOiIxIn0.sTVEd7PFcJ3WgzXP4vVjNukXIpZcXsiJ_onbpnxCXPU	2026-07-31 13:11:48.440764+03	2026-08-07 13:11:48+03	1	90e4a118da4344cfb9185e96996970d7
+60	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5NzU1NSwiaWF0IjoxNzg1NDkyNzU1LCJqdGkiOiI4NDYzMDg0NzQ2MWM0NDQ5OGI4OTA3NzcxNjIzYjg5YSIsInVzZXJfaWQiOiIxIn0.cddpvMPrLy3t1Z_TxqX_2IDm02dtRqyGRqPaw-j6vGs	2026-07-31 13:12:35.141307+03	2026-08-07 13:12:35+03	1	84630847461c44498b8907771623b89a
+61	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjA5Nzg4MSwiaWF0IjoxNzg1NDkzMDgxLCJqdGkiOiI1NGM2OGUxMTEzNzQ0NzExYmYxMmNmMTRkOTczNTc5MSIsInVzZXJfaWQiOiIxIn0.LtoLmzgkqm027kFgn0h59_Sxco170QABg9TRwI2_VvM	2026-07-31 13:18:01.424781+03	2026-08-07 13:18:01+03	1	54c68e1113744711bf12cf14d9735791
+62	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjEwMDUxNSwiaWF0IjoxNzg1NDk1NzE1LCJqdGkiOiJjNjJlMTRiMDBjZTU0NjMzOGQ1MTI5NzVlMmQ2NmFkYiIsInVzZXJfaWQiOiIxIn0.zgcnrT-CEqO-o58k9vohCsgbuX-MExzV5BWtRZqxXB4	2026-07-31 14:01:55.900097+03	2026-08-07 14:01:55+03	1	c62e14b00ce546338d512975e2d66adb
+63	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjEwMDY4OSwiaWF0IjoxNzg1NDk1ODg5LCJqdGkiOiJhNWE4MmQ5YWYwNmM0NTAxOTk0NjkxZDg1NWNjZWE0NCIsInVzZXJfaWQiOiI3In0.nMgj5VPEvuO9U7BJvDVNzjSMGZIxjxbijVboTLSVK7g	2026-07-31 14:04:49.970225+03	2026-08-07 14:04:49+03	7	a5a82d9af06c4501994691d855ccea44
+64	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjEwMDc2NCwiaWF0IjoxNzg1NDk1OTY0LCJqdGkiOiJkNzE2Yjk3NTUyY2E0NmVmOTkxYzBmZDM4YmRjYTg4ZiIsInVzZXJfaWQiOiI0In0.PDsAlq7FwAnJI0gBaK2AeStpaOBGhzlqR2eTxbMDEuo	2026-07-31 14:06:04.878035+03	2026-08-07 14:06:04+03	4	d716b97552ca46ef991c0fd38bdca88f
+65	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjEwMDg3NiwiaWF0IjoxNzg1NDk2MDc2LCJqdGkiOiJjZmI2YTliNmQxYzc0NDg1OTA3MzNiNDkzMzA5OTY4MSIsInVzZXJfaWQiOiI0In0.nWweqtli3GP0vRau27wy4rtkUt4d3rpnbIZhV4w1RV8	2026-07-31 14:07:56.167491+03	2026-08-07 14:07:56+03	4	cfb6a9b6d1c7448590733b4933099681
+66	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjEwMTUxNSwiaWF0IjoxNzg1NDk2NzE1LCJqdGkiOiIyMjJiMzNhZWI1ODQ0MjQ2ODNiZDBjODVlZDY5NDIzYyIsInVzZXJfaWQiOiI0In0.otXggekJLWkysHnABhjlxaRruvdAcSd5sxZKiYs5ecI	2026-07-31 14:18:35.212701+03	2026-08-07 14:18:35+03	4	222b33aeb584424683bd0c85ed69423c
+67	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjExNTM1NCwiaWF0IjoxNzg1NTEwNTU0LCJqdGkiOiIzZjVlMjY4ZDI0YWI0ODA3OTJiNTcwZGM1YmYwNDY5YiIsInVzZXJfaWQiOiIxIn0.xOtOD-s39vdXoUz7-hWuVoVWg3PyrZEkvVkBc94GElA	2026-07-31 18:09:14.627134+03	2026-08-07 18:09:14+03	1	3f5e268d24ab480792b570dc5bf0469b
+68	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjExNTQ3MiwiaWF0IjoxNzg1NTEwNjcyLCJqdGkiOiJjY2YyNjcyYjIxYTE0NDFlYjlmZTc1YzU1MjY2YzhiNSIsInVzZXJfaWQiOiI0In0.bfdjVEz-22wYIwIBy7PlOUUgY5O0ELgJB1GDY2Rp-Ug	2026-07-31 18:11:12.667985+03	2026-08-07 18:11:12+03	4	ccf2672b21a1441eb9fe75c55266c8b5
+69	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjExODcxNywiaWF0IjoxNzg1NTEzOTE3LCJqdGkiOiI3Y2VkMmU4ODEwNTg0NzIyOTJkZWI2ODhjY2ExMTE4MSIsInVzZXJfaWQiOiI0In0.qtcvcZbf6YFV1rCHZ-nSuyJ63NE_rDTF3CB-mpxm5iE	2026-07-31 19:05:17.666127+03	2026-08-07 19:05:17+03	4	7ced2e881058472292deb688cca11181
+73	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjExOTc5OCwiaWF0IjoxNzg1NTE0OTk4LCJqdGkiOiI1NjYzYmM0Yzc5MGM0MzYzYjBlNmI2NGNkZTJiOTUwZiIsInVzZXJfaWQiOiI0In0.6_PExzC4hE_XRtKsas1umiSBAbl0SPGc0NdGNro11Ac	2026-07-31 19:23:18.694441+03	2026-08-07 19:23:18+03	4	5663bc4c790c4363b0e6b64cde2b950f
+77	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjEyMDcwMiwiaWF0IjoxNzg1NTE1OTAyLCJqdGkiOiJjYWUyMTU2MTg2NDI0ZTg0YTQxZDYxMzRhZTVhNTVmYyIsInVzZXJfaWQiOiI0In0.8j220EqKgflpCbZNXwjxrj8TF3y1kNE0B1Kc_LqhJKo	2026-07-31 19:38:22.22607+03	2026-08-07 19:38:22+03	4	cae2156186424e84a41d6134ae5a55fc
+79	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjEyMzExNCwiaWF0IjoxNzg1NTE4MzE0LCJqdGkiOiI2OGY1NmM4NWFiNzU0YjA4YTA5Y2RmYzk2ZTBkYjQ2ZCIsInVzZXJfaWQiOiI0In0.fEAyoTB3zbwsUyZmwoprB_RHxpaYXv71LZ1OxAoEzO0	2026-07-31 20:18:34.888444+03	2026-08-07 20:18:34+03	4	68f56c85ab754b08a09cdfc96e0db46d
+81	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjEyNDA2OSwiaWF0IjoxNzg1NTE5MjY5LCJqdGkiOiIyN2VjMWQ3ZGI3YjA0MjA2YmU5ZTRjNjM1MWMyMzU4NSIsInVzZXJfaWQiOiI0In0.1q-enZZZNYeO302qWVonP0GXZ5p5b7kRcNwb4IMHhHQ	2026-07-31 20:34:29.439508+03	2026-08-07 20:34:29+03	4	27ec1d7db7b04206be9e4c6351c23585
+84	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjEyNDk4MSwiaWF0IjoxNzg1NTIwMTgxLCJqdGkiOiJmZmUyNDY4N2ViMjE0MGFjYjI4NDVhNWUxMTI1NmUwNSIsInVzZXJfaWQiOiI0In0.jcNPVBhAFR7IeyTq7cjOgMuStUnjI24HRiLxfGAMtbU	2026-07-31 20:49:41.050354+03	2026-08-07 20:49:41+03	4	ffe24687eb2140acb2845a5e11256e05
+89	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjEyNTk4OCwiaWF0IjoxNzg1NTIxMTg4LCJqdGkiOiJhZTYyNDBlOTg2MTQ0YTM5YjlmNWJmY2RiNzdmNDhkNSIsInVzZXJfaWQiOiIzNCJ9._uWnXKPorf8_FlZldAIF3eIkSfMs_1-D316o7Kbi3bA	2026-07-31 21:06:28.051946+03	2026-08-07 21:06:28+03	34	ae6240e986144a39b9f5bfcdb77f48d5
+91	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjEyNjAwNCwiaWF0IjoxNzg1NTIxMjA0LCJqdGkiOiI2MGJmMjQ1Zjc0MDA0ZjgyYjhkZmI1NTRiMThiYjM1MSIsInVzZXJfaWQiOiI0In0.9ERq4-mwwWie6y7-WSg9_jT55BkDzAacAMbYYdPeuAA	2026-07-31 21:06:44.210922+03	2026-08-07 21:06:44+03	4	60bf245f74004f82b8dfb554b18bb351
+98	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjEyNzE1NSwiaWF0IjoxNzg1NTIyMzU1LCJqdGkiOiIyZDNmMjE3Yjg5NmU0OTZiODg1NDM5MjM0NjBmNTJkYSIsInVzZXJfaWQiOiI0In0.zJCNVoTDzLn--ZuRsJYB7Ev8jzZvobEwzGv-XqbviBQ	2026-07-31 21:25:55.365921+03	2026-08-07 21:25:55+03	4	2d3f217b896e496b88543923460f52da
+100	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjEyODE0MSwiaWF0IjoxNzg1NTIzMzQxLCJqdGkiOiI0MDI1MDcyYjlmODI0OTQ4OGQ1YTEwZDQzNzY1MjcwYyIsInVzZXJfaWQiOiI0In0.wjchUVNfrzmtUkuSaImtUUKBBUXwCzFHaz2S4_gDX64	2026-07-31 21:42:21.926605+03	2026-08-07 21:42:21+03	4	4025072b9f8249488d5a10d43765270c
+105	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3MjY3MCwiaWF0IjoxNzg1NTY3ODcwLCJqdGkiOiJmNzZmY2U2NzYyMzM0ZThkOWEwOWZjMzc2YmZjNmM3MiIsInVzZXJfaWQiOiI0In0.R4uu-YTGaWX3kIUFOXT0vlee2cpJDc3x4BIRo79Z1js	2026-08-01 10:04:30.78346+03	2026-08-08 10:04:30+03	4	f76fce6762334e8d9a09fc376bfc6c72
+106	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3MzE1MywiaWF0IjoxNzg1NTY4MzUzLCJqdGkiOiJmNWIxOTVkZDRkYTM0ZTVhOTBlMjNkZjYwOWU5M2U0ZiIsInVzZXJfaWQiOiIyIn0.JmAVurdb_Y9UcUsHaAfj_Ox2chP333YELtk_OGw-2iY	2026-08-01 10:12:33.785413+03	2026-08-08 10:12:33+03	2	f5b195dd4da34e5a90e23df609e93e4f
+107	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3MzI3MiwiaWF0IjoxNzg1NTY4NDcyLCJqdGkiOiI2MjJlM2MyOGM1MWI0N2Q3OWI2NzA1ZDhlM2ExMGM0NyIsInVzZXJfaWQiOiIyIn0.Za84hqsCYPDrxP4mBH338WidIeGvULkchkSDGlhLktA	2026-08-01 10:14:32.430468+03	2026-08-08 10:14:32+03	2	622e3c28c51b47d79b6705d8e3a10c47
+108	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3MzI5NSwiaWF0IjoxNzg1NTY4NDk1LCJqdGkiOiIyZGM3NDZjYWFkMWQ0MzI1YWQ2OTU5MWRiOTk1ODcxMiIsInVzZXJfaWQiOiIyIn0.VJoXMhbpHQy7TUbZWQ3sIxNHfLYsfNp909cI9MYMxF0	2026-08-01 10:14:55.058919+03	2026-08-08 10:14:55+03	2	2dc746caad1d4325ad69591db9958712
+109	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3MzMxOSwiaWF0IjoxNzg1NTY4NTE5LCJqdGkiOiIxMTI5ZDczYTlkOWM0NjVhOGQ1MjJkYjQ2ZTBjMTAzNSIsInVzZXJfaWQiOiIyIn0.T4EN9qJu3djE1dW_dTssiVIgtWSnkJXH5FgByufRr6U	2026-08-01 10:15:19.0956+03	2026-08-08 10:15:19+03	2	1129d73a9d9c465a8d522db46e0c1035
+110	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3MzQxOCwiaWF0IjoxNzg1NTY4NjE4LCJqdGkiOiJhMWM3ZDhhOGY0ZDc0OTMxYmQyOGUxOTUzOTQ1NTVlNCIsInVzZXJfaWQiOiIyIn0.BGVOd3IEn3EuxH_gee3D_0ffUqjTk-ccBGg_nVjPcW8	2026-08-01 10:16:58.07936+03	2026-08-08 10:16:58+03	2	a1c7d8a8f4d74931bd28e195394555e4
+111	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3MzQ2NSwiaWF0IjoxNzg1NTY4NjY1LCJqdGkiOiIzODc5MzAyYTdhMTY0YWFiODE1MjA3YjA1YzU5NWVkNiIsInVzZXJfaWQiOiIyIn0.5LyN9GDMBJzZ0rRiaNcfuZoBfnUeHFDhtcERKK49QPQ	2026-08-01 10:17:45.651972+03	2026-08-08 10:17:45+03	2	3879302a7a164aab815207b05c595ed6
+112	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3MzQ3MiwiaWF0IjoxNzg1NTY4NjcyLCJqdGkiOiJhMzgxNWI3ZjhhZDM0ZWYxODBmZjBkNjI4MjBlZTNlMiIsInVzZXJfaWQiOiIyIn0.8X0T5OZrDb6XbMoWofakKhP25HW7XAQmKoaYw9SeAtQ	2026-08-01 10:17:52.858104+03	2026-08-08 10:17:52+03	2	a3815b7f8ad34ef180ff0d62820ee3e2
+113	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3MzUwMiwiaWF0IjoxNzg1NTY4NzAyLCJqdGkiOiI5M2MxODAyMGE4YjQ0ZGNkYTkxYzUzYTNiZWM0NTU0YyIsInVzZXJfaWQiOiIyIn0.FmYuOwDTX_EKo0AKZUZuf5ZPsbj4vqGAZlEzXEdlimg	2026-08-01 10:18:22.719099+03	2026-08-08 10:18:22+03	2	93c18020a8b44dcda91c53a3bec4554c
+114	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3NDczNCwiaWF0IjoxNzg1NTY5OTM0LCJqdGkiOiI2ZTAxZTQzNDhmNWI0YmM1OWFkYjRhYjc0ODdmZmY5NCIsInVzZXJfaWQiOiI0In0.jHLoQU1XGm3gaafcnbTCaqsqVKF_PjcUwiCW-w8Rtm4	2026-08-01 10:38:54.866795+03	2026-08-08 10:38:54+03	4	6e01e4348f5b4bc59adb4ab7487fff94
+115	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3NDk5NiwiaWF0IjoxNzg1NTcwMTk2LCJqdGkiOiJjMjQxZWZjZGQwYjQ0M2JhYWJkNDdiMzBiMjI5NzhhYiIsInVzZXJfaWQiOiIyIn0.jYxG_xpLQRtUtDX-eMfmTdFpgqomxA3nJVWisN5eQhA	2026-08-01 10:43:16.673212+03	2026-08-08 10:43:16+03	2	c241efcdd0b443baabd47b30b22978ab
+116	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3NTYzOSwiaWF0IjoxNzg1NTcwODM5LCJqdGkiOiI4MDM2MWI3N2U4MTA0MDYzODJmMTljMGViZjkxNTEwYiIsInVzZXJfaWQiOiI0In0.mzCbL1lrEbu3ABhODv_cAk1-byeZATEpAY024KqxLhw	2026-08-01 10:53:59.051392+03	2026-08-08 10:53:59+03	4	80361b77e810406382f19c0ebf91510b
+117	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3NjI5MSwiaWF0IjoxNzg1NTcxNDkxLCJqdGkiOiJhMzMwZmYyMjc5NDA0ODliOTQ4MmI3NTYyYmI2N2ZhZiIsInVzZXJfaWQiOiIyIn0.e7-6Gm_mdB23mQADpwlPNH3rC-mtd3i1lWHa_torwrE	2026-08-01 11:04:51.968793+03	2026-08-08 11:04:51+03	2	a330ff227940489b9482b7562bb67faf
+118	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3NjU4NiwiaWF0IjoxNzg1NTcxNzg2LCJqdGkiOiIxM2VmMjQ4MjFhMzA0MGQzOGY5ZjE4NTY2MTJhNTVhZiIsInVzZXJfaWQiOiI0In0.NJqccP3etD3zfJ8QjKXSgfS2XOoFxa-0xs-EwmRdxV0	2026-08-01 11:09:46.843+03	2026-08-08 11:09:46+03	4	13ef24821a3040d38f9f1856612a55af
+119	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjE3Nzg2MiwiaWF0IjoxNzg1NTczMDYyLCJqdGkiOiIxMDU1ODczYTIzM2U0ZGRlYjc5MzA2ODJhNGJiMGQyYyIsInVzZXJfaWQiOiI0In0.JvDKNVVq7r3j__i1riSmvAUtlUJ6IaE2PgepXeSRuwc	2026-08-01 11:31:02.926653+03	2026-08-08 11:31:02+03	4	1055873a233e4ddeb7930682a4bb0d2c
+120	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjM2NDU1NiwiaWF0IjoxNzg1NzU5NzU2LCJqdGkiOiI3ZGJhZjY4OTgyMjY0YTU2OTAyNzgyZTZkMjAxMzlmOSIsInVzZXJfaWQiOiI0In0.eE4ROqd2Dl6ayFYZH0_MXQHG6DfTW8TuKQCjSS3B-MU	2026-08-03 15:22:36.852397+03	2026-08-10 15:22:36+03	4	7dbaf68982264a56902782e6d20139f9
+121	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjM2NDU3NywiaWF0IjoxNzg1NzU5Nzc3LCJqdGkiOiI0YjYzOWEyMGQzMGI0MGY0ODUwNTJkNjhkYTIyOTEzNiIsInVzZXJfaWQiOiI0In0.Eo8PYq7wyE0-9hL1_1tj0fCWAJ0Ayo4BR4Upx9AlYj4	2026-08-03 15:22:57.246795+03	2026-08-10 15:22:57+03	4	4b639a20d30b40f485052d68da229136
+122	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjUzNzY5OCwiaWF0IjoxNzg1OTMyODk4LCJqdGkiOiJlZWI0YTNkNTgyN2U0ZDhjOTA0NDI5MmVlMjVjMzUwYiIsInVzZXJfaWQiOiI0In0.k9gsIE2W6azGCOCIm7_QYGHP8RYtNks6qYDEWCZ1ziE	2026-08-05 15:28:18.021951+03	2026-08-12 15:28:18+03	4	eeb4a3d5827e4d8c9044292ee25c350b
+123	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjUzOTQ4MSwiaWF0IjoxNzg1OTM0NjgxLCJqdGkiOiJiNzNiNjE2MGZhMTM0YjM1YmI5YTU5NjY1YWIzMzBmNCIsInVzZXJfaWQiOiI0In0.VUITHDz6S8m_NVRrXh1yQ0hAEff22uIdxdrgrvlcgDs	2026-08-05 15:58:01.37184+03	2026-08-12 15:58:01+03	4	b73b6160fa134b35bb9a59665ab330f4
+124	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjU0MDgxNCwiaWF0IjoxNzg1OTM2MDE0LCJqdGkiOiI3ZDcwNjc2M2QwMWE0ZTE5OTM0MWE5MjVmOTE0ZmFmZiIsInVzZXJfaWQiOiI0In0.MJC4O4DyIOEtl5dsfWRU4KQNCb7Gkcsaf4mzUoZmxOw	2026-08-05 16:20:14.959637+03	2026-08-12 16:20:14+03	4	7d706763d01a4e199341a925f914faff
+125	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjU0MTcxNywiaWF0IjoxNzg1OTM2OTE3LCJqdGkiOiJlN2Y4YzYxOGViOWU0ZWE2YWViMGFkNTUxMzlhMTNjNyIsInVzZXJfaWQiOiI0In0.dZ7_im_C0GjoFlWoTspbpGe9fTvzbfTpebutxgQGsoE	2026-08-05 16:35:17.586031+03	2026-08-12 16:35:17+03	4	e7f8c618eb9e4ea6aeb0ad55139a13c7
+126	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjU0MjY4MiwiaWF0IjoxNzg1OTM3ODgyLCJqdGkiOiIyODY1YTdjODU5NzQ0ZTZjYjk5NDg1Mzg4Y2I0MGI3MSIsInVzZXJfaWQiOiI0In0.2plv6F-qyVOBD4HsxrfcdV8In7Epr7SrlZTehEg2eeA	2026-08-05 16:51:22.597563+03	2026-08-12 16:51:22+03	4	2865a7c859744e6cb99485388cb40b71
+127	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjU0MzcxNCwiaWF0IjoxNzg1OTM4OTE0LCJqdGkiOiI1MjVkZjZmODRiMmE0YzY1OTdmZDNiOTYyYjdlMjBmZSIsInVzZXJfaWQiOiI0In0.GxW79P3OXOqftf0iUMTUMli8ZWn_zE_GHTt3zoxF1K0	2026-08-05 17:08:34.804644+03	2026-08-12 17:08:34+03	4	525df6f84b2a4c6597fd3b962b7e20fe
+128	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjU0NDc2MSwiaWF0IjoxNzg1OTM5OTYxLCJqdGkiOiIwMzIyMzQ3MmQ2YTU0YjU1ODI3NTAxMzVkNjVkMDQwNiIsInVzZXJfaWQiOiI0In0.wQQ8IjloyKOyJ_EMBADzFsJzx84tn5GQ2X92yIqk7O0	2026-08-05 17:26:01.095482+03	2026-08-12 17:26:01+03	4	03223472d6a54b5582750135d65d0406
+129	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjU0NTc5OCwiaWF0IjoxNzg1OTQwOTk4LCJqdGkiOiJhMWIxYzdkZTkwNDQ0NGVlYTRlMjRiNzExYjZkNWNlNiIsInVzZXJfaWQiOiI0In0.4LdFURFyUxmsrIQZvNVaEHOZdKm5xP9tpVB9UZo-9C0	2026-08-05 17:43:18.894464+03	2026-08-12 17:43:18+03	4	a1b1c7de904444eea4e24b711b6d5ce6
+130	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjU0NjQ4NiwiaWF0IjoxNzg1OTQxNjg2LCJqdGkiOiJiYzc5NjEwZjI4ODQ0NjU5YWQyOTA3ODM4NDRiYWU4NyIsInVzZXJfaWQiOiI0In0.JG2s4f4qnHkeIMiuDr-tiIQq4f06jjQ5X_Q87vnynwA	2026-08-05 17:54:46.820397+03	2026-08-12 17:54:46+03	4	bc79610f28844659ad290783844bae87
+131	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjU0NjU2NywiaWF0IjoxNzg1OTQxNzY3LCJqdGkiOiIyODZlNDVjNzQ4YzM0MDQzYTc1YWY2MzcyZWQ2ZGUzYiIsInVzZXJfaWQiOiI0In0.NXHkWM1X30KEzk7D0lygposnlavezvFPau7Dr0Za_GI	2026-08-05 17:56:07.645982+03	2026-08-12 17:56:07+03	4	286e45c748c34043a75af6372ed6de3b
+132	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjU0NjcyMSwiaWF0IjoxNzg1OTQxOTIxLCJqdGkiOiI3MzJhNjNmZWJjNDg0NWM4YmUyOWFiZjkxM2RlYzA4YSIsInVzZXJfaWQiOiI0In0.l3lYKchKm7PfUqL5G-wB5IjrHpFlDaoltGEL8QEZamg	2026-08-05 17:58:41.739968+03	2026-08-12 17:58:41+03	4	732a63febc4845c8be29abf913dec08a
+133	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc4NjU0Njc4MiwiaWF0IjoxNzg1OTQxOTgyLCJqdGkiOiIwNGQ5MDg3MmZlODc0NDBkYjVkN2E1YzhiYmUwYTI3OSIsInVzZXJfaWQiOiI0In0.sGi3qfv2fljcAdau52T0XnagJYgUixs5kMgLj0rdHac	2026-08-05 17:59:42.468818+03	2026-08-12 17:59:42+03	4	04d90872fe87440db5d7a5c8bbe0a279
 \.
 
 
@@ -1044,7 +1223,7 @@ COPY public.token_blacklist_outstandingtoken (id, token, created_at, expires_at,
 -- Name: accounts_passwordresettoken_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.accounts_passwordresettoken_id_seq', 9, true);
+SELECT pg_catalog.setval('public.accounts_passwordresettoken_id_seq', 10, true);
 
 
 --
@@ -1058,7 +1237,7 @@ SELECT pg_catalog.setval('public.accounts_user_groups_id_seq', 1, false);
 -- Name: accounts_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.accounts_user_id_seq', 14, true);
+SELECT pg_catalog.setval('public.accounts_user_id_seq', 46, true);
 
 
 --
@@ -1086,7 +1265,7 @@ SELECT pg_catalog.setval('public.auth_group_permissions_id_seq', 1, false);
 -- Name: auth_permission_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.auth_permission_id_seq', 68, true);
+SELECT pg_catalog.setval('public.auth_permission_id_seq', 80, true);
 
 
 --
@@ -1100,28 +1279,28 @@ SELECT pg_catalog.setval('public.django_admin_log_id_seq', 11, true);
 -- Name: django_content_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_content_type_id_seq', 17, true);
+SELECT pg_catalog.setval('public.django_content_type_id_seq', 20, true);
 
 
 --
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 36, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 52, true);
 
 
 --
 -- Name: orders_order_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.orders_order_id_seq', 1, false);
+SELECT pg_catalog.setval('public.orders_order_id_seq', 2, true);
 
 
 --
 -- Name: orders_orderitem_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.orders_orderitem_id_seq', 1, false);
+SELECT pg_catalog.setval('public.orders_orderitem_id_seq', 2, true);
 
 
 --
@@ -1132,38 +1311,59 @@ SELECT pg_catalog.setval('public.orders_orderitemoption_id_seq', 1, false);
 
 
 --
+-- Name: products_branch_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.products_branch_id_seq', 7, true);
+
+
+--
 -- Name: products_category_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.products_category_id_seq', 1, false);
+SELECT pg_catalog.setval('public.products_category_id_seq', 19, true);
+
+
+--
+-- Name: products_contact_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.products_contact_id_seq', 6, true);
 
 
 --
 -- Name: products_optiongroup_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.products_optiongroup_id_seq', 1, false);
+SELECT pg_catalog.setval('public.products_optiongroup_id_seq', 38, true);
 
 
 --
 -- Name: products_optionvalue_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.products_optionvalue_id_seq', 1, false);
+SELECT pg_catalog.setval('public.products_optionvalue_id_seq', 15, true);
 
 
 --
 -- Name: products_product_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.products_product_id_seq', 1, false);
+SELECT pg_catalog.setval('public.products_product_id_seq', 29, true);
 
 
 --
 -- Name: products_restaurantinfo_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.products_restaurantinfo_id_seq', 1, false);
+SELECT pg_catalog.setval('public.products_restaurantinfo_id_seq', 12, true);
+
+
+--
+-- Name: products_sociallink_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.products_sociallink_id_seq', 10, true);
 
 
 --
@@ -1177,7 +1377,7 @@ SELECT pg_catalog.setval('public.token_blacklist_blacklistedtoken_id_seq', 1, fa
 -- Name: token_blacklist_outstandingtoken_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.token_blacklist_outstandingtoken_id_seq', 4, true);
+SELECT pg_catalog.setval('public.token_blacklist_outstandingtoken_id_seq', 133, true);
 
 
 --
@@ -1365,11 +1565,27 @@ ALTER TABLE ONLY public.orders_orderitemoption
 
 
 --
+-- Name: products_branch products_branch_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.products_branch
+    ADD CONSTRAINT products_branch_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: products_category products_category_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.products_category
     ADD CONSTRAINT products_category_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: products_contact products_contact_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.products_contact
+    ADD CONSTRAINT products_contact_pkey PRIMARY KEY (id);
 
 
 --
@@ -1405,6 +1621,14 @@ ALTER TABLE ONLY public.products_restaurantinfo
 
 
 --
+-- Name: products_sociallink products_sociallink_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.products_sociallink
+    ADD CONSTRAINT products_sociallink_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: token_blacklist_blacklistedtoken token_blacklist_blacklistedtoken_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1434,6 +1658,14 @@ ALTER TABLE ONLY public.token_blacklist_outstandingtoken
 
 ALTER TABLE ONLY public.token_blacklist_outstandingtoken
     ADD CONSTRAINT token_blacklist_outstandingtoken_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: products_sociallink unique_social_platform_per_restaurant; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.products_sociallink
+    ADD CONSTRAINT unique_social_platform_per_restaurant UNIQUE (restaurant_id, platform);
 
 
 --
@@ -1591,6 +1823,20 @@ CREATE INDEX orders_orderitemoption_order_item_id_a1d4ccec ON public.orders_orde
 
 
 --
+-- Name: products_branch_restaurant_id_af3c1a7f; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX products_branch_restaurant_id_af3c1a7f ON public.products_branch USING btree (restaurant_id);
+
+
+--
+-- Name: products_category_restaurant_id_3ea6171d; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX products_category_restaurant_id_3ea6171d ON public.products_category USING btree (restaurant_id);
+
+
+--
 -- Name: products_optiongroup_product_id_a9165078; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1609,6 +1855,13 @@ CREATE INDEX products_optionvalue_option_group_id_ac3cf26c ON public.products_op
 --
 
 CREATE INDEX products_product_category_id_9b594869 ON public.products_product USING btree (category_id);
+
+
+--
+-- Name: products_sociallink_restaurant_id_6512057c; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX products_sociallink_restaurant_id_6512057c ON public.products_sociallink USING btree (restaurant_id);
 
 
 --
@@ -1754,6 +2007,22 @@ ALTER TABLE ONLY public.orders_orderitemoption
 
 
 --
+-- Name: products_branch products_branch_restaurant_id_af3c1a7f_fk_products_; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.products_branch
+    ADD CONSTRAINT products_branch_restaurant_id_af3c1a7f_fk_products_ FOREIGN KEY (restaurant_id) REFERENCES public.products_restaurantinfo(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: products_category products_category_restaurant_id_3ea6171d_fk_products_; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.products_category
+    ADD CONSTRAINT products_category_restaurant_id_3ea6171d_fk_products_ FOREIGN KEY (restaurant_id) REFERENCES public.products_restaurantinfo(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
 -- Name: products_optiongroup products_optiongroup_product_id_a9165078_fk_products_product_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1778,6 +2047,14 @@ ALTER TABLE ONLY public.products_product
 
 
 --
+-- Name: products_sociallink products_sociallink_restaurant_id_6512057c_fk_products_; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.products_sociallink
+    ADD CONSTRAINT products_sociallink_restaurant_id_6512057c_fk_products_ FOREIGN KEY (restaurant_id) REFERENCES public.products_restaurantinfo(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
 -- Name: token_blacklist_blacklistedtoken token_blacklist_blacklistedtoken_token_id_3cc7fe56_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1796,4 +2073,6 @@ ALTER TABLE ONLY public.token_blacklist_outstandingtoken
 --
 -- PostgreSQL database dump complete
 --
+
+\unrestrict ouG0ncSfDHuopgWai2fv5dvhHAEo0kDXO1xXmRja5Q5exaN4eZBcfHyMUpC10MX
 
