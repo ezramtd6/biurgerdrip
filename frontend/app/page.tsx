@@ -552,6 +552,28 @@ export default function Home() {
         </div>
       </section>
 
+      {/* About Us Section */}
+      <section id="about-us" className="py-16 bg-white dark:bg-gray-800 transition-colors duration-500">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center gap-12">
+            <div className="flex-1">
+              <h2 className="text-3xl md:text-4xl font-black text-gray-800 dark:text-white mb-2">{t("about_us")}</h2>
+              <div className="w-16 h-1 bg-red-600 rounded-full mb-4" />
+              <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-lg">{t("footer_about")}</p>
+            </div>
+            <div className="flex-1">
+              <div className="bg-red-50 dark:bg-gray-700 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
+                <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <i className="fas fa-pizza-slice text-white text-3xl"></i>
+                </div>
+                <h3 className="font-black text-gray-800 dark:text-white text-xl mb-2">Since 1958</h3>
+                <p className="text-gray-500 dark:text-gray-400">Serving quality pizza for over 65 years</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-500">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -575,28 +597,6 @@ export default function Home() {
               </div>
               <h3 className="font-black text-gray-800 dark:text-white text-xl mb-3">{t("feat_deals")}</h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{t("feat_deals_desc")}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* About Us Section */}
-      <section id="about-us" className="py-16 bg-white dark:bg-gray-800 transition-colors duration-500">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center gap-12">
-            <div className="flex-1">
-              <h2 className="text-3xl md:text-4xl font-black text-gray-800 dark:text-white mb-2">{t("about_us")}</h2>
-              <div className="w-16 h-1 bg-red-600 rounded-full mb-4" />
-              <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-lg">{t("footer_about")}</p>
-            </div>
-            <div className="flex-1">
-              <div className="bg-red-50 dark:bg-gray-700 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
-                <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <i className="fas fa-pizza-slice text-white text-3xl"></i>
-                </div>
-                <h3 className="font-black text-gray-800 dark:text-white text-xl mb-2">Since 1958</h3>
-                <p className="text-gray-500 dark:text-gray-400">Serving quality pizza for over 65 years</p>
-              </div>
             </div>
           </div>
         </div>

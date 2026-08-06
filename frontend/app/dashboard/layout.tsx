@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
@@ -70,12 +71,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="p-4 border-t">
           <div className="text-sm text-gray-600 mb-2">{user.first_name} {user.last_name}</div>
-          <button
-            onClick={() => logout.mutate()}
-            className="text-sm text-red-500 hover:text-red-600 cursor-pointer"
-          >
-            Logout
-          </button>
+          <div className="flex flex-col items-start gap-2">
+            <ChangePasswordDialog />
+            <button
+              onClick={() => logout.mutate()}
+              className="text-sm text-red-500 hover:text-red-600 cursor-pointer"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </aside>
 
