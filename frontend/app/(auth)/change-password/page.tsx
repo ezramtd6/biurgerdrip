@@ -10,6 +10,7 @@ import FormField from "@/components/ui/FormField";
 import { Loader2 } from "lucide-react";
 import api from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { Loading } from "@/components/common/Loading";
 
 const schema = z
@@ -33,6 +34,7 @@ type ChangePasswordForm = z.infer<typeof schema>;
 export default function ChangePasswordPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
+  const { openAuth } = useAuthModal();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -44,9 +46,10 @@ export default function ChangePasswordPage() {
 
   useEffect(() => {
     if (mounted && !isLoading && !user) {
-      router.replace("/login");
+      if (sessionStorage.getItem("auth_logged_out") !== "1") openAuth("login");
+      router.replace("/");
     }
-  }, [mounted, user, isLoading, router]);
+  }, [mounted, user, isLoading, router, openAuth]);
 
   const {
     register,

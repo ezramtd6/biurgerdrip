@@ -41,6 +41,7 @@ export function useAuth() {
       return res.data;
     },
     onSuccess: (data) => {
+      sessionStorage.removeItem("auth_logged_out");
       if (data.access) setAccessToken(data.access);
       if (data.user) setUser(data.user);
       queryClient.setQueryData(["user"], data.user);
@@ -58,9 +59,6 @@ export function useAuth() {
       const res = await api.post("/auth/register/", data);
       return res.data;
     },
-    onSuccess: () => {
-      router.push("/login");
-    },
   });
 
   const logout = useMutation({
@@ -68,6 +66,7 @@ export function useAuth() {
       await api.post("/auth/logout/");
     },
     onSettled: () => {
+      sessionStorage.setItem("auth_logged_out", "1");
       removeAccessToken();
       removeUser();
       queryClient.clear();

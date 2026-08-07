@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useCategories, useProducts, useRestaurant } from "@/hooks/useProducts";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { Loading } from "@/components/common/Loading";
 import { useTheme } from "@/hooks/useTheme";
 import Link from "next/link";
@@ -17,7 +18,8 @@ export default function MenuPage() {
   const { data: categories, isLoading: loadingCategories } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const { data: products, isLoading: loadingProducts } = useProducts(selectedCategory);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const { openAuth } = useAuthModal();
   const { isDark, toggleDarkMode } = useTheme();
 
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -29,6 +31,7 @@ export default function MenuPage() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const restaurantExists = restaurant && restaurant.length > 0;
+  const restaurantReady = restaurantExists && restaurant[0].is_active !== false;
   const restaurantInfo = restaurantExists ? restaurant[0] : null;
 
   useEffect(() => {
@@ -77,7 +80,7 @@ export default function MenuPage() {
 
   if (loadingRestaurant || loadingCategories) return <Loading />;
 
-  if (!restaurantExists) {
+  if (!restaurantReady) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
         <div className="text-center max-w-lg">
@@ -86,15 +89,19 @@ export default function MenuPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
-          <h1 className="text-3xl font-black text-gray-800 dark:text-white mb-3">Restaurant Not Set Up</h1>
+          <h1 className="text-3xl font-black text-gray-800 dark:text-white mb-3">
+            {restaurantExists && restaurantInfo?.is_active === false ? "Restaurant Frozen" : "Restaurant Not Set Up"}
+          </h1>
           <p className="text-gray-500 dark:text-gray-400 text-lg mb-6">
-            The restaurant has not been configured yet. Please contact the manager to set up the restaurant information.
+            {restaurantExists && restaurantInfo?.is_active === false
+              ? "The restaurant is currently frozen. Please check back later."
+              : "The restaurant has not been configured yet. Please contact the manager to set up the restaurant information."}
           </p>
           <div className="w-16 h-1 bg-orange-500 rounded-full mx-auto mb-6" />
           {!user && (
-            <Link href="/login" className="inline-block bg-orange-500 text-white px-8 py-3 rounded-full font-bold hover:bg-orange-600 transition shadow-lg">
+            <button onClick={() => openAuth("login")} className="inline-block bg-orange-500 text-white px-8 py-3 rounded-full font-bold hover:bg-orange-600 transition shadow-lg cursor-pointer">
               Sign In
-            </Link>
+            </button>
           )}
         </div>
       </div>
@@ -166,13 +173,13 @@ export default function MenuPage() {
               {user ? (
                 <div className="hidden md:flex items-center gap-3">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{user.first_name}</span>
-                  <Link href="/login" className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-orange-500 transition-colors">Logout</Link>
+                  <button onClick={() => logout.mutate()} className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-orange-500 transition-colors cursor-pointer">Logout</button>
                 </div>
               ) : (
-                <Link href="/login" className="hidden md:flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-orange-500 transition px-3 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                <button onClick={() => openAuth("login")} className="hidden md:flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-orange-500 transition px-3 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
                   Sign In
-                </Link>
+                </button>
               )}
 
               <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden text-gray-700 dark:text-gray-200 text-xl p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition">
@@ -194,7 +201,7 @@ export default function MenuPage() {
                   <Link href="/profile" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-500 rounded-xl transition-all">Profile</Link>
                 </>
               )}
-              {!user && <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-500 rounded-xl transition-all">Sign In</Link>}
+              {!user && <button onClick={() => { setMobileMenuOpen(false); openAuth("login"); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-500 rounded-xl transition-all cursor-pointer">Sign In</button>}
             </div>
           </div>
         )}

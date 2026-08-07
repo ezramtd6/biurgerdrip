@@ -14,7 +14,7 @@ def send_set_password_email(email, first_name, role, token):
         f"If you did not expect this email, please ignore it.\n\n"
         f"Regards,\nBurger House Team"
     )
-    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email])
+    send_mail(subject, message, f"No-Reply <{settings.DEFAULT_FROM_EMAIL}>", [email])
 
 
 def send_password_reset_email(email, first_name, token):

@@ -5,9 +5,9 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import Link from "next/link";
 import { Button, Input } from "@/components/ui";
 import api from "@/services/api";
+import { useAuthModal } from "@/components/auth/auth-modal-context";
 
 const schema = z.object({
   new_password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, "Password must be at least 8 characters with an uppercase letter, lowercase letter, number, and special character"),
@@ -18,6 +18,7 @@ type ResetPasswordForm = z.infer<typeof schema>;
 export default function ResetPasswordPage() {
   const params = useParams();
   const router = useRouter();
+  const { openAuth } = useAuthModal();
   const token = params.token as string;
 
   const [success, setSuccess] = useState(false);
@@ -53,9 +54,7 @@ export default function ResetPasswordPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
         <div className="mb-4 text-green-600 font-medium">Password reset successful!</div>
         <p className="text-sm text-gray-500 mb-6">You can now sign in with your new password.</p>
-        <Link href="/login">
-          <Button className="w-full">Go to Login</Button>
-        </Link>
+        <Button onClick={() => openAuth("login")} className="w-full">Go to Login</Button>
       </div>
     );
   }
@@ -89,9 +88,9 @@ export default function ResetPasswordPage() {
 
       <p className="mt-6 text-center text-sm text-gray-500">
         Remember your password?{" "}
-        <Link href="/login" className="text-orange-500 hover:text-orange-600 font-medium">
+        <button onClick={() => openAuth("login")} className="text-orange-500 hover:text-orange-600 font-medium cursor-pointer">
           Sign In
-        </Link>
+        </button>
       </p>
     </div>
   );

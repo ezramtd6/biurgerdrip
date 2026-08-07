@@ -5,9 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuthModal } from "@/components/auth/auth-modal-context";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { openAuth } = useAuthModal();
   const { isDark, toggleDarkMode } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
@@ -90,15 +92,15 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="hidden md:flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-orange-500 transition px-3 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+              <button
+                onClick={() => openAuth("login")}
+                className="hidden md:flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-orange-500 transition px-3 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                 </svg>
                 Sign In
-              </Link>
+              </button>
             )}
 
             <button
@@ -134,9 +136,9 @@ export default function Navbar() {
                 Logout
               </button>
             ) : (
-              <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-500 rounded-xl transition-all">
+              <button onClick={() => { setMobileMenuOpen(false); openAuth("login"); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-500 rounded-xl transition-all cursor-pointer">
                 Sign In
-              </Link>
+              </button>
             )}
           </div>
         </div>

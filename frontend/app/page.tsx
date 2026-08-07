@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import api from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuthModal } from "@/components/auth/auth-modal-context";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import {
@@ -33,8 +34,6 @@ const translations: Record<string, Record<string, string>> = {
     hero_desc: "Order your favorite pizza online from Pizza Hut Ethiopia. Explore delicious flavors and enjoy fast, reliable delivery to your doorstep in Addis Ababa.",
     order_now: "Order Now",
     view_deals: "View Deals",
-    free_delivery: "Free Delivery",
-    free_delivery_desc: "On orders over ETB 500",
     cat_pizza: "PIZZAS",
     cat_sides: "SIDES",
     cat_melts: "MELTS",
@@ -85,8 +84,6 @@ const translations: Record<string, Record<string, string>> = {
     hero_desc: "የተወደደውን ፒዛ ከፒዛ ሆት ኢትዮጵያ በኦንላይን ይዘዙ። ጣፋጭ ጣዕሞችን ያስሱ እና በአዲስ አበባ ወደ ቤትዎ ፈጣን እና አስተማማኝ አቅርቦት ይደህኑ።",
     order_now: "አሁን ይዘዙ",
     view_deals: "ቅናሾችን ይመልከቱ",
-    free_delivery: "ነፃ አቅርቦት",
-    free_delivery_desc: "በ ETB 500 በላይ ትዕዛዞች ላይ",
     cat_pizza: "ፒዛዎች",
     cat_sides: "ጎን ምግቦች",
     cat_melts: "ሜልትስ",
@@ -148,6 +145,7 @@ interface CartItem {
 
 export default function Home() {
   const { user, logout } = useAuth();
+  const { openAuth } = useAuthModal();
   const router = useRouter();
   const { isDark, toggleDarkMode } = useTheme();
   const [restaurantReady, setRestaurantReady] = useState(true);
@@ -183,8 +181,9 @@ export default function Home() {
     api.get("/restaurant/")
       .then((res) => {
         const data = res.data.results || res.data;
-        setRestaurant(data && data.length > 0 ? data[0] : null);
-        setRestaurantReady(data && data.length > 0);
+        const first = data && data.length > 0 ? data[0] : null;
+        setRestaurant(first);
+        setRestaurantReady(!!first && first.is_active !== false);
       })
       .catch(() => setRestaurantReady(false))
       .finally(() => setCheckingRestaurant(false));
@@ -244,6 +243,28 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    let timer: number | undefined;
+    const scrollToHash = () => {
+      const hash = window.location.hash;
+      if (!hash) return;
+      const el = document.querySelector(hash);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      timer = window.setTimeout(scrollToHash, 150);
+    };
+    scrollToHash();
+    window.addEventListener("hashchange", scrollToHash);
+    window.addEventListener("popstate", scrollToHash);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("hashchange", scrollToHash);
+      window.removeEventListener("popstate", scrollToHash);
+    };
+  }, [checkingRestaurant]);
+
   const t = (key: string) => translations[currentLang]?.[key] || translations.en[key] || key;
 
   const addToCart = (item: Product) => {
@@ -272,21 +293,33 @@ export default function Home() {
 
   const menuAvailable = !checkingRestaurant && restaurantReady;
 
+  if (mounted && user && (user.role === "CASHIER" || user.role === "MANAGER" || user.role === "ADMIN")) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-500">
       <header className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300 ${headerScrolled ? "shadow-md" : "shadow-sm"}`}>
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-18 py-3">
+          <div className="flex items-center justify-between gap-3 h-18 py-3">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-11 h-11 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:shadow-red-600/30 group-hover:scale-110 transition-all duration-300">
-                <svg viewBox="0 0 100 100" className="w-7 h-7" fill="white">
-                  <path d="M50 5 L85 25 L85 35 L50 20 L15 35 L15 25 Z" />
-                  <path d="M20 35 L20 75 Q20 85 30 85 L40 85 L40 45 L35 45 L35 35 Z" />
-                  <path d="M45 35 L45 85 L55 85 L55 35 Z" />
-                  <path d="M60 35 L60 45 L65 45 L65 85 L70 85 Q80 85 80 75 L80 35 Z" />
-                </svg>
-              </div>
-              <span className="text-2xl font-black text-red-600 tracking-tight group-hover:tracking-wide transition-all duration-300">Pizza Hut</span>
+              {restaurant?.logo ? (
+                <img src={restaurant.logo} alt={restaurant.name || "Restaurant"} className="w-11 h-11 rounded-full object-cover shadow-lg group-hover:scale-110 transition-all duration-300" />
+              ) : (
+                <div className="w-11 h-11 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:shadow-red-600/30 group-hover:scale-110 transition-all duration-300">
+                  <svg viewBox="0 0 100 100" className="w-7 h-7" fill="white">
+                    <path d="M50 5 L85 25 L85 35 L50 20 L15 35 L15 25 Z" />
+                    <path d="M20 35 L20 75 Q20 85 30 85 L40 85 L40 45 L35 45 L35 35 Z" />
+                    <path d="M45 35 L45 85 L55 85 L55 35 Z" />
+                    <path d="M60 35 L60 45 L65 45 L65 85 L70 85 Q80 85 80 75 L80 35 Z" />
+                  </svg>
+                </div>
+              )}
+              <span className="text-2xl font-black text-red-600 tracking-tight group-hover:tracking-wide transition-all duration-300">{restaurant?.name || "Pizza Hut"}</span>
             </Link>
             <nav className="hidden lg:flex items-center gap-8">
               <a href="#menu" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 transition-colors py-2">{t("menu")}</a>
@@ -323,9 +356,9 @@ export default function Home() {
                   </DropdownMenu>
                 </div>
               ) : (
-                <Link href="/login" className="hidden md:flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 transition px-3 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                <button onClick={() => openAuth("login")} className="hidden md:flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 transition px-3 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
                   <i className="far fa-user"></i> {t("my_account")}
-                </Link>
+                </button>
               )}
               <button onClick={() => setCartOpen(true)} className="relative bg-red-600 text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-red-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-red-600/30 hover:scale-105 active:scale-95">
                 <i className="fas fa-shopping-bag"></i>
@@ -340,13 +373,13 @@ export default function Home() {
         </div>
         <div className={`lg:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg ${mobileMenuOpen ? "" : "hidden"}`}>
           <div className="px-4 py-4 space-y-1">
-            <a href="#menu" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("menu")}</a>
-            <a href="#store-locations" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("store_locations")}</a>
-            <a href="#about-us" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("about_us")}</a>
+            <a href="#menu" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("menu")}</a>
+            <a href="#store-locations" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("store_locations")}</a>
+            <a href="#about-us" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("about_us")}</a>
             {user && mounted ? (
-              <button onClick={() => { logout.mutate(); setMobileMenuOpen(false); }} className="block w-full text-left py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">Logout</button>
+              <button onClick={() => { logout.mutate(); setMobileMenuOpen(false); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">Logout</button>
             ) : (
-              <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("my_account")}</Link>
+              <button onClick={() => { setMobileMenuOpen(false); openAuth("login"); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all cursor-pointer">{t("my_account")}</button>
             )}
           </div>
         </div>
@@ -382,29 +415,11 @@ export default function Home() {
             </div>
             <div className="relative hidden md:block">
               <div className="animate-bounce" style={{ animationDuration: "6s" }}>
-                <img src="https://www.pizzahut.et/95e49adae4d362a79e4d4df4c7c1c62d04bf9250" alt="Pizza" className="w-full max-w-lg mx-auto drop-shadow-2xl rounded-full" />
-              </div>
-              <div className="absolute -bottom-2 -left-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <i className="fas fa-motorcycle text-green-600 text-xl"></i>
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-800 dark:text-gray-100">{t("free_delivery")}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{t("free_delivery_desc")}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute top-10 -right-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                    <i className="fas fa-star text-yellow-600 text-xl"></i>
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-800 dark:text-gray-100">4.9 Rating</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">10,000+ Reviews</p>
-                  </div>
-                </div>
+                {restaurant?.logo ? (
+                  <img src={restaurant.logo} alt={restaurant.name || "Restaurant"} className="w-full max-w-lg mx-auto drop-shadow-2xl rounded-full" />
+                ) : (
+                  <img src="https://www.pizzahut.et/95e49adae4d362a79e4d4df4c7c1c62d04bf9250" alt="Pizza" className="w-full max-w-lg mx-auto drop-shadow-2xl rounded-full" />
+                )}
               </div>
             </div>
           </div>
@@ -460,7 +475,11 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-xl font-black text-gray-800 dark:text-white mb-2">Menu Not Available</h3>
-              <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">The restaurant has not been configured yet. Please check back later.</p>
+              <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                {restaurant && restaurant.is_active === false
+                  ? "The restaurant is currently frozen. Please check back later."
+                  : "The restaurant has not been configured yet. Please check back later."}
+              </p>
             </div>
           )}
           {menuAvailable && (
@@ -499,7 +518,8 @@ export default function Home() {
       </section>
 
       {/* Store Locations Section */}
-      <section id="store-locations" className="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-500">
+      {restaurantReady && (
+        <section id="store-locations" className="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-500">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-black text-gray-800 dark:text-white mb-2">{t("store_locations")}</h2>
@@ -550,7 +570,8 @@ export default function Home() {
             <BranchMap restaurant={restaurant} branches={branches} />
           </div>
         </div>
-      </section>
+        </section>
+      )}
 
       {/* About Us Section */}
       <section id="about-us" className="py-16 bg-white dark:bg-gray-800 transition-colors duration-500">
@@ -576,14 +597,7 @@ export default function Home() {
 
       <section className="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-500">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="feature-card bg-white dark:bg-gray-800 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
-              <div className="feature-icon w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <i className="fas fa-motorcycle text-red-600 text-3xl"></i>
-              </div>
-              <h3 className="font-black text-gray-800 dark:text-white text-xl mb-3">{t("feat_delivery")}</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{t("feat_delivery_desc")}</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="feature-card bg-white dark:bg-gray-800 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
               <div className="feature-icon w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
                 <i className="fas fa-utensils text-red-600 text-3xl"></i>
@@ -606,69 +620,74 @@ export default function Home() {
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-red-400 to-red-600" />
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-12">
-            <div>
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
-                  <svg viewBox="0 0 100 100" className="w-6 h-6" fill="white">
-                    <path d="M50 5 L85 25 L85 35 L50 20 L15 35 L15 25 Z" />
-                    <path d="M20 35 L20 75 Q20 85 30 85 L40 85 L40 45 L35 45 L35 35 Z" />
-                    <path d="M45 35 L45 85 L55 85 L55 35 Z" />
-                    <path d="M60 35 L60 45 L65 45 L65 85 L70 85 Q80 85 80 75 L80 35 Z" />
-                  </svg>
-                </div>
-                <span className="text-xl font-black">Pizza Hut</span>
+            <div className="text-center md:text-left">
+              <div className="flex items-center gap-3 mb-5 justify-center md:justify-start">
+                {restaurant?.logo ? (
+                  <img src={restaurant.logo} alt={restaurant.name || "Restaurant"} className="w-10 h-10 rounded-full object-cover shadow-lg" />
+                ) : (
+                  <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
+                    <svg viewBox="0 0 100 100" className="w-6 h-6" fill="white">
+                      <path d="M50 5 L85 25 L85 35 L50 20 L15 35 L15 25 Z" />
+                      <path d="M20 35 L20 75 Q20 85 30 85 L40 85 L40 45 L35 45 L35 35 Z" />
+                      <path d="M45 35 L45 85 L55 85 L55 35 Z" />
+                      <path d="M60 35 L60 45 L65 45 L65 85 L70 85 Q80 85 80 75 L80 35 Z" />
+                    </svg>
+                  </div>
+                )}
+                <span className="text-xl font-black">{restaurant?.name || "Pizza Hut"}</span>
               </div>
-              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{t("footer_about")}</p>
             </div>
-            <div>
+            <div className="text-center md:text-left">
               <h4 className="font-black mb-5 text-lg">{t("help_support")}</h4>
               <ul className="space-y-3 text-sm text-gray-500 dark:text-gray-400">
-                <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("contact_us")}</span></li>
-                <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("faqs")}</span></li>
-                <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("terms")}</span></li>
-                <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("privacy")}</span></li>
+                <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("contact_us")}</span></li>
+                <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("faqs")}</span></li>
+                <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("terms")}</span></li>
+                <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("privacy")}</span></li>
               </ul>
             </div>
-            <div>
-              <h4 className="font-black mb-5 text-lg">{t("contact")}</h4>
-              <ul className="space-y-3 text-sm text-gray-500 dark:text-gray-400">
-                {contacts.length > 0 ? (
-                  contacts.map((c) => (
-                    <div key={c.id} className="space-y-3">
-                      <li className="flex items-center gap-3 hover:text-red-600 transition-colors cursor-pointer"><i className="fas fa-phone-alt text-red-600"></i> {c.phone}</li>
-                      <li className="flex items-center gap-3 hover:text-red-600 transition-colors cursor-pointer"><i className="fas fa-envelope text-red-600"></i> {c.email}</li>
-                      <li className="flex items-center gap-3 hover:text-red-600 transition-colors"><i className="fas fa-map-marker-alt text-red-600"></i> {c.location}</li>
-                    </div>
-                  ))
-                ) : (
-                  <li className="text-gray-400 dark:text-gray-500">No contact info yet</li>
-                )}
-              </ul>
-              <div className="flex gap-3 mt-6">
-                {socialLinks.length > 0 ? (
-                  socialLinks.map((link) => (
-                    <a
-                      key={link.id}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={link.platform}
-                      className="social-icon w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-red-600 hover:text-white transition"
-                    >
-                      <i className={socialIconMap[link.platform] || "fas fa-link"}></i>
-                    </a>
-                  ))
-                ) : (
-                  <span className="text-sm text-gray-400 dark:text-gray-500">No social media links yet</span>
-                )}
+            {restaurantReady && (
+              <div className="text-center md:text-left">
+                <h4 className="font-black mb-5 text-lg">{t("contact")}</h4>
+                <ul className="space-y-3 text-sm text-gray-500 dark:text-gray-400">
+                  {contacts.length > 0 ? (
+                    contacts.map((c) => (
+                      <div key={c.id} className="space-y-3">
+                        <li className="flex items-center gap-3 justify-center md:justify-start hover:text-red-600 transition-colors cursor-pointer"><i className="fas fa-phone-alt text-red-600"></i> {c.phone}</li>
+                        <li className="flex items-center gap-3 justify-center md:justify-start hover:text-red-600 transition-colors cursor-pointer"><i className="fas fa-envelope text-red-600"></i> {c.email}</li>
+                        <li className="flex items-center gap-3 justify-center md:justify-start hover:text-red-600 transition-colors"><i className="fas fa-map-marker-alt text-red-600"></i> {c.location}</li>
+                      </div>
+                    ))
+                  ) : (
+                    <li className="text-gray-400 dark:text-gray-500">No contact info yet</li>
+                  )}
+                </ul>
+                <div className="flex gap-3 mt-6 justify-center md:justify-start">
+                  {socialLinks.length > 0 ? (
+                    socialLinks.map((link) => (
+                      <a
+                        key={link.id}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={link.platform}
+                        className="social-icon w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-red-600 hover:text-white transition"
+                      >
+                        <i className={socialIconMap[link.platform] || "fas fa-link"}></i>
+                      </a>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-400 dark:text-gray-500">No social media links yet</span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <div className="border-t border-gray-200 dark:border-gray-700 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-500 dark:text-gray-400 text-sm">&copy; 2026 Pizza Hut (Pty) Ltd. {t("rights")}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">&copy; {new Date().getFullYear()} {restaurant?.name || "Pizza Hut"} {t("rights")}</p>
             <div className="flex items-center gap-4 text-gray-500 text-sm">
               <span>{t("delivered_by")}</span>
-              <span className="font-black text-white bg-red-600 px-3 py-1 rounded-full text-xs">{t("ph_ethiopia")}</span>
+              <span className="font-black text-white bg-red-600 px-3 py-1 rounded-full text-xs">{restaurant?.name || t("ph_ethiopia")}</span>
             </div>
           </div>
         </div>

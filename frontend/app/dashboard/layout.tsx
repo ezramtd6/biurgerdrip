@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
@@ -13,8 +14,6 @@ const links = [
   { href: "/dashboard/products", label: "Products", icon: "🍔" },
   { href: "/dashboard/option-groups", label: "Option Groups", icon: "⚙️" },
   { href: "/dashboard/restaurant", label: "Restaurant", icon: "🏪" },
-  { href: "/dashboard/social-links", label: "Social Links", icon: "🔗" },
-  { href: "/dashboard/contacts", label: "Contacts", icon: "📞" },
   { href: "/dashboard/cashiers", label: "Cashiers", icon: "👨‍💼" },
   { href: "/dashboard/customers", label: "Customers", icon: "👥" },
   { href: "/dashboard/reports", label: "Reports", icon: "📈" },
@@ -22,6 +21,7 @@ const links = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth();
+  const { openAuth } = useAuthModal();
   const pathname = usePathname();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -32,9 +32,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (mounted && !isLoading && (!user || (user.role !== "MANAGER" && user.role !== "ADMIN"))) {
-      router.push("/login");
+      if (sessionStorage.getItem("auth_logged_out") !== "1") openAuth("login");
+      router.replace("/");
     }
-  }, [mounted, user, isLoading, router]);
+  }, [mounted, user, isLoading, router, openAuth]);
 
   if (!mounted || isLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" /></div>;
   if (!user) return null;

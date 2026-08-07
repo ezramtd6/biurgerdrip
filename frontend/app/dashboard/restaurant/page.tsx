@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
-import { Button, Input, Modal } from "@/components/ui";
-import { RestaurantInfo, Branch } from "@/types";
+import { Button, Input, Modal, Select } from "@/components/ui";
+import { RestaurantInfo, Branch, Contact, SocialLink, SocialPlatform } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import { useForm } from "react-hook-form";
@@ -14,10 +14,17 @@ import { z } from "zod";
 const infoSchema = z.object({
   name: z.string().min(1, "Name is required"),
   address: z.string().min(1, "Address is required"),
-  phone: z.string().min(1, "Phone is required"),
+  phone: z
+    .string()
+    .min(1, "Phone is required")
+    .regex(/^\+251(?:\s?\d{3}\s?\d{3}\s?\d{3})$/, "Phone must start with +251 followed by 9 digits, e.g. +251 911 234 567"),
   opening_hours: z.string().min(1, "Opening hours is required"),
   latitude: z.coerce.number().refine((v) => !Number.isNaN(v) && v >= -90 && v <= 90, "Invalid latitude").optional(),
   longitude: z.coerce.number().refine((v) => !Number.isNaN(v) && v >= -180 && v <= 180, "Invalid longitude").optional(),
+  contact_email: z
+    .string()
+    .min(1, "Email is required")
+    .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Enter a valid email address, e.g. info@burgerhouse.com"),
 });
 
 type RestaurantForm = z.infer<typeof infoSchema>;
@@ -28,6 +35,22 @@ const branchSchema = z.object({
 });
 
 type BranchForm = z.infer<typeof branchSchema>;
+
+const platformOptions: { value: SocialPlatform; label: string; icon: string }[] = [
+  { value: "facebook", label: "Facebook", icon: "fab fa-facebook-f" },
+  { value: "instagram", label: "Instagram", icon: "fab fa-instagram" },
+  { value: "twitter", label: "Twitter / X", icon: "fab fa-twitter" },
+  { value: "tiktok", label: "TikTok", icon: "fab fa-tiktok" },
+  { value: "youtube", label: "YouTube", icon: "fab fa-youtube" },
+  { value: "telegram", label: "Telegram", icon: "fab fa-telegram-plane" },
+];
+
+const socialLinkSchema = z.object({
+  platform: z.enum(["facebook", "instagram", "twitter", "tiktok", "youtube", "telegram"]),
+  url: z.string().url("Enter a valid URL"),
+});
+
+type SocialLinkForm = z.infer<typeof socialLinkSchema>;
 
 function extractError(e: unknown): string {
   const err = e as { response?: { status?: number; data?: unknown }; message?: string };
@@ -54,6 +77,12 @@ export default function RestaurantPage() {
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [deleteRestaurant, setDeleteRestaurant] = useState(false);
   const [deleteBranch, setDeleteBranch] = useState<Branch | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [socialOpen, setSocialOpen] = useState(false);
+  const [editingSocial, setEditingSocial] = useState<SocialLink | null>(null);
+  const [deleteSocial, setDeleteSocial] = useState<SocialLink | null>(null);
 
   const { data: info, isLoading } = useQuery<RestaurantInfo | null>({
     queryKey: ["restaurant-info"],
@@ -74,16 +103,54 @@ export default function RestaurantPage() {
     enabled: !!info,
   });
 
+  const { data: contact, isLoading: contactLoading } = useQuery<Contact | null>({
+    queryKey: ["restaurant-contact"],
+    queryFn: async () => {
+      const res = await api.get("/contacts/");
+      const results = res.data.results || res.data;
+      return (Array.isArray(results) ? results[0] : results) ?? null;
+    },
+  });
+
+  const { data: socialLinks, isLoading: socialLoading } = useQuery<SocialLink[]>({
+    queryKey: ["restaurant-social-links"],
+    queryFn: async () => {
+      const res = await api.get("/social-links/");
+      return res.data.results || res.data || [];
+    },
+  });
+
   const updateMutation = useMutation({
     mutationFn: async (data: RestaurantForm) => {
-      if (info) return api.put(`/restaurant/${info.id}/`, data);
-      return api.post("/restaurant/", data);
+      const fd = new FormData();
+      fd.append("name", data.name);
+      fd.append("address", data.address);
+      fd.append("phone", data.phone);
+      fd.append("opening_hours", data.opening_hours);
+      if (data.latitude !== undefined) fd.append("latitude", String(data.latitude));
+      if (data.longitude !== undefined) fd.append("longitude", String(data.longitude));
+      if (logoFile) fd.append("logo", logoFile);
+      const req = info
+        ? api.put(`/restaurant/${info.id}/`, fd, { headers: { "Content-Type": "multipart/form-data" } })
+        : api.post("/restaurant/", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      await req;
+
+      const contactPayload = {
+        email: data.contact_email,
+        phone: data.phone,
+        location: data.address,
+      };
+      if (contact) return api.patch(`/contacts/${contact.id}/`, contactPayload);
+      return api.post("/contacts/", contactPayload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["restaurant-info"] });
+      queryClient.invalidateQueries({ queryKey: ["restaurant-contact"] });
       setError(null);
       setSuccess(true);
       setEditing(false);
+      setLogoFile(null);
+      setLogoPreview(null);
       setTimeout(() => setSuccess(false), 3000);
     },
     onError: (e: unknown) => {
@@ -142,6 +209,34 @@ export default function RestaurantPage() {
     onError: (e: unknown) => setError(extractError(e)),
   });
 
+  const socialSaveMutation = useMutation({
+    mutationFn: (data: SocialLinkForm & { id?: number }) =>
+      data.id
+        ? api.patch(`/social-links/${data.id}/`, data)
+        : api.post("/social-links/", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["restaurant-social-links"] });
+      setError(null);
+      setSocialOpen(false);
+      setEditingSocial(null);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    },
+    onError: (e: unknown) => {
+      setSuccess(false);
+      setError(extractError(e));
+    },
+  });
+
+  const socialDeleteMutation = useMutation({
+    mutationFn: (id: number) => api.delete(`/social-links/${id}/`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["restaurant-social-links"] });
+      setError(null);
+    },
+    onError: (e: unknown) => setError(extractError(e)),
+  });
+
   const infoForm = useForm<RestaurantForm>({
     resolver: zodResolver(infoSchema),
     values: info
@@ -152,6 +247,7 @@ export default function RestaurantPage() {
           opening_hours: info.opening_hours,
           latitude: info.latitude ?? undefined,
           longitude: info.longitude ?? undefined,
+          contact_email: contact?.email ?? "",
         }
       : undefined,
   });
@@ -183,6 +279,46 @@ export default function RestaurantPage() {
     setBranchOpen(true);
   };
 
+  const socialForm = useForm<SocialLinkForm>({
+    resolver: zodResolver(socialLinkSchema),
+    defaultValues: { platform: "facebook", url: "" },
+    values: editingSocial
+      ? { platform: editingSocial.platform, url: editingSocial.url }
+      : undefined,
+  });
+
+  const openAddSocial = () => {
+    setEditingSocial(null);
+    socialForm.reset({ platform: "facebook", url: "" });
+    setError(null);
+    setSocialOpen(true);
+  };
+
+  const openEditSocial = (link: SocialLink) => {
+    setEditingSocial(link);
+    socialForm.reset({ platform: link.platform, url: link.url });
+    setError(null);
+    setSocialOpen(true);
+  };
+
+  const usedPlatforms = new Set(
+    (socialLinks || [])
+      .filter((l) => !editingSocial || l.id !== editingSocial.id)
+      .map((l) => l.platform)
+  );
+
+  const availablePlatforms = platformOptions.map((p) => ({
+    value: p.value,
+    label: usedPlatforms.has(p.value) ? `${p.label} (already added)` : p.label,
+    disabled: usedPlatforms.has(p.value),
+  }));
+
+  const openEdit = () => {
+    setLogoFile(null);
+    setLogoPreview(info?.logo || null);
+    setEditing(true);
+  };
+
   if (isLoading) return <Loading />;
 
   const handleDelete = () => {
@@ -208,6 +344,14 @@ export default function RestaurantPage() {
       <div className="bg-white rounded-xl border border-gray-100 p-6">
         {info && !editing ? (
           <div className="space-y-4">
+            {info.logo && (
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Logo</dt>
+                <dd className="mt-1">
+                  <img src={info.logo} alt={`${info.name} logo`} className="w-20 h-20 rounded-full object-cover" />
+                </dd>
+              </div>
+            )}
             <dl className="grid grid-cols-1 gap-4">
               <div>
                 <dt className="text-sm font-medium text-gray-500">Name</dt>
@@ -243,9 +387,15 @@ export default function RestaurantPage() {
                   <dd className="mt-1 text-gray-900">{info.longitude ?? "—"}</dd>
                 </div>
               </div>
+              {contact && (
+                <div className="border-t border-gray-100 pt-4">
+                  <dt className="text-sm font-medium text-gray-500">Contact Email</dt>
+                  <dd className="mt-1 text-gray-900">{contact.email}</dd>
+                </div>
+              )}
             </dl>
             <div className="flex gap-3 pt-4 border-t">
-              <Button type="button" onClick={() => setEditing(true)}>
+              <Button type="button" onClick={openEdit}>
                 Edit
               </Button>
               <Button type="button" variant={info.is_active ? "secondary" : "brand"} loading={toggleMutation.isPending} onClick={() => toggleMutation.mutate()}>
@@ -261,10 +411,45 @@ export default function RestaurantPage() {
             <Input label="Restaurant Name" error={infoForm.formState.errors.name?.message} {...infoForm.register("name")} />
             <Input label="Address" error={infoForm.formState.errors.address?.message} {...infoForm.register("address")} />
             <Input label="Phone" error={infoForm.formState.errors.phone?.message} {...infoForm.register("phone")} />
+            <Input label="Contact Email" type="email" placeholder="info@burgerhouse.com" error={infoForm.formState.errors.contact_email?.message} {...infoForm.register("contact_email")} />
             <Input label="Opening Hours" placeholder="e.g. 9:00 AM - 10:00 PM" error={infoForm.formState.errors.opening_hours?.message} {...infoForm.register("opening_hours")} />
             <div className="grid grid-cols-2 gap-4">
               <Input label="Latitude" placeholder="e.g. 9.0054" error={infoForm.formState.errors.latitude?.message} {...infoForm.register("latitude")} />
               <Input label="Longitude" placeholder="e.g. 38.7636" error={infoForm.formState.errors.longitude?.message} {...infoForm.register("longitude")} />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setLogoFile(file);
+                    setLogoPreview(URL.createObjectURL(file));
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-orange-400 transition-colors cursor-pointer"
+              >
+                {logoPreview ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <img src={logoPreview} alt="Logo preview" className="w-20 h-20 rounded-full object-cover" />
+                    <span className="text-sm text-gray-500">Click to change</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-2xl">+</span>
+                    <span className="text-sm text-gray-500">Click to upload logo</span>
+                  </div>
+                )}
+              </button>
             </div>
 
             <div className="flex gap-3">
@@ -322,6 +507,76 @@ export default function RestaurantPage() {
         )}
       </div>
 
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900">Social Media Links</h2>
+          <Button onClick={openAddSocial} disabled={!info}>
+            <span className="text-lg leading-none mr-1">+</span> Add Link
+          </Button>
+        </div>
+
+        {!info ? (
+          <p className="text-sm text-gray-500">Save the restaurant information first to add social media links.</p>
+        ) : socialLoading ? (
+          <Loading />
+        ) : (socialLinks ?? []).length === 0 ? (
+          <p className="text-sm text-gray-500">No social media links yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {(socialLinks ?? []).map((link) => (
+              <div key={link.id} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 h-8 bg-orange-50 text-orange-600 rounded-lg flex items-center justify-center">
+                    <i className={platformOptions.find((p) => p.value === link.platform)?.icon || "fas fa-link"}></i>
+                  </span>
+                  <span className="text-sm text-gray-900 font-medium capitalize">{link.platform.replace(/-/g, " ")}</span>
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-orange-600 hover:underline truncate max-w-[300px]">
+                    {link.url}
+                  </a>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => openEditSocial(link)}>
+                    Edit
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    loading={socialDeleteMutation.isPending && socialDeleteMutation.variables === link.id}
+                    onClick={() => setDeleteSocial(link)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Modal
+        isOpen={socialOpen}
+        onClose={() => { setSocialOpen(false); setEditingSocial(null); }}
+        title={editingSocial ? "Edit Social Link" : "Add Social Link"}
+      >
+        <form onSubmit={socialForm.handleSubmit((data) => socialSaveMutation.mutate(editingSocial ? { ...data, id: editingSocial.id } : data))} className="space-y-4">
+          <Select
+            label="Platform"
+            error={socialForm.formState.errors.platform?.message}
+            options={availablePlatforms}
+            {...socialForm.register("platform")}
+          />
+          <Input label="URL" type="url" placeholder="https://facebook.com/yourpage" error={socialForm.formState.errors.url?.message} {...socialForm.register("url")} />
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="secondary" onClick={() => setSocialOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={socialSaveMutation.isPending}>
+              {editingSocial ? "Save Changes" : "Add Link"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
       <Modal
         isOpen={branchOpen}
         onClose={() => { setBranchOpen(false); setEditingBranch(null); }}
@@ -358,6 +613,15 @@ export default function RestaurantPage() {
         onConfirm={() => { if (deleteBranch) branchDeleteMutation.mutate(deleteBranch.id); setDeleteBranch(null); }}
         title="Delete branch"
         description="Are you sure you want to delete this branch?"
+        confirmLabel="Delete"
+        destructive
+      />
+      <ConfirmDialog
+        open={!!deleteSocial}
+        onClose={() => setDeleteSocial(null)}
+        onConfirm={() => { if (deleteSocial) socialDeleteMutation.mutate(deleteSocial.id); setDeleteSocial(null); }}
+        title="Delete social link"
+        description={`Are you sure you want to delete the ${deleteSocial?.platform} link?`}
         confirmLabel="Delete"
         destructive
       />

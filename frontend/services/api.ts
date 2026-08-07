@@ -40,9 +40,11 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch {
         localStorage.removeItem("access_token");
+        localStorage.removeItem("user");
         const url = originalRequest.url || "";
         if (typeof window !== "undefined" && !url.includes("/auth/logout/") && !url.includes("/auth/login/")) {
-          window.location.href = "/login";
+          sessionStorage.setItem("auth_pending", "login");
+          window.location.replace("/");
         }
       }
     }

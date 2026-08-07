@@ -3,10 +3,11 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useProduct } from "@/hooks/useProducts";
+import { useAuth } from "@/hooks/useAuth";
+import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { Button } from "@/components/ui";
 import { Loading } from "@/components/common/Loading";
 import api from "@/services/api";
-import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { OptionGroup, OptionValue } from "@/types";
 
@@ -14,6 +15,7 @@ export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { openAuth } = useAuthModal();
   const { isDark, toggleDarkMode } = useTheme();
   const productId = Number(params.productId);
   const { data: product, isLoading } = useProduct(productId);
@@ -55,7 +57,7 @@ export default function ProductDetailPage() {
 
   const handleOrder = async () => {
     if (!user) {
-      router.push("/login");
+      openAuth("login");
       return;
     }
 

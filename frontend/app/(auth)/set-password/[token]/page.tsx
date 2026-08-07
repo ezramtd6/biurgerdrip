@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import Link from "next/link";
 import { Button, Input } from "@/components/ui";
 import api from "@/services/api";
 import { Loading } from "@/components/common/Loading";
+import { useAuthModal } from "@/components/auth/auth-modal-context";
 
 const schema = z
   .object({
@@ -32,6 +32,7 @@ interface UserInfo {
 export default function SetPasswordPage() {
   const params = useParams();
   const router = useRouter();
+  const { openAuth } = useAuthModal();
   const token = params.token as string;
 
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -83,9 +84,9 @@ export default function SetPasswordPage() {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
         <div className="text-red-500 text-sm mb-4">{error}</div>
-        <Link href="/login" className="text-orange-500 hover:text-orange-600 font-medium text-sm">
+        <button onClick={() => openAuth("login")} className="text-orange-500 hover:text-orange-600 font-medium text-sm cursor-pointer">
           Go to Login
-        </Link>
+        </button>
       </div>
     );
   }
@@ -95,9 +96,7 @@ export default function SetPasswordPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
         <div className="mb-4 text-green-600 font-medium">Password set successfully!</div>
         <p className="text-sm text-gray-500 mb-6">You can now sign in with your new password.</p>
-        <Link href="/login">
-          <Button className="w-full">Go to Login</Button>
-        </Link>
+        <Button onClick={() => openAuth("login")} className="w-full">Go to Login</Button>
       </div>
     );
   }

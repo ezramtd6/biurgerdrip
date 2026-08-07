@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { useEffect, useState } from "react";
+import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 
 const links = [
   { href: "/cashier", label: "Dashboard", icon: "📊" },
@@ -13,6 +15,7 @@ const links = [
 
 export default function CashierLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth();
+  const { openAuth } = useAuthModal();
   const pathname = usePathname();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -23,9 +26,10 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (mounted && !isLoading && (!user || user.role !== "CASHIER")) {
-      router.push("/login");
+      if (sessionStorage.getItem("auth_logged_out") !== "1") openAuth("login");
+      router.replace("/");
     }
-  }, [mounted, user, isLoading, router]);
+  }, [mounted, user, isLoading, router, openAuth]);
 
   if (!mounted || isLoading)
     return (
@@ -66,15 +70,16 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
         </nav>
 
         <div className="p-4 border-t">
-          <div className="text-sm text-gray-600 mb-2">
-            {user.first_name} {user.last_name}
+          <div className="text-sm text-gray-600 mb-2">{user.first_name} {user.last_name}</div>
+          <div className="flex flex-col items-start gap-2">
+            <ChangePasswordDialog />
+            <button
+              onClick={() => logout.mutate()}
+              className="text-sm text-red-500 hover:text-red-600 cursor-pointer"
+            >
+              Logout
+            </button>
           </div>
-          <button
-            onClick={() => logout.mutate()}
-            className="text-sm text-red-500 hover:text-red-600 cursor-pointer"
-          >
-            Logout
-          </button>
         </div>
       </aside>
 
