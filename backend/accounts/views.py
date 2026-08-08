@@ -27,22 +27,19 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
+    def perform_create(self, serializer):
+        user = serializer.save()
+
+        token = secrets.token_urlsafe(64)
+        PasswordResetToken.objects.create(user=user, token=token)
+
+        send_set_password_email(user.email, user.first_name, user.role, token)
+
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
-        email = request.data.get("email")
-        try:
-            user = User.objects.get(email=email)
-            if not user.is_active:
-                return Response(
-                    {"error": "Your account is not active. Please set your password first via the link sent to your email."},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
-        except User.DoesNotExist:
-            pass
-
         response = super().post(request, *args, **kwargs)
         
         if response.status_code == 200:

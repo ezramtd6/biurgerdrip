@@ -69,6 +69,20 @@ class BranchSerializer(serializers.ModelSerializer):
         model = Branch
         fields = "__all__"
 
+    def create(self, validated_data):
+        restaurant = validated_data.get("restaurant")
+        if restaurant and not Branch.objects.filter(restaurant=restaurant).exists():
+            validated_data["is_main"] = True
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if validated_data.get("is_main"):
+            Branch.objects.filter(
+                restaurant=instance.restaurant,
+                is_main=True,
+            ).exclude(pk=instance.pk).update(is_main=False)
+        return super().update(instance, validated_data)
+
 
 class SocialLinkSerializer(serializers.ModelSerializer):
     restaurant = serializers.PrimaryKeyRelatedField(

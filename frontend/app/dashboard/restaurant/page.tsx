@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
-import { Button, Input, Modal, Select } from "@/components/ui";
+import { Button, Input, Modal, Select, Textarea } from "@/components/ui";
 import { RestaurantInfo, Branch, Contact, SocialLink, SocialPlatform } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
@@ -29,7 +29,15 @@ const infoSchema = z.object({
 
 type RestaurantForm = z.infer<typeof infoSchema>;
 
+const aboutSchema = z.object({
+  about: z.string(),
+  about_amharic: z.string(),
+});
+
+type AboutForm = z.infer<typeof aboutSchema>;
+
 const branchSchema = z.object({
+  name: z.string().min(1, "Branch name is required"),
   latitude: z.coerce.number().refine((v) => !Number.isNaN(v) && v >= -90 && v <= 90, "Invalid latitude").optional(),
   longitude: z.coerce.number().refine((v) => !Number.isNaN(v) && v >= -180 && v <= 180, "Invalid longitude").optional(),
 });
@@ -73,6 +81,7 @@ export default function RestaurantPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [aboutEditing, setAboutEditing] = useState(false);
   const [branchOpen, setBranchOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [deleteRestaurant, setDeleteRestaurant] = useState(false);
@@ -180,6 +189,21 @@ export default function RestaurantPage() {
     onError: (e: unknown) => setError(extractError(e)),
   });
 
+  const aboutMutation = useMutation({
+    mutationFn: (data: AboutForm) => api.patch(`/restaurant/${info!.id}/`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["restaurant-info"] });
+      setError(null);
+      setAboutEditing(false);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    },
+    onError: (e: unknown) => {
+      setSuccess(false);
+      setError(extractError(e));
+    },
+  });
+
   const branchMutation = useMutation({
     mutationFn: async (data: BranchForm) => {
       const payload = { ...data, restaurant: info!.id };
@@ -205,6 +229,17 @@ export default function RestaurantPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["branches"] });
       setError(null);
+    },
+    onError: (e: unknown) => setError(extractError(e)),
+  });
+
+  const setMainMutation = useMutation({
+    mutationFn: (id: number) => api.patch(`/branches/${id}/`, { is_main: true }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["branches"] });
+      setError(null);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
     },
     onError: (e: unknown) => setError(extractError(e)),
   });
@@ -252,10 +287,21 @@ export default function RestaurantPage() {
       : undefined,
   });
 
+  const aboutForm = useForm<AboutForm>({
+    resolver: zodResolver(aboutSchema),
+    values: info
+      ? {
+          about: info.about,
+          about_amharic: info.about_amharic,
+        }
+      : undefined,
+  });
+
   const branchForm = useForm<BranchForm>({
     resolver: zodResolver(branchSchema),
     values: editingBranch
       ? {
+          name: editingBranch.name,
           latitude: editingBranch.latitude ?? undefined,
           longitude: editingBranch.longitude ?? undefined,
         }
@@ -272,6 +318,7 @@ export default function RestaurantPage() {
   const openEditBranch = (branch: Branch) => {
     setEditingBranch(branch);
     branchForm.reset({
+      name: branch.name,
       latitude: branch.latitude ?? undefined,
       longitude: branch.longitude ?? undefined,
     });
@@ -468,6 +515,48 @@ export default function RestaurantPage() {
 
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900">About Us</h2>
+          {info && !aboutEditing && (
+            <Button variant="secondary" onClick={() => setAboutEditing(true)}>
+              Edit
+            </Button>
+          )}
+        </div>
+
+        {!info ? (
+          <p className="text-sm text-gray-500">Save the restaurant information first to add the About Us section.</p>
+        ) : aboutEditing ? (
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <form onSubmit={aboutForm.handleSubmit((data) => aboutMutation.mutate(data))} className="space-y-4">
+              <Textarea label="About Us (English)" placeholder="Tell customers about your restaurant, its story, and what makes it special..." error={aboutForm.formState.errors.about?.message} {...aboutForm.register("about")} />
+              <Textarea label="About Us (አማርኛ)" placeholder="ስለ ቤት ቤት ምግብ ቤትዎ ይጻፉ..." error={aboutForm.formState.errors.about_amharic?.message} {...aboutForm.register("about_amharic")} />
+              <div className="flex gap-3">
+                <Button type="submit" loading={aboutMutation.isPending}>
+                  Save About Us
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => setAboutEditing(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        ) : (info.about || info.about_amharic) ? (
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            {info.about_amharic && (
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-500 mb-1">አማርኛ</p>
+                <p className="text-sm text-gray-700 whitespace-pre-line">{info.about_amharic}</p>
+              </div>
+            )}
+            {info.about && <p className="text-sm text-gray-700 whitespace-pre-line">{info.about}</p>}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No About Us text yet. Click Edit to add it.</p>
+        )}
+      </div>
+
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">Branches</h2>
           <Button onClick={openAddBranch} disabled={!info}>
             <span className="text-lg leading-none mr-1">+</span> Add Branch
@@ -484,11 +573,27 @@ export default function RestaurantPage() {
           <div className="space-y-3">
             {(branches ?? []).map((branch) => (
               <div key={branch.id} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center justify-between">
-                <div className="text-sm text-gray-900">
-                  <span className="font-medium text-gray-500">Lat:</span> {branch.latitude ?? "—"}
-                  <span className="mx-3 font-medium text-gray-500">Lng:</span> {branch.longitude ?? "—"}
+                <div className="text-sm text-gray-900 flex items-center gap-3">
+                  <span className="font-semibold text-gray-900">{branch.name || `Branch #${branch.id}`}</span>
+                  {branch.is_main && (
+                    <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Main</span>
+                  )}
+                  <span className="text-gray-500">
+                    <span className="font-medium">Lat:</span> {branch.latitude ?? "—"}
+                    <span className="mx-3 font-medium">Lng:</span> {branch.longitude ?? "—"}
+                  </span>
                 </div>
                 <div className="flex gap-2">
+                  {!branch.is_main && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      loading={setMainMutation.isPending && setMainMutation.variables === branch.id}
+                      onClick={() => setMainMutation.mutate(branch.id)}
+                    >
+                      Set as Main
+                    </Button>
+                  )}
                   <Button variant="ghost" size="sm" onClick={() => openEditBranch(branch)}>
                     Edit
                   </Button>
@@ -583,6 +688,7 @@ export default function RestaurantPage() {
         title={editingBranch ? "Edit Branch" : "Add Branch"}
       >
         <form onSubmit={branchForm.handleSubmit((data) => branchMutation.mutate(data))} className="space-y-4">
+          <Input label="Branch Name" placeholder="e.g. Bole, Piassa, Bishoftu" error={branchForm.formState.errors.name?.message} {...branchForm.register("name")} />
           <div className="grid grid-cols-2 gap-4">
             <Input label="Latitude" placeholder="e.g. 9.0054" error={branchForm.formState.errors.latitude?.message} {...branchForm.register("latitude")} />
             <Input label="Longitude" placeholder="e.g. 38.7636" error={branchForm.formState.errors.longitude?.message} {...branchForm.register("longitude")} />

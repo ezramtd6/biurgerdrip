@@ -23,19 +23,12 @@ const loginSchema = z.object({
 });
 type LoginForm = z.infer<typeof loginSchema>;
 
-const registerSchema = z
-  .object({
-    first_name: z.string().min(1, "First name is required"),
-    last_name: z.string().min(1, "Last name is required"),
-    email: z.string().email("Invalid email"),
-    phone: z.string().optional(),
-    password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, "Password must be at least 8 characters with an uppercase letter, lowercase letter, number, and special character"),
-    confirm_password: z.string(),
-  })
-  .refine((data) => data.password === data.confirm_password, {
-    message: "Passwords do not match",
-    path: ["confirm_password"],
-  });
+const registerSchema = z.object({
+  first_name: z.string().min(1, "First name is required"),
+  last_name: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email"),
+  phone: z.string().optional(),
+});
 type RegisterForm = z.infer<typeof registerSchema>;
 
 const forgotSchema = z.object({
@@ -49,6 +42,9 @@ const roleRedirects: Record<string, string> = {
   CASHIER: "/cashier",
   CUSTOMER: "/",
 };
+
+const modalFieldClass = "dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500";
+const modalLabelClass = "dark:text-white";
 
 export default function AuthModalProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -78,7 +74,7 @@ export default function AuthModalProvider({ children }: { children: React.ReactN
       <Dialog open={open} onOpenChange={(next) => setOpen(next)}>
         <DialogPopup className="max-w-md w-full p-6">
           <div className="absolute top-3 right-3">
-            <DialogClose className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition cursor-pointer">
+            <DialogClose className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition cursor-pointer">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -126,7 +122,7 @@ function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; o
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-gray-900">Signed in successfully</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Signed in successfully</h2>
         <p className="text-sm text-gray-400 mt-4">Redirecting...</p>
       </div>
     );
@@ -135,7 +131,7 @@ function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; o
   return (
     <div>
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Sign in to your account</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sign in to your account</h1>
       </div>
 
       {login.isError && (
@@ -150,6 +146,8 @@ function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; o
           type="email"
           placeholder="you@example.com"
           error={errors.email?.message}
+          labelClassName={modalLabelClass}
+          className={modalFieldClass}
           {...register("email")}
           onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(onSubmit)(); }}
         />
@@ -158,6 +156,8 @@ function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; o
           type="password"
           placeholder="Enter your password"
           error={errors.password?.message}
+          labelClassName={modalLabelClass}
+          className={modalFieldClass}
           {...register("password")}
           onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(onSubmit)(); }}
         />
@@ -172,7 +172,7 @@ function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; o
         </Button>
       </div>
 
-      <p className="mt-6 text-center text-sm text-gray-500">
+      <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-300">
         Don&apos;t have an account?{" "}
         <button onClick={() => onSwitch("register")} className="text-brand hover:text-brand-dark font-medium cursor-pointer">
           Register
@@ -193,8 +193,7 @@ function RegisterView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
   });
 
   const onSubmit = (data: RegisterForm) => {
-    const { confirm_password, ...payload } = data;
-    registerUser.mutate({ ...payload, phone: payload.phone || "" });
+    registerUser.mutate({ ...data, phone: data.phone || "" });
   };
 
   if (registerUser.isSuccess) {
@@ -205,8 +204,8 @@ function RegisterView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-gray-900">Account created!</h2>
-        <p className="text-sm text-gray-500 mt-2 mb-6">You can now sign in with your account.</p>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Account created!</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-300 mt-2 mb-6">Check your email to set your password and activate your account.</p>
         <Button variant="brand" className="w-full" onClick={() => onSwitch("login")}>
           Go to Sign In
         </Button>
@@ -217,7 +216,7 @@ function RegisterView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
   return (
     <div>
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create your account</h1>
       </div>
 
       {registerUser.isError && (
@@ -228,20 +227,18 @@ function RegisterView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="First Name" placeholder="John" error={errors.first_name?.message} {...register("first_name")} />
-          <FormField label="Last Name" placeholder="Doe" error={errors.last_name?.message} {...register("last_name")} />
+          <FormField label="First Name" placeholder="John" error={errors.first_name?.message} labelClassName={modalLabelClass} className={modalFieldClass} {...register("first_name")} />
+          <FormField label="Last Name" placeholder="Doe" error={errors.last_name?.message} labelClassName={modalLabelClass} className={modalFieldClass} {...register("last_name")} />
         </div>
-        <FormField label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register("email")} />
-        <FormField label="Phone (optional)" type="tel" placeholder="+1234567890" error={errors.phone?.message} {...register("phone")} />
-        <FormField label="Password" type="password" placeholder="Min 8 characters" error={errors.password?.message} {...register("password")} />
-        <FormField label="Confirm Password" type="password" placeholder="Re-enter password" error={errors.confirm_password?.message} {...register("confirm_password")} />
+        <FormField label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} labelClassName={modalLabelClass} className={modalFieldClass} {...register("email")} />
+        <FormField label="Phone (optional)" type="tel" placeholder="+1234567890" error={errors.phone?.message} labelClassName={modalLabelClass} className={modalFieldClass} {...register("phone")} />
         <Button type="submit" variant="brand" className="w-full" disabled={registerUser.isPending}>
           {registerUser.isPending && <Loader2 className="animate-spin" />}
           Create Account
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-500">
+      <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-300">
         Already have an account?{" "}
         <button onClick={() => onSwitch("login")} className="text-brand hover:text-brand-dark font-medium cursor-pointer">
           Sign In
@@ -280,7 +277,7 @@ function ForgotView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
     return (
       <div className="text-center py-8">
         <div className="mb-4 text-green-600 font-medium">Check your email!</div>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-gray-500 dark:text-gray-300 mb-6">
           If an account exists with that email, we&apos;ve sent a password reset link.
         </p>
         <Button variant="brand" className="w-full" onClick={() => onSwitch("login")}>
@@ -293,8 +290,8 @@ function ForgotView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
   return (
     <div>
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Forgot Password</h1>
-        <p className="text-sm text-gray-500 mt-1">Enter your email and we&apos;ll send you a reset link</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Forgot Password</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">Enter your email and we&apos;ll send you a reset link</p>
       </div>
 
       {error && (
@@ -302,14 +299,14 @@ function ForgotView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormField label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} {...register("email")} />
+        <FormField label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} labelClassName={modalLabelClass} className={modalFieldClass} {...register("email")} />
         <Button type="submit" variant="brand" className="w-full" disabled={submitting}>
           {submitting && <Loader2 className="animate-spin" />}
           Send Reset Link
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-500">
+      <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-300">
         Remember your password?{" "}
         <button onClick={() => onSwitch("login")} className="text-brand hover:text-brand-dark font-medium cursor-pointer">
           Sign In

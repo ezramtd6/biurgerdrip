@@ -1,10 +1,7 @@
-import re
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
 from .models import User
-
-PASSWORD_REGEX = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$")
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -15,18 +12,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
-
-    def validate_password(self, value):
-        if not PASSWORD_REGEX.match(value):
-            raise serializers.ValidationError(
-                "Password must be at least 8 characters with an uppercase letter, lowercase letter, number, and special character (@$!%*?&)."
-            )
-        return value
-    
     class Meta:
         model = User
-        fields = ["email", "first_name", "last_name", "phone", "password"]
+        fields = ["email", "first_name", "last_name", "phone"]
     
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -34,9 +22,12 @@ class RegisterSerializer(serializers.ModelSerializer):
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
             phone=validated_data.get("phone", ""),
-            password=validated_data["password"],
+            password=None,
             role=User.Role.CUSTOMER,
+            is_active=False,
         )
+        user.set_unusable_password()
+        user.save()
         return user
 
 
@@ -62,14 +53,14 @@ class CustomTokenRefreshSerializer(serializers.Serializer):
 class CashierSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "email", "first_name", "last_name", "phone", "role", "is_active"]
+        fields = ["id", "email", "first_name", "last_name", "phone", "role", "is_active", "branch"]
         read_only_fields = ["id", "role"]
 
 
 class CashierCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["email", "first_name", "last_name", "phone"]
+        fields = ["email", "first_name", "last_name", "phone", "branch"]
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -77,6 +68,7 @@ class CashierCreateSerializer(serializers.ModelSerializer):
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
             phone=validated_data.get("phone", ""),
+            branch=validated_data.get("branch"),
             password=None,
             role=User.Role.CASHIER,
             is_active=False,

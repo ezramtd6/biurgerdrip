@@ -54,7 +54,6 @@ export function useAuth() {
       first_name: string;
       last_name: string;
       phone: string;
-      password: string;
     }) => {
       const res = await api.post("/auth/register/", data);
       return res.data;

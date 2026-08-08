@@ -108,6 +108,10 @@ class RestaurantInfo(models.Model):
 
     opening_hours = models.CharField(max_length=100)
 
+    about = models.TextField(blank=True)
+
+    about_amharic = models.TextField(blank=True)
+
     is_active = models.BooleanField(default=True)
 
     latitude = models.DecimalField(
@@ -135,6 +139,10 @@ class Branch(models.Model):
         related_name="branches"
     )
 
+    name = models.CharField(max_length=100, blank=True, default="")
+
+    is_main = models.BooleanField(default=False)
+
     latitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,
@@ -150,7 +158,7 @@ class Branch(models.Model):
     )
 
     def __str__(self):
-        return f"{self.restaurant.name} - {self.latitude}, {self.longitude}"
+        return f"{self.restaurant.name} - {self.name or self.pk}"
 
 
 class SocialLink(models.Model):

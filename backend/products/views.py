@@ -152,6 +152,14 @@ class RestaurantInfoViewSet(ActiveStateMixin, viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         return [IsManager()]
 
+    def perform_create(self, serializer):
+        restaurant = serializer.save()
+        Branch.objects.create(
+            restaurant=restaurant,
+            name=restaurant.name or "Main Branch",
+            is_main=True,
+        )
+
     def cascade_freeze(self, instance):
         instance.categories.all().update(is_active=False)
         Product.objects.filter(category__restaurant=instance).update(is_active=False)
@@ -174,6 +182,15 @@ class BranchViewSet(viewsets.ModelViewSet):
         if self.action in ("list", "retrieve"):
             return [permissions.AllowAny()]
         return [IsManager()]
+
+    def perform_destroy(self, instance):
+        restaurant = instance.restaurant
+        was_main = instance.is_main
+        super().perform_destroy(instance)
+        if was_main:
+            replacement = Branch.objects.filter(restaurant=restaurant).order_by("pk").first()
+            if replacement:
+                Branch.objects.filter(pk=replacement.pk).update(is_main=True)
 
 
 class SocialLinkViewSet(viewsets.ModelViewSet):

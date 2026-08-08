@@ -165,6 +165,8 @@ export default function Home() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 8;
 
   useEffect(() => {
     setMounted(true);
@@ -288,8 +290,16 @@ export default function Home() {
   };
 
   const filteredItems = currentCategory === "all" ? products : products.filter((i) => i.category === currentCategory);
+  const pageItems = filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
   const totalQty = cart.reduce((sum, i) => sum + i.qty, 0);
   const totalCartPrice = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+
+  const goToPage = (p: number) => {
+    setPage(Math.min(Math.max(1, p), totalPages));
+    document.getElementById("menu")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const menuAvailable = !checkingRestaurant && restaurantReady;
 
@@ -455,9 +465,9 @@ export default function Home() {
             </div>
             {menuAvailable && (
               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-                <button onClick={() => setCurrentCategory("all")} className={`filter-btn flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition whitespace-nowrap ${currentCategory === "all" ? "active brand-selected" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"}`}>{t("all")}</button>
+                <button onClick={() => { setCurrentCategory("all"); setPage(1); }} className={`filter-btn flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition whitespace-nowrap ${currentCategory === "all" ? "active brand-selected" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"}`}>{t("all")}</button>
                 {categories.map((cat) => (
-                  <button key={cat.id} onClick={() => setCurrentCategory(cat.id)} className={`filter-btn flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition whitespace-nowrap ${currentCategory === cat.id ? "active brand-selected" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"}`}>{currentLang === "am" ? cat.name_amharic || cat.name : cat.name}</button>
+                  <button key={cat.id} onClick={() => { setCurrentCategory(cat.id); setPage(1); }} className={`filter-btn flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition whitespace-nowrap ${currentCategory === cat.id ? "active brand-selected" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"}`}>{currentLang === "am" ? cat.name_amharic || cat.name : cat.name}</button>
                 ))}
               </div>
             )}
@@ -485,13 +495,19 @@ export default function Home() {
           {menuAvailable && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-7">
-                {filteredItems.map((item, index) => {
+                {pageItems.map((item, index) => {
                   const itemName = currentLang === "am" ? item.name_amharic || item.name : item.name;
                   const itemDesc = currentLang === "am" ? item.description_amharic || item.description : item.description;
                   return (
                     <div key={item.id} className="menu-card bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300" style={{ animationDelay: `${index * 0.05}s` }}>
                       <div className="relative overflow-hidden">
-                        <img src={item.image || ""} alt={itemName} className="w-full h-48 object-contain bg-gray-50 dark:bg-gray-900 p-4" />
+                        {item.image ? (
+                          <img src={item.image} alt={itemName} className="w-full h-48 object-contain bg-gray-50 dark:bg-gray-900 p-4" />
+                        ) : (
+                          <div className="w-full h-48 bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                            <i className="fas fa-utensils text-gray-300 dark:text-gray-700 text-5xl"></i>
+                          </div>
+                        )}
                       </div>
                       <div className="p-4">
                         <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-1">{itemName}</h3>
@@ -510,6 +526,39 @@ export default function Home() {
               {filteredItems.length === 0 && (
                 <div className="text-center py-16">
                   <p className="text-gray-500 dark:text-gray-400">No products in this category yet</p>
+                </div>
+              )}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-12">
+                  <button
+                    onClick={() => goToPage(page - 1)}
+                    disabled={page === 1}
+                    className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center justify-center hover:bg-red-600 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-100 disabled:dark:hover:bg-gray-700 disabled:hover:text-gray-700 disabled:dark:hover:text-gray-200 transition"
+                    aria-label="Previous page"
+                  >
+                    <i className="fas fa-chevron-left text-xs"></i>
+                  </button>
+                  {pageNumbers.map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => goToPage(p)}
+                      className={`w-10 h-10 rounded-full text-sm font-bold transition ${
+                        p === page
+                          ? "bg-red-600 text-white shadow-lg"
+                          : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-red-100 dark:hover:bg-gray-600"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => goToPage(page + 1)}
+                    disabled={page === totalPages}
+                    className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center justify-center hover:bg-red-600 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-100 disabled:dark:hover:bg-gray-700 disabled:hover:text-gray-700 disabled:dark:hover:text-gray-200 transition"
+                    aria-label="Next page"
+                  >
+                    <i className="fas fa-chevron-right text-xs"></i>
+                  </button>
                 </div>
               )}
             </>
@@ -576,21 +625,14 @@ export default function Home() {
       {/* About Us Section */}
       <section id="about-us" className="py-16 bg-white dark:bg-gray-800 transition-colors duration-500">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center gap-12">
-            <div className="flex-1">
-              <h2 className="text-3xl md:text-4xl font-black text-gray-800 dark:text-white mb-2">{t("about_us")}</h2>
-              <div className="w-16 h-1 bg-red-600 rounded-full mb-4" />
-              <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-lg">{t("footer_about")}</p>
-            </div>
-            <div className="flex-1">
-              <div className="bg-red-50 dark:bg-gray-700 rounded-3xl p-8 text-center shadow-sm border border-gray-100 dark:border-gray-700">
-                <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <i className="fas fa-pizza-slice text-white text-3xl"></i>
-                </div>
-                <h3 className="font-black text-gray-800 dark:text-white text-xl mb-2">Since 1958</h3>
-                <p className="text-gray-500 dark:text-gray-400">Serving quality pizza for over 65 years</p>
-              </div>
-            </div>
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-black text-gray-800 dark:text-white mb-2">{t("about_us")}</h2>
+            <div className="w-16 h-1 bg-red-600 rounded-full mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-lg whitespace-pre-line">
+              {currentLang === "am" && restaurant?.about_amharic
+                ? restaurant.about_amharic
+                : restaurant?.about || t("footer_about")}
+            </p>
           </div>
         </div>
       </section>
@@ -714,7 +756,11 @@ export default function Home() {
             <div className="space-y-4">
               {cart.map((item) => (
                 <div key={item.id} className="flex gap-3 bg-gray-50 dark:bg-gray-700 rounded-xl p-3">
-                  <img src={item.image} alt={currentLang === "am" ? item.nameAm : item.name} className="w-16 h-16 object-contain rounded-lg bg-white dark:bg-gray-800" />
+                  {item.image ? (
+                    <img src={item.image} alt={currentLang === "am" ? item.nameAm : item.name} className="w-16 h-16 object-contain rounded-lg bg-white dark:bg-gray-800" />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center text-gray-400 text-xs">No Image</div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-sm text-gray-800 dark:text-white truncate">{currentLang === "am" ? item.nameAm : item.name}</h4>
                     <p className="text-red-600 font-bold text-sm">ETB {item.price.toFixed(2)}</p>

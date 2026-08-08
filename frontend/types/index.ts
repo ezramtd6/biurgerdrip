@@ -6,6 +6,7 @@ export interface User {
   phone: string;
   role: "ADMIN" | "MANAGER" | "CASHIER" | "CUSTOMER";
   is_active: boolean;
+  branch: number | null;
 }
 
 export interface Category {
@@ -65,6 +66,8 @@ export interface RestaurantInfo {
   address: string;
   phone: string;
   opening_hours: string;
+  about: string;
+  about_amharic: string;
   is_active: boolean;
   latitude: number | null;
   longitude: number | null;
@@ -73,6 +76,8 @@ export interface RestaurantInfo {
 export interface Branch {
   id: number;
   restaurant: number;
+  name: string;
+  is_main: boolean;
   latitude: number | null;
   longitude: number | null;
 }

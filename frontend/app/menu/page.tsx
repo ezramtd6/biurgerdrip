@@ -28,6 +28,8 @@ export default function MenuPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 8;
   const menuRef = useRef<HTMLDivElement>(null);
 
   const restaurantExists = restaurant && restaurant.length > 0;
@@ -42,6 +44,15 @@ export default function MenuPage() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const pageItems = (products ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil((products ?? []).length / PAGE_SIZE));
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  const goToPage = (p: number) => {
+    setPage(Math.min(Math.max(1, p), totalPages));
+    menuRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -292,7 +303,7 @@ export default function MenuPage() {
             </div>
             <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
               <button
-                onClick={() => setSelectedCategory(null)}
+                onClick={() => { setSelectedCategory(null); setPage(1); }}
                 className={`filter-btn flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition whitespace-nowrap ${
                   selectedCategory === null ? "active brand-selected" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                 }`}
@@ -302,7 +313,7 @@ export default function MenuPage() {
               {allCategories.map((cat) => (
                 <button
                   key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
+                  onClick={() => { setSelectedCategory(cat.id); setPage(1); }}
                   className={`filter-btn flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition whitespace-nowrap ${
                     selectedCategory === cat.id ? "active brand-selected" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                   }`}
@@ -316,8 +327,9 @@ export default function MenuPage() {
           {loadingProducts ? (
             <Loading />
           ) : products && products.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-7">
-              {products.map((product, index) => (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-7">
+              {pageItems.map((product, index) => (
                 <div
                   key={product.id}
                   className="menu-card bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 fade-in"
@@ -350,6 +362,41 @@ export default function MenuPage() {
                 </div>
               ))}
             </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-12">
+                <button
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page === 1}
+                  className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center justify-center hover:bg-orange-500 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-100 disabled:dark:hover:bg-gray-700 disabled:hover:text-gray-700 disabled:dark:hover:text-gray-200 transition"
+                  aria-label="Previous page"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                {pageNumbers.map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => goToPage(p)}
+                    className={`w-10 h-10 rounded-full text-sm font-bold transition ${
+                      p === page
+                        ? "bg-orange-500 text-white shadow-lg"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-orange-100 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+                <button
+                  onClick={() => goToPage(page + 1)}
+                  disabled={page === totalPages}
+                  className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center justify-center hover:bg-orange-500 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-100 disabled:dark:hover:bg-gray-700 disabled:hover:text-gray-700 disabled:dark:hover:text-gray-200 transition"
+                  aria-label="Next page"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </div>
+            )}
+            </>
           ) : (
             <div className="text-center py-16">
               <svg className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
@@ -359,6 +406,31 @@ export default function MenuPage() {
           )}
         </div>
       </section>
+
+      {/* About Us Section */}
+      {(restaurantInfo?.about || restaurantInfo?.about_amharic) && (
+        <section className="py-16 bg-white dark:bg-gray-800 transition-colors duration-500 border-t dark:border-gray-700">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-black text-gray-800 dark:text-white mb-2 text-center">About Us</h2>
+              <div className="w-16 h-1 bg-orange-500 rounded-full mb-8 mx-auto" />
+              {restaurantInfo?.about_amharic && (
+                <div className="mb-6">
+                  <p className="text-sm font-medium text-gray-400 dark:text-gray-500 mb-3 text-center">አማርኛ</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-base md:text-lg leading-relaxed text-center whitespace-pre-line">
+                    {restaurantInfo.about_amharic}
+                  </p>
+                </div>
+              )}
+              {restaurantInfo?.about && (
+                <p className="text-gray-500 dark:text-gray-400 text-base md:text-lg leading-relaxed text-center whitespace-pre-line">
+                  {restaurantInfo.about}
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Features Section */}
       <section className="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-500">
