@@ -12,6 +12,7 @@ import ErrorDialog from "@/components/common/ErrorDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Search } from "lucide-react";
 
 const schema = z.object({
   name: z.string().min(1, "Name in English is required"),
@@ -26,6 +27,7 @@ export default function CategoriesPage() {
   const [editing, setEditing] = useState<Category | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["admin-categories"],
@@ -36,12 +38,12 @@ export default function CategoriesPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: CategoryForm) => api.post("/categories/", data),
+    mutationFn: (data: CategoryForm) => api.post("/categories/", { ...data, is_active: true }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-categories"] }); setIsOpen(false); resetForm(); },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: CategoryForm }) => api.put(`/categories/${id}/`, data),
+    mutationFn: ({ id, data }: { id: number; data: CategoryForm }) => api.put(`/categories/${id}/`, { ...data, is_active: true }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-categories"] }); setIsOpen(false); setEditing(null); resetForm(); },
   });
 
@@ -76,12 +78,33 @@ export default function CategoriesPage() {
 
   if (isLoading) return <Loading />;
 
+  const q = search.trim().toLowerCase();
+  const filtered = categories?.filter((c) => {
+    if (!q) return true;
+    return (
+      c.name.toLowerCase().includes(q) ||
+      c.name_amharic.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
         <Button onClick={openCreate}>Add Category</Button>
       </div>
+
+      {categories && categories.length > 0 && (
+        <div className="relative mb-4 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search categories..."
+            className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+        </div>
+      )}
 
       {!categories || categories.length === 0 ? (
         <EmptyState message="No categories yet" />
@@ -117,7 +140,8 @@ export default function CategoriesPage() {
               },
             },
           ]}
-          data={categories as unknown as Record<string, unknown>[]}
+          data={filtered as unknown as Record<string, unknown>[]}
+          emptyMessage="No categories match your search"
         />
       )}
 

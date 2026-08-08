@@ -12,6 +12,7 @@ import ErrorDialog from "@/components/common/ErrorDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Search } from "lucide-react";
 
 const schema = z.object({
   product: z.string().min(1, "Product is required"),
@@ -32,6 +33,7 @@ export default function OptionGroupsPage() {
   const [valueModalOpen, setValueModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<OptionGroup | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: groups, isLoading } = useQuery<OptionGroup[]>({
     queryKey: ["admin-option-groups"],
@@ -42,7 +44,7 @@ export default function OptionGroupsPage() {
   });
 
   const { data: products } = useQuery<Product[]>({
-    queryKey: ["admin-products-list"],
+    queryKey: ["admin-products"],
     queryFn: async () => {
       const res = await api.get("/products/");
       return res.data.results || res.data;
@@ -58,6 +60,7 @@ export default function OptionGroupsPage() {
         price: data.price,
         required: data.required || false,
         multiple_choice: data.multiple_choice || false,
+        is_active: true,
       }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }); setIsOpen(false); },
   });
@@ -71,6 +74,7 @@ export default function OptionGroupsPage() {
         price: data.price,
         required: data.required || false,
         multiple_choice: data.multiple_choice || false,
+        is_active: true,
       }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }); setIsOpen(false); setEditing(null); },
   });
@@ -105,12 +109,34 @@ export default function OptionGroupsPage() {
 
   const getProductName = (id: number) => products?.find((p) => p.id === id)?.name || "—";
 
+  const q = search.trim().toLowerCase();
+  const filtered = groups?.filter((g) => {
+    if (!q) return true;
+    return (
+      g.name.toLowerCase().includes(q) ||
+      g.name_amharic.toLowerCase().includes(q) ||
+      getProductName(g.product).toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Option Groups</h1>
         <Button onClick={openCreate}>Add Option Group</Button>
       </div>
+
+      {groups && groups.length > 0 && (
+        <div className="relative mb-4 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search option groups..."
+            className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+        </div>
+      )}
 
       {!groups || groups.length === 0 ? (
         <EmptyState message="No option groups yet" />
@@ -149,7 +175,8 @@ export default function OptionGroupsPage() {
               },
             },
           ]}
-          data={groups as unknown as Record<string, unknown>[]}
+          data={filtered as unknown as Record<string, unknown>[]}
+          emptyMessage="No option groups match your search"
         />
       )}
 

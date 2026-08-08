@@ -12,6 +12,7 @@ import ErrorDialog from "@/components/common/ErrorDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Search } from "lucide-react";
 
 const schema = z
   .object({
@@ -40,6 +41,7 @@ export default function ProductsPage() {
   const [imageError, setImageError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: products, isLoading: loadingProducts } = useQuery<Product[]>({
@@ -69,6 +71,7 @@ export default function ProductsPage() {
       fd.append("has_sizes", data.has_sizes ? "true" : "false");
       fd.append("category", data.category);
       if (imageFile) fd.append("image", imageFile);
+      fd.append("is_active", "true");
       return api.post("/products/", fd, { headers: { "Content-Type": "multipart/form-data" } });
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-products"] }); queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }); setIsOpen(false); resetForm(); },
@@ -85,6 +88,7 @@ export default function ProductsPage() {
       fd.append("has_sizes", data.has_sizes ? "true" : "false");
       fd.append("category", data.category);
       if (imageFile) fd.append("image", imageFile);
+      fd.append("is_active", "true");
       return api.put(`/products/${id}/`, fd, { headers: { "Content-Type": "multipart/form-data" } });
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-products"] }); queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }); setIsOpen(false); setEditing(null); resetForm(); },
@@ -133,12 +137,35 @@ export default function ProductsPage() {
 
   const getCategoryName = (id: number) => categories?.find((c) => c.id === id)?.name || "—";
 
+  const q = search.trim().toLowerCase();
+  const filtered = products?.filter((p) => {
+    if (!q) return true;
+    return (
+      p.name.toLowerCase().includes(q) ||
+      p.name_amharic.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      getCategoryName(p.category).toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Products</h1>
         <Button onClick={openCreate}>Add Product</Button>
       </div>
+
+      {products && products.length > 0 && (
+        <div className="relative mb-4 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search products..."
+            className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+        </div>
+      )}
 
       {!products || products.length === 0 ? (
         <EmptyState message="No products yet" />
@@ -188,7 +215,8 @@ export default function ProductsPage() {
               },
             },
           ]}
-          data={products as unknown as Record<string, unknown>[]}
+          data={filtered as unknown as Record<string, unknown>[]}
+          emptyMessage="No products match your search"
         />
       )}
 
