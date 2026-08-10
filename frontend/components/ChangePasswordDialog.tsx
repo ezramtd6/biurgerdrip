@@ -36,8 +36,19 @@ const schema = z
 
 type ChangePasswordForm = z.infer<typeof schema>;
 
-export default function ChangePasswordDialog() {
-  const [open, setOpen] = useState(false);
+interface ChangePasswordDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export default function ChangePasswordDialog({ open: openProp, onOpenChange }: ChangePasswordDialogProps = {}) {
+  const [openState, setOpenState] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : openState;
+  const setOpen = (value: boolean) => {
+    if (isControlled) onOpenChange?.(value);
+    else setOpenState(value);
+  };
   const [success, setSuccess] = useState<string | null>(null);
 
   const mutation = useMutation({
@@ -68,14 +79,15 @@ export default function ChangePasswordDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer"
-      >
-        Change Password
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger
+          className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer"
+        >
+          Change Password
+        </DialogTrigger>
+      )}
       <DialogPopup>
         <DialogTitle>Change Password</DialogTitle>
-        <DialogDescription>Update your account password.</DialogDescription>
 
         {success ? (
           <div className="space-y-4">

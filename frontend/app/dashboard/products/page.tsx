@@ -158,11 +158,11 @@ export default function ProductsPage() {
       {products && products.length > 0 && (
         <div className="relative mb-4 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
+          <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search products..."
-            className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="pl-9 pr-3 h-9"
           />
         </div>
       )}

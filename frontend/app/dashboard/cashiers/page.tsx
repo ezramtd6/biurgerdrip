@@ -148,6 +148,13 @@ export default function CashiersPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
+            {createMutation.isError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                {(createMutation.error as { response?: { data?: Record<string, string[]> } })?.response?.data?.email?.[0] ||
+                  (createMutation.error as Error)?.message ||
+                  "Failed to create cashier. Please try again."}
+              </div>
+            )}
             <Input label="Email" type="email" error={errors.email?.message} {...register("email")} />
             <div className="grid grid-cols-2 gap-4">
               <Input label="First Name" error={errors.first_name?.message} {...register("first_name")} />

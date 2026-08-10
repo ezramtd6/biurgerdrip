@@ -136,7 +136,12 @@ function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; o
 
       {login.isError && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-          {(login.error as any)?.response?.data?.detail || "Invalid email or password"}
+          {(() => {
+            const detail = (login.error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+            return detail === "No active account found with the given credentials" || detail === "User is not allowed to authenticate"
+              ? "Email or password is wrong"
+              : detail || "Email or password is wrong";
+          })()}
         </div>
       )}
 

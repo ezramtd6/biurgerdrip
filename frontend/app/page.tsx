@@ -18,6 +18,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { RestaurantInfo, Category, Product, Branch, SocialLink, Contact } from "@/types";
+import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import dynamic from "next/dynamic";
 
 const BranchMap = dynamic(() => import("@/components/BranchMap"), { ssr: false });
@@ -162,6 +163,7 @@ export default function Home() {
   const [currentCategory, setCurrentCategory] = useState<string | number>("all");
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: "", visible: false });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [pwdOpen, setPwdOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -356,7 +358,7 @@ export default function Home() {
                         <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
                       </DropdownMenuGroup>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => router.push("/change-password")}>
+                      <DropdownMenuItem onClick={() => setPwdOpen(true)}>
                         Change Password
                       </DropdownMenuItem>
                       <DropdownMenuItem variant="destructive" onClick={() => logout.mutate()}>
@@ -364,6 +366,7 @@ export default function Home() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  <ChangePasswordDialog open={pwdOpen} onOpenChange={setPwdOpen} />
                 </div>
               ) : (
                 <button onClick={() => openAuth("login")} className="hidden md:flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 transition px-3 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
