@@ -5,12 +5,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
+import { useRestaurant } from "@/hooks/useRestaurant";
 import { useAuthModal } from "@/components/auth/auth-modal-context";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { openAuth } = useAuthModal();
   const { isDark, toggleDarkMode } = useTheme();
+  const { data: restaurant } = useRestaurant();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -31,19 +33,23 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-18 py-3">
           <Link href="/menu" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 bg-orange-500 rounded-full flex items-center justify-center shadow-lg group-hover:shadow-orange-500/30 group-hover:scale-110 transition-all duration-300">
-              <svg viewBox="0 0 100 100" className="w-7 h-7" fill="white">
-                <path d="M50 15 C30 15 15 30 15 50 C15 70 30 85 50 85 C70 85 85 70 85 50 C85 30 70 15 50 15 Z" />
-                <circle cx="35" cy="45" r="5" fill="#C2410C" />
-                <circle cx="55" cy="35" r="4" fill="#C2410C" />
-                <circle cx="65" cy="55" r="5" fill="#C2410C" />
-                <circle cx="45" cy="60" r="4" fill="#C2410C" />
-                <circle cx="30" cy="60" r="3" fill="#FDE68A" />
-                <circle cx="60" cy="45" r="3" fill="#FDE68A" />
-              </svg>
+            <div className="w-11 h-11 bg-orange-500 rounded-full flex items-center justify-center shadow-lg group-hover:shadow-orange-500/30 group-hover:scale-110 transition-all duration-300 overflow-hidden">
+              {restaurant?.logo ? (
+                <img src={restaurant.logo} alt={restaurant.name || "Restaurant"} className="w-full h-full object-cover" />
+              ) : (
+                <svg viewBox="0 0 100 100" className="w-7 h-7" fill="white">
+                  <path d="M50 15 C30 15 15 30 15 50 C15 70 30 85 50 85 C70 85 85 70 85 50 C85 30 70 15 50 15 Z" />
+                  <circle cx="35" cy="45" r="5" fill="#C2410C" />
+                  <circle cx="55" cy="35" r="4" fill="#C2410C" />
+                  <circle cx="65" cy="55" r="5" fill="#C2410C" />
+                  <circle cx="45" cy="60" r="4" fill="#C2410C" />
+                  <circle cx="30" cy="60" r="3" fill="#FDE68A" />
+                  <circle cx="60" cy="45" r="3" fill="#FDE68A" />
+                </svg>
+              )}
             </div>
             <span className="text-2xl font-black text-orange-500 tracking-tight group-hover:tracking-wide transition-all duration-300">
-              Burger House
+              {restaurant?.name || "Burger House"}
             </span>
           </Link>
 

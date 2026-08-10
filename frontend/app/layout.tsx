@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import NavbarWrapper from "@/components/layout/NavbarWrapper";
+import DocumentTitle from "@/components/layout/DocumentTitle";
 import BackButtonGuard from "@/components/layout/BackButtonGuard";
 import AuthModalProvider from "@/components/auth/AuthModal";
 
@@ -45,6 +46,7 @@ export default function RootLayout({
         <Providers>
           <AuthModalProvider>
             <BackButtonGuard />
+            <DocumentTitle />
             <NavbarWrapper />
             {children}
           </AuthModalProvider>

@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { useEffect, useState } from "react";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
+import SiteBrand from "@/components/layout/SiteBrand";
 
 const links = [
   { href: "/cashier", label: "Dashboard", icon: "📊" },
@@ -44,7 +45,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-6 border-b">
           <Link href="/cashier" className="text-lg font-bold text-orange-500">
-            Burger House
+            <SiteBrand />
           </Link>
           <p className="text-xs text-gray-400 mt-1">Cashier Terminal</p>
         </div>

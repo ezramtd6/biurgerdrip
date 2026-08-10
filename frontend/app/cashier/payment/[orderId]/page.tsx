@@ -7,8 +7,9 @@ import { Order } from "@/types";
 import { Button } from "@/components/ui";
 import { Loading } from "@/components/common/Loading";
 import { useState, useRef } from "react";
+import { useRestaurant } from "@/hooks/useRestaurant";
 
-function printReceipt(order: Order) {
+function printReceipt(order: Order, restaurantName?: string | null) {
   const w = window.open("", "_blank", "width=400,height=600");
   if (!w) return;
 
@@ -26,7 +27,7 @@ function printReceipt(order: Order) {
       .row { display: flex; justify-content: space-between; }
       .total { font-weight: bold; font-size: 1.1em; }
     </style></head><body>
-      <h2>🍔 Burger House</h2>
+      <h2>🍔 {restaurantName || "Burger House"}</h2>
       <p style="text-align:center;font-size:0.8em">${order.order_number}</p>
       <p style="text-align:center;font-size:0.8em">${new Date(order.created_at).toLocaleString()}</p>
       <div class="line"></div>
@@ -50,6 +51,7 @@ export default function PaymentPage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { data: restaurant } = useRestaurant();
   const orderId = Number(params.orderId);
   const [paymentMethod, setPaymentMethod] = useState<string>("CASH");
 
@@ -174,7 +176,7 @@ export default function PaymentPage() {
       {isPaid && (
         <div className="text-center space-y-4">
           <p className="text-green-600 font-medium">Payment already completed</p>
-          <Button variant="secondary" onClick={() => printReceipt(order)}>
+          <Button variant="secondary" onClick={() => printReceipt(order, restaurant?.name)}>
             Print Receipt
           </Button>
         </div>
