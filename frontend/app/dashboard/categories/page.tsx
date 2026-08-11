@@ -12,7 +12,7 @@ import ErrorDialog from "@/components/common/ErrorDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Search } from "lucide-react";
+import { Search, ChevronUp, ChevronDown } from "lucide-react";
 
 const schema = z.object({
   name: z.string().min(1, "Name in English is required"),
@@ -38,7 +38,7 @@ export default function CategoriesPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: CategoryForm) => api.post("/categories/", { ...data, is_active: true }),
+    mutationFn: (data: CategoryForm) => api.post("/categories/", { ...data, is_active: true, display_order: (categories?.length ?? 0) + 1 }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-categories"] }); setIsOpen(false); resetForm(); },
   });
 
@@ -57,6 +57,26 @@ export default function CategoriesPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] }),
     onError: (e: unknown) => setErrorMessage((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Failed to update status"),
   });
+
+  const reorderMutation = useMutation({
+    mutationFn: ({ id, display_order }: { id: number; display_order: number }) =>
+      api.patch(`/categories/${id}/`, { display_order }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-categories"] }),
+  });
+
+  const moveCategory = (index: number, direction: -1 | 1) => {
+    if (!categories) return;
+    const target = index + direction;
+    if (target < 0 || target >= categories.length) return;
+    const reordered = [...categories];
+    const a = reordered[index];
+    const b = reordered[target];
+    reordered[index] = b;
+    reordered[target] = a;
+    queryClient.setQueryData(["admin-categories"], reordered);
+    reorderMutation.mutate({ id: a.id, display_order: target + 1 });
+    reorderMutation.mutate({ id: b.id, display_order: index + 1 });
+  };
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<CategoryForm>({
     resolver: zodResolver(schema),
@@ -128,8 +148,27 @@ export default function CategoriesPage() {
               header: "",
               render: (item: Record<string, unknown>) => {
                 const cat = item as unknown as Category;
+                const index = categories?.findIndex((c) => c.id === cat.id) ?? 0;
                 return (
                   <div className="flex gap-2 justify-end">
+                    <div className="flex items-center gap-0.5 mr-1">
+                      <button
+                        onClick={() => moveCategory(index, -1)}
+                        disabled={index === 0 || reorderMutation.isPending}
+                        className="text-gray-400 hover:text-gray-700 disabled:opacity-30 transition p-0.5"
+                        title="Move up"
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => moveCategory(index, 1)}
+                        disabled={index === (categories?.length ?? 0) - 1 || reorderMutation.isPending}
+                        className="text-gray-400 hover:text-gray-700 disabled:opacity-30 transition p-0.5"
+                        title="Move down"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </div>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(cat)}>Edit</Button>
                     <Button variant={cat.is_active ? "secondary" : "brand"} size="sm" loading={toggleMutation.isPending && toggleMutation.variables === cat} onClick={() => toggleMutation.mutate(cat)}>
                       {cat.is_active ? "Freeze" : "Unfreeze"}

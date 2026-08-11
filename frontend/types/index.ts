@@ -15,6 +15,7 @@ export interface Category {
   name_amharic: string;
   image: string | null;
   description: string;
+  display_order: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;

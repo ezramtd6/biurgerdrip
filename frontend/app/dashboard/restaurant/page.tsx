@@ -136,6 +136,7 @@ export default function RestaurantPage() {
       fd.append("address", data.address);
       fd.append("phone", data.phone);
       fd.append("opening_hours", data.opening_hours);
+      fd.append("is_active", "true");
       if (data.latitude !== undefined) fd.append("latitude", String(data.latitude));
       if (data.longitude !== undefined) fd.append("longitude", String(data.longitude));
       if (logoFile) fd.append("logo", logoFile);

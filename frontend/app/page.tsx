@@ -17,7 +17,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { RestaurantInfo, Category, Product, Branch, SocialLink, Contact } from "@/types";
+import { RestaurantInfo, Category, Product, Branch, SocialLink, Contact, OptionValue, OptionGroup } from "@/types";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import dynamic from "next/dynamic";
 
@@ -73,6 +73,9 @@ const translations: Record<string, Record<string, string>> = {
     checkout: "Checkout",
     add: "Add",
     added_to_cart: "added to cart!",
+    size: "Size",
+    select: "Select",
+    currency: "ETB",
   },
   am: {
     store_locations: "የሱቅ ቦታዎች",
@@ -123,6 +126,9 @@ const translations: Record<string, Record<string, string>> = {
     checkout: "ይክፈሉ",
     add: "ጨምር",
     added_to_cart: "ወደ ተራማጅ ተጨምሯል!",
+    size: "መጠን",
+    select: "ይምረጡ",
+    currency: "ብር",
   },
 };
 
@@ -142,6 +148,8 @@ interface CartItem {
   price: number;
   image: string;
   qty: number;
+  optionKey?: string;
+  optionNames?: string;
 }
 
 export default function Home() {
@@ -169,10 +177,31 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 8;
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, number>>({});
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("cart");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) setCart(parsed);
+      }
+    } catch {
+      // ignore malformed storage
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("cart", JSON.stringify(cart));
+    } catch {
+      // ignore storage errors
+    }
+  }, [cart]);
 
   useEffect(() => {
     if (user) {
@@ -272,18 +301,25 @@ export default function Home() {
   const t = (key: string) => translations[currentLang]?.[key] || translations.en[key] || key;
 
   const addToCart = (item: Product) => {
+    const groups = (item.option_groups ?? []).filter((g) => (g.values ?? []).some((v) => v.available));
+    const selected = groups
+      .map((g) => ({ group: g, value: g.values?.find((v) => v.id === selectedOptions[`${item.id}:${g.id}`]) }))
+      .filter((x) => x.value) as { group: OptionGroup; value: OptionValue }[];
+    const price = Number(item.price) + selected.reduce((sum, x) => sum + Number(x.value.price_adjustment), 0);
+    const optionKey = selected.map((x) => x.value.id).sort((a, b) => a - b).join("-");
+    const optionNames = selected.map((x) => `${x.group.name}: ${x.value.name}`).join(", ");
     setCart((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
-      if (existing) return prev.map((i) => (i.id === item.id ? { ...i, qty: i.qty + 1 } : i));
-      return [{ id: item.id, name: item.name, nameAm: item.name_amharic || item.name, price: Number(item.price), image: item.image || "", qty: 1 }, ...prev];
+      const existing = prev.find((i) => i.id === item.id && i.optionKey === optionKey);
+      if (existing) return prev.map((i) => (i.id === item.id && i.optionKey === optionKey ? { ...i, qty: i.qty + 1 } : i));
+      return [{ id: item.id, name: item.name, nameAm: item.name_amharic || item.name, price, image: item.image || "", qty: 1, optionKey, optionNames }, ...prev];
     });
     showToast(`${currentLang === "am" ? item.name_amharic || item.name : item.name} ${t("added_to_cart")}`);
   };
 
-  const removeFromCart = (id: number) => setCart((prev) => prev.filter((i) => i.id !== id));
+  const removeFromCart = (id: number, optionKey?: string) => setCart((prev) => prev.filter((i) => !(i.id === id && i.optionKey === optionKey)));
 
-  const updateQty = (id: number, delta: number) => {
-    setCart((prev) => prev.map((i) => (i.id === id ? { ...i, qty: i.qty + delta } : i)).filter((i) => i.qty > 0));
+  const updateQty = (id: number, optionKey: string | undefined, delta: number) => {
+    setCart((prev) => prev.map((i) => (i.id === id && i.optionKey === optionKey ? { ...i, qty: i.qty + delta } : i)).filter((i) => i.qty > 0));
   };
 
   const showToast = (message: string) => {
@@ -501,6 +537,11 @@ export default function Home() {
                 {pageItems.map((item, index) => {
                   const itemName = currentLang === "am" ? item.name_amharic || item.name : item.name;
                   const itemDesc = currentLang === "am" ? item.description_amharic || item.description : item.description;
+                  const groups = [...(item.option_groups ?? [])]
+                    .filter((g) => (g.values ?? []).some((v) => v.available))
+                    .sort((a, b) => (a.name === "Size" ? -1 : b.name === "Size" ? 1 : a.display_order - b.display_order));
+                  const sizeGroup = groups.find((g) => g.name === "Size");
+                  const missingRequired = !!sizeGroup && !selectedOptions[`${item.id}:${sizeGroup.id}`];
                   return (
                     <div key={item.id} className="menu-card bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300" style={{ animationDelay: `${index * 0.05}s` }}>
                       <div className="relative overflow-hidden">
@@ -515,9 +556,63 @@ export default function Home() {
                       <div className="p-4">
                         <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-1">{itemName}</h3>
                         <p className="text-gray-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">{itemDesc}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-red-600 font-black text-xl">ETB {Number(item.price).toFixed(2)}</span>
-                          <button onClick={() => addToCart(item)} className="add-btn bg-red-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-red-700 transition flex items-center gap-1.5 active:scale-95 shadow-lg">
+                        <div className="flex flex-col gap-3">
+                          {!sizeGroup && (
+                            <span className="text-red-600 leading-none">
+                              <span className="text-[10px] font-bold uppercase tracking-widest mr-1 opacity-70 align-top">{t("currency")}</span>
+                              <span className="text-xl font-extrabold tracking-tight">{Number(item.price).toFixed(2)}</span>
+                            </span>
+                          )}
+                          {groups.map((group) => {
+                            const groupKey = `${item.id}:${group.id}`;
+                            const values = (group.values ?? [])
+                              .filter((v) => v.available)
+                              .sort((a, b) => (group.name === "Size" ? Number(b.price_adjustment) - Number(a.price_adjustment) : 0));
+                            const hasVal = !!selectedOptions[groupKey];
+                            return (
+                              <div key={group.id} className="flex-1 min-w-0">
+                                <div className="relative">
+                                  <select
+                                    value={selectedOptions[groupKey] ?? ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setSelectedOptions((prev) => {
+                                        if (val === "") {
+                                          const { [groupKey]: _, ...rest } = prev;
+                                          return rest;
+                                        }
+                                        return { ...prev, [groupKey]: Number(val) };
+                                      });
+                                    }}
+                                    className={`w-full appearance-none bg-transparent pr-7 py-1 cursor-pointer outline-none transition-colors ${
+                                      hasVal ? "text-red-600 font-extrabold text-lg tracking-tight" : "text-gray-400 dark:text-gray-500 font-medium text-sm"
+                                    }`}
+                                  >
+                                    <option value="" disabled={group.name === "Size"}>
+                                      {group.name === "Size"
+                                        ? `${t("select")} ${currentLang === "am" ? group.name_amharic || group.name : group.name} *`
+                                        : hasVal
+                                          ? currentLang === "am" ? "ይቅር ይበሉ" : "Unselect"
+                                          : `${t("select")} ${currentLang === "am" ? group.name_amharic || group.name : group.name}`}
+                                    </option>
+                                    {values.map((v) => (
+                                      <option key={v.id} value={v.id}>
+                                        {currentLang === "am" ? v.name_amharic || v.name : v.name} {t("currency")} {Number(v.price_adjustment).toFixed(2)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <span className={`absolute inset-y-0 right-3 flex items-center pointer-events-none transition-colors ${hasVal ? "text-red-600" : "text-gray-400"}`}>
+                                    <i className="fas fa-chevron-down text-xs"></i>
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          <button
+                            onClick={() => addToCart(item)}
+                            disabled={groups.length > 0 && missingRequired}
+                            className="add-btn w-full bg-red-600 text-white px-4 py-2.5 rounded-full text-sm font-semibold hover:bg-red-700 transition flex items-center justify-center gap-1.5 active:scale-95 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-600"
+                          >
                             <i className="fas fa-plus text-xs"></i> {t("add")}
                           </button>
                         </div>
@@ -758,22 +853,25 @@ export default function Home() {
           ) : (
             <div className="space-y-4">
               {cart.map((item) => (
-                <div key={item.id} className="flex gap-3 bg-gray-50 dark:bg-gray-700 rounded-xl p-3">
+                <div key={`${item.id}-${item.optionKey ?? ""}`} className="flex gap-3 bg-gray-50 dark:bg-gray-700 rounded-xl p-3">
                   {item.image ? (
                     <img src={item.image} alt={currentLang === "am" ? item.nameAm : item.name} className="w-16 h-16 object-contain rounded-lg bg-white dark:bg-gray-800" />
                   ) : (
                     <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center text-gray-400 text-xs">No Image</div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm text-gray-800 dark:text-white truncate">{currentLang === "am" ? item.nameAm : item.name}</h4>
-                    <p className="text-red-600 font-bold text-sm">ETB {item.price.toFixed(2)}</p>
+                    <h4 className="font-semibold text-sm text-gray-800 dark:text-white truncate">
+                      {currentLang === "am" ? item.nameAm : item.name}
+                      {item.optionNames && <span className="text-gray-500 font-normal ml-1">({item.optionNames})</span>}
+                    </h4>
+                    <p className="text-red-600 font-bold text-sm">{t("currency")} {item.price.toFixed(2)}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <button onClick={() => updateQty(item.id, -1)} className="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white transition">-</button>
+                      <button onClick={() => updateQty(item.id, item.optionKey, -1)} className="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white transition">-</button>
                       <span className="text-sm font-semibold w-4 text-center text-gray-800 dark:text-white">{item.qty}</span>
-                      <button onClick={() => updateQty(item.id, 1)} className="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white transition">+</button>
+                      <button onClick={() => updateQty(item.id, item.optionKey, 1)} className="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white transition">+</button>
                     </div>
                   </div>
-                  <button onClick={() => removeFromCart(item.id)} className="text-gray-400 hover:text-red-500 transition self-start">
+                  <button onClick={() => removeFromCart(item.id, item.optionKey)} className="text-gray-400 hover:text-red-500 transition self-start">
                     <i className="fas fa-trash-alt text-sm"></i>
                   </button>
                 </div>
@@ -785,19 +883,22 @@ export default function Home() {
           <div className="p-5 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
             <div className="flex justify-between mb-3 text-sm">
               <span className="text-gray-500 dark:text-gray-400">{t("subtotal")}</span>
-              <span className="font-bold text-gray-800 dark:text-white">ETB {totalCartPrice.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between mb-4 text-sm">
-              <span className="text-gray-500 dark:text-gray-400">{t("delivery")}</span>
-              <span className="font-bold text-green-600 flex items-center gap-1"><i className="fas fa-check-circle text-xs"></i> {t("free")}</span>
+              <span className="font-bold text-gray-800 dark:text-white">{t("currency")} {totalCartPrice.toFixed(2)}</span>
             </div>
             <div className="flex justify-between mb-6 text-xl font-black text-gray-800 dark:text-white border-t dark:border-gray-700 pt-4">
               <span>{t("total")}</span>
-              <span>ETB {totalCartPrice.toFixed(2)}</span>
+              <span>{t("currency")} {totalCartPrice.toFixed(2)}</span>
             </div>
-            <Link href="/orders" onClick={() => setCartOpen(false)} className="w-full bg-red-600 text-white py-4 rounded-2xl font-black text-lg hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-red-600/30 flex items-center justify-center gap-2">
+            <button
+              onClick={() => {
+                setCartOpen(false);
+                if (!user) openAuth("login");
+                else router.push("/orders");
+              }}
+              className="w-full bg-red-600 text-white py-4 rounded-2xl font-black text-lg hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-red-600/30 flex items-center justify-center gap-2"
+            >
               {t("checkout")} <i className="fas fa-arrow-right"></i>
-            </Link>
+            </button>
           </div>
         )}
       </div>

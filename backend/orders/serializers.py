@@ -67,7 +67,7 @@ class OrderCreateSerializer(serializers.Serializer):
             quantity = item_data["quantity"]
 
             option_values = item_data.get("option_values", [])
-            unit_price = 0
+            unit_price = product.price
             for ov_id in option_values:
                 ov = OptionValue.objects.get(id=ov_id)
                 unit_price += ov.price_adjustment

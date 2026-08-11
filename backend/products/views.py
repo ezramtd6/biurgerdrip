@@ -142,6 +142,13 @@ class OptionValueViewSet(viewsets.ModelViewSet):
     serializer_class = OptionValueSerializer
     permission_classes = [IsManager]
 
+    def get_queryset(self):
+        qs = OptionValue.objects.all()
+        group_id = self.request.query_params.get("option_group")
+        if group_id:
+            qs = qs.filter(option_group_id=group_id)
+        return qs
+
 
 class RestaurantInfoViewSet(ActiveStateMixin, viewsets.ModelViewSet):
     queryset = RestaurantInfo.objects.all()

@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 
-const HIDE_NAVBAR_PATHS = ["/change-password", "/set-password", "/reset-password", "/dashboard", "/cashier", "/menu"];
+const HIDE_NAVBAR_PATHS = ["/change-password", "/set-password", "/reset-password", "/dashboard", "/cashier", "/menu", "/orders"];
 
 export default function NavbarWrapper() {
   const pathname = usePathname();

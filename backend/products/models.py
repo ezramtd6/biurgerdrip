@@ -15,11 +15,15 @@ class Category(models.Model):
     name_amharic = models.CharField(max_length=100, blank=True)
     image = models.ImageField(upload_to="categories/", blank=True, null=True)
     description = models.TextField(blank=True)
+    display_order = models.PositiveIntegerField(default=0)
 
     is_active = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "id"]
 
     def __str__(self):
         return self.name
@@ -73,6 +77,9 @@ class OptionGroup(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.name}"
 
+    class Meta:
+        ordering = ["display_order", "id"]
+
 class OptionValue(models.Model):
     option_group = models.ForeignKey(
         OptionGroup,
@@ -96,6 +103,9 @@ class OptionValue(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ["display_order", "id"]
 
 class RestaurantInfo(models.Model):
     name = models.CharField(max_length=100)

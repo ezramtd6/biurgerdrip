@@ -16,8 +16,23 @@ class CategorySerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class OptionValueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OptionValue
+        fields = "__all__"
+
+
+class OptionGroupSerializer(serializers.ModelSerializer):
+    values = OptionValueSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = OptionGroup
+        fields = "__all__"
+
+
 class ProductSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(max_digits=8, decimal_places=2, min_value=Decimal("0"), required=False)
+    option_groups = OptionGroupSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
@@ -26,11 +41,17 @@ class ProductSerializer(serializers.ModelSerializer):
     def _ensure_size_group(self, instance):
         if not instance.has_sizes:
             return
-        OptionGroup.objects.get_or_create(
+        group, _ = OptionGroup.objects.get_or_create(
             product=instance,
             name="Size",
-            defaults={"name_amharic": "መጠን"},
+            defaults={"name_amharic": "መጠን", "required": True, "multiple_choice": True},
         )
+        if not group.required:
+            group.required = True
+            group.save(update_fields=["required"])
+        if not group.multiple_choice:
+            group.multiple_choice = True
+            group.save(update_fields=["multiple_choice"])
 
     def create(self, validated_data):
         instance = super().create(validated_data)
@@ -44,18 +65,6 @@ class ProductSerializer(serializers.ModelSerializer):
         else:
             instance.option_groups.filter(name="Size").delete()
         return instance
-
-
-class OptionGroupSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OptionGroup
-        fields = "__all__"
-
-
-class OptionValueSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OptionValue
-        fields = "__all__"
 
 
 class RestaurantInfoSerializer(serializers.ModelSerializer):

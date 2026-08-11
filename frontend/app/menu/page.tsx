@@ -7,10 +7,13 @@ import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { Loading } from "@/components/common/Loading";
 import { useTheme } from "@/hooks/useTheme";
 import Link from "next/link";
-import { Product } from "@/types";
+import { useRouter } from "next/navigation";
+import { Product, OptionValue, OptionGroup } from "@/types";
 
 interface CartItem extends Product {
   qty: number;
+  optionKey?: string;
+  optionNames?: string;
 }
 
 export default function MenuPage() {
@@ -21,6 +24,7 @@ export default function MenuPage() {
   const { user, logout } = useAuth();
   const { openAuth } = useAuthModal();
   const { isDark, toggleDarkMode } = useTheme();
+  const router = useRouter();
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -30,6 +34,7 @@ export default function MenuPage() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 8;
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, number>>({});
   const menuRef = useRef<HTMLDivElement>(null);
 
   const restaurantExists = restaurant && restaurant.length > 0;
@@ -45,6 +50,26 @@ export default function MenuPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("cart");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) setCart(parsed);
+      }
+    } catch {
+      // ignore malformed storage
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("cart", JSON.stringify(cart));
+    } catch {
+      // ignore storage errors
+    }
+  }, [cart]);
+
   const pageItems = (products ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalPages = Math.max(1, Math.ceil((products ?? []).length / PAGE_SIZE));
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -55,24 +80,40 @@ export default function MenuPage() {
   };
 
   const addToCart = (product: Product) => {
+    const groups = (product.option_groups ?? []).filter((g) => (g.values ?? []).some((v) => v.available));
+    const selected = groups
+      .map((g) => ({ group: g, value: g.values?.find((v) => v.id === selectedOptions[`${product.id}:${g.id}`]) }))
+      .filter((x) => x.value) as { group: OptionGroup; value: OptionValue }[];
+    const price = Number(product.price) + selected.reduce((sum, x) => sum + Number(x.value.price_adjustment), 0);
+    const optionKey = selected.map((x) => x.value.id).sort((a, b) => a - b).join("-");
+    const optionNames = selected.map((x) => `${x.group.name}: ${x.value.name}`).join(", ");
     setCart((prev) => {
-      const existing = prev.find((i) => i.id === product.id);
+      const existing = prev.find((i) => i.id === product.id && i.optionKey === optionKey);
       if (existing) {
-        return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i));
+        return prev.map((i) => (i.id === product.id && i.optionKey === optionKey ? { ...i, qty: i.qty + 1 } : i));
       }
-      return [...prev, { ...product, qty: 1 }];
+      return [
+        ...prev,
+        {
+          ...product,
+          price,
+          qty: 1,
+          optionKey,
+          optionNames,
+        },
+      ];
     });
     showToast(`${product.name} added to cart!`);
   };
 
-  const removeFromCart = (id: number) => {
-    setCart((prev) => prev.filter((i) => i.id !== id));
+  const removeFromCart = (id: number, optionKey?: string) => {
+    setCart((prev) => prev.filter((i) => !(i.id === id && i.optionKey === optionKey)));
   };
 
-  const updateQty = (id: number, delta: number) => {
+  const updateQty = (id: number, optionKey: string | undefined, delta: number) => {
     setCart((prev) =>
       prev
-        .map((i) => (i.id === id ? { ...i, qty: i.qty + delta } : i))
+        .map((i) => (i.id === id && i.optionKey === optionKey ? { ...i, qty: i.qty + delta } : i))
         .filter((i) => i.qty > 0)
     );
   };
@@ -329,7 +370,13 @@ export default function MenuPage() {
           ) : products && products.length > 0 ? (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-7">
-              {pageItems.map((product, index) => (
+              {pageItems.map((product, index) => {
+                const groups = [...(product.option_groups ?? [])]
+                  .filter((g) => (g.values ?? []).some((v) => v.available))
+                  .sort((a, b) => (a.name === "Size" ? -1 : b.name === "Size" ? 1 : a.display_order - b.display_order));
+                const sizeGroup = groups.find((g) => g.name === "Size");
+                const missingRequired = !!sizeGroup && !selectedOptions[`${product.id}:${sizeGroup.id}`];
+                return (
                 <div
                   key={product.id}
                   className="menu-card bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 fade-in"
@@ -348,19 +395,69 @@ export default function MenuPage() {
                   <div className="p-4">
                     <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-1">{product.name}</h3>
                     <p className="text-gray-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
-                    <div className="flex items-center justify-between">
+                    <div className="mb-3 space-y-2">
+                      {!sizeGroup && (
+                        <span className="text-orange-600 leading-none">
+                          <span className="text-[10px] font-bold uppercase tracking-widest mr-1 opacity-70 align-top">ETB</span>
+                          <span className="text-xl font-extrabold tracking-tight">{Number(product.price).toFixed(2)}</span>
+                        </span>
+                      )}
+                      {groups.map((group) => {
+                        const groupKey = `${product.id}:${group.id}`;
+                        const values = (group.values ?? [])
+                          .filter((v) => v.available)
+                          .sort((a, b) => (group.name === "Size" ? Number(b.price_adjustment) - Number(a.price_adjustment) : 0));
+                        const hasVal = !!selectedOptions[groupKey];
+                        return (
+                          <div key={group.id} className="relative">
+                            <select
+                              value={selectedOptions[groupKey] ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setSelectedOptions((prev) => {
+                                  if (val === "") {
+                                    const { [groupKey]: _, ...rest } = prev;
+                                    return rest;
+                                  }
+                                  return { ...prev, [groupKey]: Number(val) };
+                                });
+                              }}
+                              className={`w-full appearance-none bg-transparent pr-7 py-1 cursor-pointer outline-none transition-colors ${
+                                hasVal ? "text-orange-600 font-extrabold text-lg tracking-tight" : "text-gray-400 dark:text-gray-500 font-medium text-sm"
+                              }`}
+                            >
+                              <option value="" disabled={group.name === "Size"}>{group.name === "Size" ? `Select ${group.name} *` : hasVal ? "Unselect" : `Select ${group.name}`}</option>
+                              {values.map((v) => (
+                                <option key={v.id} value={v.id}>
+                                  {v.name} ETB {Number(v.price_adjustment).toFixed(2)}
+                                </option>
+                              ))}
+                            </select>
+                            <span className={`absolute inset-y-0 right-3 flex items-center pointer-events-none transition-colors ${hasVal ? "text-orange-600" : "text-gray-400"}`}>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
                       <Link href={`/menu/${product.id}`} className="add-btn bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-orange-600 transition flex items-center gap-1.5 active:scale-95 shadow-lg">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                         View
                       </Link>
-                      <button onClick={() => addToCart(product)} className="add-btn bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-orange-600 transition flex items-center gap-1.5 active:scale-95 shadow-lg">
+                      <button
+                        onClick={() => addToCart(product)}
+                        disabled={groups.length > 0 && missingRequired}
+                        className="add-btn bg-orange-500 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-orange-600 transition flex items-center gap-1.5 active:scale-95 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-orange-500"
+                      >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                         Add
                       </button>
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
 
             {totalPages > 1 && (
@@ -528,22 +625,25 @@ export default function MenuPage() {
           ) : (
             <div className="space-y-4">
               {cart.map((item) => (
-                <div key={item.id} className="flex gap-3 bg-gray-50 dark:bg-gray-700 rounded-xl p-3">
+                <div key={`${item.id}-${item.optionKey ?? ""}`} className="flex gap-3 bg-gray-50 dark:bg-gray-700 rounded-xl p-3">
                   {item.image ? (
                     <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-lg" />
                   ) : (
                     <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded-lg flex items-center justify-center text-gray-400 text-xs">No Image</div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm text-gray-800 dark:text-white truncate">{item.name}</h4>
+                    <h4 className="font-semibold text-sm text-gray-800 dark:text-white truncate">
+                      {item.name}
+                      {item.optionNames && <span className="text-gray-500 font-normal ml-1">({item.optionNames})</span>}
+                    </h4>
                     <p className="text-orange-500 font-bold text-sm">ETB {item.price.toFixed(2)}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <button onClick={() => updateQty(item.id, -1)} className="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white transition">-</button>
+                      <button onClick={() => updateQty(item.id, item.optionKey, -1)} className="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white transition">-</button>
                       <span className="text-sm font-semibold w-4 text-center text-gray-800 dark:text-white">{item.qty}</span>
-                      <button onClick={() => updateQty(item.id, 1)} className="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white transition">+</button>
+                      <button onClick={() => updateQty(item.id, item.optionKey, 1)} className="w-6 h-6 rounded-full bg-white dark:bg-gray-600 border dark:border-gray-500 flex items-center justify-center text-xs hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-white transition">+</button>
                     </div>
                   </div>
-                  <button onClick={() => removeFromCart(item.id)} className="text-gray-400 hover:text-red-500 transition self-start hover:scale-110">
+                  <button onClick={() => removeFromCart(item.id, item.optionKey)} className="text-gray-400 hover:text-red-500 transition self-start hover:scale-110">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   </button>
                 </div>
@@ -562,10 +662,17 @@ export default function MenuPage() {
               <span>Total</span>
               <span>ETB {totalCartPrice.toFixed(2)}</span>
             </div>
-            <Link href="/orders" onClick={() => setCartOpen(false)} className="w-full bg-orange-500 text-white py-4 rounded-2xl font-black text-lg hover:bg-orange-600 transition-all duration-300 shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
+            <button
+              onClick={() => {
+                setCartOpen(false);
+                if (!user) openAuth("login");
+                else router.push("/orders");
+              }}
+              className="w-full bg-orange-500 text-white py-4 rounded-2xl font-black text-lg hover:bg-orange-600 transition-all duration-300 shadow-lg hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+            >
               Checkout
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-            </Link>
+            </button>
           </div>
         )}
       </div>

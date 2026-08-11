@@ -12,7 +12,7 @@ import ErrorDialog from "@/components/common/ErrorDialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Search } from "lucide-react";
+import { Search, ChevronUp, ChevronDown } from "lucide-react";
 
 const schema = z.object({
   product: z.string().min(1, "Product is required"),
@@ -108,6 +108,7 @@ export default function OptionGroupsPage() {
   if (isLoading) return <Loading />;
 
   const getProductName = (id: number) => products?.find((p) => p.id === id)?.name || "—";
+  const sizeEnabledProductIds = new Set(products?.filter((p) => p.has_sizes).map((p) => p.id));
 
   const q = search.trim().toLowerCase();
   const filtered = groups?.filter((g) => {
@@ -162,14 +163,15 @@ export default function OptionGroupsPage() {
               header: "",
               render: (item: Record<string, unknown>) => {
                 const group = item as unknown as OptionGroup;
+                const autoSizeGroup = group.name === "Size" && sizeEnabledProductIds.has(group.product);
                 return (
                   <div className="flex gap-2 justify-end">
                     <Button variant="ghost" size="sm" onClick={() => { setSelectedGroup(group); setValueModalOpen(true); }}>Values</Button>
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(group)}>Edit</Button>
+                    {!autoSizeGroup && <Button variant="ghost" size="sm" onClick={() => openEdit(group)}>Edit</Button>}
                     <Button variant={group.is_active ? "secondary" : "brand"} size="sm" loading={toggleMutation.isPending && toggleMutation.variables === group} onClick={() => toggleMutation.mutate(group)}>
                       {group.is_active ? "Freeze" : "Unfreeze"}
                     </Button>
-                    <Button variant="danger" size="sm" onClick={() => setDeleteTarget(group)}>Delete</Button>
+                    {!autoSizeGroup && <Button variant="danger" size="sm" onClick={() => setDeleteTarget(group)}>Delete</Button>}
                   </div>
                 );
               },
@@ -296,10 +298,30 @@ function OptionValuesModal({ isOpen, onClose, group }: { isOpen: boolean; onClos
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-option-values", group.id] }),
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: ({ id, display_order }: { id: number; display_order: number }) =>
+      api.patch(`/option-values/${id}/`, { display_order }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-option-values", group.id] }),
+  });
+
+  const moveValue = (index: number, direction: -1 | 1) => {
+    if (!values) return;
+    const target = index + direction;
+    if (target < 0 || target >= values.length) return;
+    const reordered = [...values];
+    const a = reordered[index];
+    const b = reordered[target];
+    reordered[index] = b;
+    reordered[target] = a;
+    queryClient.setQueryData(["admin-option-values", group.id], reordered);
+    reorderMutation.mutate({ id: a.id, display_order: target + 1 });
+    reorderMutation.mutate({ id: b.id, display_order: index + 1 });
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`${group.name} - Values`} maxWidth="lg">
       <div className="space-y-3 mb-4">
-        {values?.map((v: any) => (
+        {values?.map((v: any, index: number) => (
           <div key={v.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div>
               <span className="text-sm font-medium">{v.name}</span>
@@ -308,7 +330,25 @@ function OptionValuesModal({ isOpen, onClose, group }: { isOpen: boolean; onClos
                 <span className="ml-2 text-xs text-green-600">+${Number(v.price_adjustment).toFixed(2)}</span>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              <div className="flex flex-col mr-1">
+                <button
+                  onClick={() => moveValue(index, -1)}
+                  disabled={index === 0 || reorderMutation.isPending}
+                  className="text-gray-400 hover:text-gray-700 disabled:opacity-30 transition p-0.5"
+                  title="Move up"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => moveValue(index, 1)}
+                  disabled={index === (values?.length ?? 0) - 1 || reorderMutation.isPending}
+                  className="text-gray-400 hover:text-gray-700 disabled:opacity-30 transition p-0.5"
+                  title="Move down"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </div>
               <Button variant="ghost" size="sm" onClick={() => openEdit(v)}>Edit</Button>
               <Button variant="danger" size="sm" onClick={() => deleteMutation.mutate(v.id)}>Delete</Button>
             </div>
