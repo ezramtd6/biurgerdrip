@@ -13,6 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Search, ChevronUp, ChevronDown } from "lucide-react";
+import { apiErrorMessage } from "@/lib/utils";
 
 const schema = z.object({
   name: z.string().min(1, "Name in English is required"),
@@ -27,6 +28,7 @@ export default function CategoriesPage() {
   const [editing, setEditing] = useState<Category | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   const { data: categories, isLoading } = useQuery<Category[]>({
@@ -40,11 +42,13 @@ export default function CategoriesPage() {
   const createMutation = useMutation({
     mutationFn: (data: CategoryForm) => api.post("/categories/", { ...data, is_active: true, display_order: (categories?.length ?? 0) + 1 }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-categories"] }); setIsOpen(false); resetForm(); },
+    onError: (e: unknown) => setFormError(apiErrorMessage(e, "Failed to create category")),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: CategoryForm }) => api.put(`/categories/${id}/`, { ...data, is_active: true }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-categories"] }); setIsOpen(false); setEditing(null); resetForm(); },
+    onError: (e: unknown) => setFormError(apiErrorMessage(e, "Failed to update category")),
   });
 
   const deleteMutation = useMutation({
@@ -84,10 +88,11 @@ export default function CategoriesPage() {
 
   const resetForm = () => { reset({ name: "", name_amharic: "" }); };
 
-  const openCreate = () => { setEditing(null); resetForm(); setIsOpen(true); };
+  const openCreate = () => { setEditing(null); resetForm(); setFormError(null); setIsOpen(true); };
   const openEdit = (cat: Category) => {
     setEditing(cat);
     reset({ name: cat.name, name_amharic: cat.name_amharic });
+    setFormError(null);
     setIsOpen(true);
   };
 
@@ -186,7 +191,7 @@ export default function CategoriesPage() {
 
       <Modal isOpen={isOpen} onClose={() => { setIsOpen(false); setEditing(null); }} title={editing ? "Edit Category" : "Add Category"}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input label="Name in English" error={errors.name?.message} {...register("name")} />
+          <Input label="Name in English" error={errors.name?.message || formError || undefined} {...register("name")} />
           <Input label="Name in Amharic" error={errors.name_amharic?.message} {...register("name_amharic")} />
 
           <div className="flex gap-3 justify-end">

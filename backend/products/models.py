@@ -11,7 +11,7 @@ class Category(models.Model):
         blank=True,
     )
 
-    name=models.CharField(max_length=100)
+    name=models.CharField(max_length=100, unique=True, error_messages={"unique": "A category with this name already exists."})
     name_amharic = models.CharField(max_length=100, blank=True)
     image = models.ImageField(upload_to="categories/", blank=True, null=True)
     description = models.TextField(blank=True)
@@ -50,6 +50,15 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["category", "name"],
+                name="unique_product_name_per_category",
+                violation_error_message="A product with this name already exists in this category.",
+            )
+        ]
+
     def __str__(self):
         return self.name
 
@@ -64,8 +73,6 @@ class OptionGroup(models.Model):
 
     name_amharic = models.CharField(max_length=100, blank=True)
 
-    price = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-
     is_active = models.BooleanField(default=True)
 
     required = models.BooleanField(default=False)
@@ -79,6 +86,13 @@ class OptionGroup(models.Model):
 
     class Meta:
         ordering = ["display_order", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product", "name"],
+                name="unique_option_group_name_per_product",
+                violation_error_message="An option group with this name already exists for this product.",
+            )
+        ]
 
 class OptionValue(models.Model):
     option_group = models.ForeignKey(
@@ -106,6 +120,13 @@ class OptionValue(models.Model):
 
     class Meta:
         ordering = ["display_order", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["option_group", "name"],
+                name="unique_option_value_name_per_group",
+                violation_error_message="An option value with this name already exists in this group.",
+            )
+        ]
 
 class RestaurantInfo(models.Model):
     name = models.CharField(max_length=100)

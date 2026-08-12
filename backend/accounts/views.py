@@ -85,7 +85,7 @@ class CustomTokenRefreshView(APIView):
         try:
             refresh = RefreshToken(refresh_token)
             access_token = str(refresh.access_token)
-            
+
             response = Response({"access": access_token})
             response.set_cookie(
                 "access_token",
@@ -95,7 +95,28 @@ class CustomTokenRefreshView(APIView):
                 secure=not settings.DEBUG,
                 samesite="Lax",
             )
-            
+
+            if settings.SIMPLE_JWT.get("ROTATE_REFRESH_TOKENS"):
+                if settings.SIMPLE_JWT.get("BLACKLIST_AFTER_ROTATION"):
+                    try:
+                        refresh.blacklist()
+                    except AttributeError:
+                        pass
+
+                refresh.set_jti()
+                refresh.set_exp()
+                refresh.set_iat()
+                refresh.outstand()
+
+                response.set_cookie(
+                    "refresh_token",
+                    str(refresh),
+                    max_age=7 * 24 * 60 * 60,
+                    httponly=True,
+                    secure=not settings.DEBUG,
+                    samesite="Lax",
+                )
+
             return response
         except TokenError:
             return Response(
@@ -195,6 +216,30 @@ class ForgotPasswordView(APIView):
         )
 
 
+class ResetPasswordTokenView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, token):
+        try:
+            reset_token = PasswordResetToken.objects.get(token=token, is_used=False)
+        except PasswordResetToken.DoesNotExist:
+            return Response(
+                {"error": "Invalid or expired token."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        token_age = timezone.now() - reset_token.created_at
+        if token_age > timedelta(hours=24):
+            reset_token.is_used = True
+            reset_token.save()
+            return Response(
+                {"error": "Invalid or expired token."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({"valid": True})
+
+
 class ResetPasswordView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -234,7 +279,7 @@ class ResetPasswordView(APIView):
             reset_token.is_used = True
             reset_token.save()
             return Response(
-                {"error": "Token has expired. Please request a new one."},
+                {"error": "Invalid or expired token."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -268,7 +313,7 @@ class SetPasswordTokenView(APIView):
             reset_token.is_used = True
             reset_token.save()
             return Response(
-                {"error": "Token has expired. Please contact your administrator."},
+                {"error": "Invalid or expired token."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -326,7 +371,7 @@ class SetPasswordView(APIView):
             reset_token.is_used = True
             reset_token.save()
             return Response(
-                {"error": "Token has expired. Please contact your administrator."},
+                {"error": "Invalid or expired token."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

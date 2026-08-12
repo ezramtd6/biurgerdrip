@@ -13,12 +13,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Search, ChevronUp, ChevronDown } from "lucide-react";
+import { apiErrorMessage } from "@/lib/utils";
 
 const schema = z.object({
   product: z.string().min(1, "Product is required"),
   name: z.string().min(1, "Name is required"),
   name_amharic: z.string().min(1, "Name in Amharic is required"),
-  price: z.coerce.number().refine((v) => v >= 0, "Amount is required"),
   required: z.boolean().optional(),
   multiple_choice: z.boolean().optional(),
 });
@@ -33,6 +33,7 @@ export default function OptionGroupsPage() {
   const [valueModalOpen, setValueModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<OptionGroup | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   const { data: groups, isLoading } = useQuery<OptionGroup[]>({
@@ -57,12 +58,12 @@ export default function OptionGroupsPage() {
         product: Number(data.product),
         name: data.name,
         name_amharic: data.name_amharic,
-        price: data.price,
         required: data.required || false,
         multiple_choice: data.multiple_choice || false,
         is_active: true,
       }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }); setIsOpen(false); },
+    onError: (e: unknown) => setFormError(apiErrorMessage(e, "Failed to create option group")),
   });
 
   const updateMutation = useMutation({
@@ -71,12 +72,12 @@ export default function OptionGroupsPage() {
         product: Number(data.product),
         name: data.name,
         name_amharic: data.name_amharic,
-        price: data.price,
         required: data.required || false,
         multiple_choice: data.multiple_choice || false,
         is_active: true,
       }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }); setIsOpen(false); setEditing(null); },
+    onError: (e: unknown) => setFormError(apiErrorMessage(e, "Failed to update option group")),
   });
 
   const deleteMutation = useMutation({
@@ -97,8 +98,8 @@ export default function OptionGroupsPage() {
   const requiredVal = watch("required");
   const multipleVal = watch("multiple_choice");
 
-  const openCreate = () => { setEditing(null); reset({ product: "", name: "", name_amharic: "", price: 0, required: false, multiple_choice: false }); setIsOpen(true); };
-  const openEdit = (g: OptionGroup) => { setEditing(g); reset({ product: String(g.product), name: g.name, name_amharic: g.name_amharic, price: Number(g.price), required: g.required, multiple_choice: g.multiple_choice }); setIsOpen(true); };
+  const openCreate = () => { setEditing(null); reset({ product: "", name: "", name_amharic: "", required: false, multiple_choice: false }); setFormError(null); setIsOpen(true); };
+  const openEdit = (g: OptionGroup) => { setEditing(g); reset({ product: String(g.product), name: g.name, name_amharic: g.name_amharic, required: g.required, multiple_choice: g.multiple_choice }); setFormError(null); setIsOpen(true); };
 
   const onSubmit = (data: OptionGroupForm) => {
     if (editing) updateMutation.mutate({ id: editing.id, data });
@@ -191,9 +192,8 @@ export default function OptionGroupsPage() {
             options={products?.map((p) => ({ value: p.id, label: p.name })) || []}
             {...register("product")}
           />
-          <Input label="Name (English)" placeholder="e.g. Size, Sauce, Extras" error={errors.name?.message} {...register("name")} />
+          <Input label="Name (English)" placeholder="e.g. Size, Sauce, Extras" error={errors.name?.message || formError || undefined} {...register("name")} />
           <Input label="Name (Amharic)" error={errors.name_amharic?.message} {...register("name_amharic")} />
-          <Input label="Amount (ETB)" type="number" step="0.01" placeholder="e.g. 0.00" error={errors.price?.message} {...register("price")} />
           <div className="flex gap-6">
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" className="rounded" {...register("required")} />
@@ -252,8 +252,9 @@ function OptionValuesModal({ isOpen, onClose, group }: { isOpen: boolean; onClos
   const [newName, setNewName] = useState("");
   const [newNameAmharic, setNewNameAmharic] = useState("");
   const [newPrice, setNewPrice] = useState("0");
+  const [valueError, setValueError] = useState<string | null>(null);
 
-  const resetForm = () => { setEditingValue(null); setNewName(""); setNewNameAmharic(""); setNewPrice("0"); setShowAdd(false); };
+  const resetForm = () => { setEditingValue(null); setNewName(""); setNewNameAmharic(""); setNewPrice("0"); setShowAdd(false); setValueError(null); };
 
   const addMutation = useMutation({
     mutationFn: () => api.post("/option-values/", {
@@ -268,6 +269,7 @@ function OptionValuesModal({ isOpen, onClose, group }: { isOpen: boolean; onClos
       queryClient.invalidateQueries({ queryKey: ["admin-option-values", group.id] });
       resetForm();
     },
+    onError: (e: unknown) => setValueError(apiErrorMessage(e, "Failed to add value")),
   });
 
   const updateMutation = useMutation({
@@ -283,6 +285,7 @@ function OptionValuesModal({ isOpen, onClose, group }: { isOpen: boolean; onClos
       queryClient.invalidateQueries({ queryKey: ["admin-option-values", group.id] });
       resetForm();
     },
+    onError: (e: unknown) => setValueError(apiErrorMessage(e, "Failed to update value")),
   });
 
   const openEdit = (v: any) => {
@@ -370,6 +373,7 @@ function OptionValuesModal({ isOpen, onClose, group }: { isOpen: boolean; onClos
             </Button>
             <Button variant="ghost" size="sm" onClick={resetForm}>Cancel</Button>
           </div>
+          {valueError && <p className="text-sm text-red-600">{valueError}</p>}
         </div>
       ) : (
         <Button size="sm" onClick={() => setShowAdd(true)}>+ Add Value</Button>

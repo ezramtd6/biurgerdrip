@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
 import { Button, Input, Select, Modal, Table } from "@/components/ui";
 import { Product, Category } from "@/types";
@@ -13,6 +13,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Search } from "lucide-react";
+import { apiErrorMessage } from "@/lib/utils";
+
+function invalidateProductQueries(queryClient: QueryClient) {
+  queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+  queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] });
+  queryClient.invalidateQueries({ queryKey: ["products"] });
+  queryClient.invalidateQueries({ queryKey: ["product"] });
+  queryClient.invalidateQueries({ queryKey: ["cashier-products"] });
+  queryClient.invalidateQueries({ queryKey: ["cashier-categories"] });
+  queryClient.invalidateQueries({ queryKey: ["categories"] });
+}
 
 const schema = z
   .object({
@@ -41,6 +52,7 @@ export default function ProductsPage() {
   const [imageError, setImageError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,7 +86,8 @@ export default function ProductsPage() {
       fd.append("is_active", "true");
       return api.post("/products/", fd, { headers: { "Content-Type": "multipart/form-data" } });
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-products"] }); queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }); setIsOpen(false); resetForm(); },
+    onSuccess: () => { invalidateProductQueries(queryClient); setIsOpen(false); resetForm(); },
+    onError: (e: unknown) => setFormError(apiErrorMessage(e, "Failed to create product")),
   });
 
   const updateMutation = useMutation({
@@ -91,12 +104,13 @@ export default function ProductsPage() {
       fd.append("is_active", "true");
       return api.put(`/products/${id}/`, fd, { headers: { "Content-Type": "multipart/form-data" } });
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-products"] }); queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }); setIsOpen(false); setEditing(null); resetForm(); },
+    onSuccess: () => { invalidateProductQueries(queryClient); setIsOpen(false); setEditing(null); resetForm(); },
+    onError: (e: unknown) => setFormError(apiErrorMessage(e, "Failed to update product")),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/products/${id}/`),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-products"] }); queryClient.invalidateQueries({ queryKey: ["admin-option-groups"] }); },
+    onSuccess: () => invalidateProductQueries(queryClient),
   });
 
   const toggleMutation = useMutation({
@@ -111,7 +125,7 @@ export default function ProductsPage() {
 
   const hasSizes = watch("has_sizes");
 
-  const resetForm = () => { reset({ name: "", name_amharic: "", description: "", description_amharic: "", price: 0, category: "", has_sizes: false }); setImageFile(null); setImagePreview(null); setImageError(null); };
+  const resetForm = () => { reset({ name: "", name_amharic: "", description: "", description_amharic: "", price: 0, category: "", has_sizes: false }); setImageFile(null); setImagePreview(null); setImageError(null); setFormError(null); };
 
   const openCreate = () => { setEditing(null); resetForm(); setIsOpen(true); };
   const openEdit = (p: Product) => {
@@ -120,11 +134,12 @@ export default function ProductsPage() {
     setImageFile(null);
     setImagePreview(p.image || null);
     setImageError(null);
+    setFormError(null);
     setIsOpen(true);
   };
 
   const onSubmit = (data: ProductForm) => {
-    if (!imageFile && !editing?.image) {
+    if (!editing && !imageFile) {
       setImageError("Image is required");
       return;
     }
@@ -222,7 +237,7 @@ export default function ProductsPage() {
 
       <Modal isOpen={isOpen} onClose={() => { setIsOpen(false); setEditing(null); }} title={editing ? "Edit Product" : "Add Product"}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input label="Name (English)" error={errors.name?.message} {...register("name")} />
+          <Input label="Name (English)" error={errors.name?.message || formError || undefined} {...register("name")} />
           <Input label="Name (Amharic)" error={errors.name_amharic?.message} {...register("name_amharic")} />
           <Input label="Description (English)" error={errors.description?.message} {...register("description")} />
           <Input label="Description (Amharic)" error={errors.description_amharic?.message} {...register("description_amharic")} />
@@ -262,7 +277,6 @@ export default function ProductsPage() {
               type="file"
               accept="image/*"
               className="hidden"
-              required={!imagePreview}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {

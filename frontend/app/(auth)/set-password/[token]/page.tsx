@@ -39,7 +39,6 @@ export default function SetPasswordPage() {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const {
@@ -71,7 +70,8 @@ export default function SetPasswordPage() {
         password: data.password,
         confirm_password: data.confirm_password,
       });
-      setSuccess(true);
+      sessionStorage.setItem("password_set_success", "1");
+      router.replace("/");
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to set password");
     } finally {
@@ -88,16 +88,6 @@ export default function SetPasswordPage() {
         <button onClick={() => openAuth("login")} className="text-orange-500 hover:text-orange-600 font-medium text-sm cursor-pointer">
           Go to Login
         </button>
-      </div>
-    );
-  }
-
-  if (success) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
-        <div className="mb-4 text-green-600 font-medium">Password set successfully!</div>
-        <p className="text-sm text-gray-500 mb-6">You can now sign in with your new password.</p>
-        <Button onClick={() => openAuth("login")} className="w-full">Go to Login</Button>
       </div>
     );
   }

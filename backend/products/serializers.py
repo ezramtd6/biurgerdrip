@@ -1,4 +1,5 @@
 from decimal import Decimal
+from django.db import transaction
 from rest_framework import serializers
 from .models import Category, Product, OptionGroup, OptionValue, RestaurantInfo, Branch, SocialLink, Contact
 
@@ -54,16 +55,18 @@ class ProductSerializer(serializers.ModelSerializer):
             group.save(update_fields=["multiple_choice"])
 
     def create(self, validated_data):
-        instance = super().create(validated_data)
-        self._ensure_size_group(instance)
+        with transaction.atomic():
+            instance = super().create(validated_data)
+            self._ensure_size_group(instance)
         return instance
 
     def update(self, instance, validated_data):
-        instance = super().update(instance, validated_data)
-        if instance.has_sizes:
-            self._ensure_size_group(instance)
-        else:
-            instance.option_groups.filter(name="Size").delete()
+        with transaction.atomic():
+            instance = super().update(instance, validated_data)
+            if instance.has_sizes:
+                self._ensure_size_group(instance)
+            else:
+                instance.option_groups.filter(name="Size").delete()
         return instance
 
 

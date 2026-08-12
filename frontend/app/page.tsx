@@ -327,6 +327,17 @@ export default function Home() {
     setTimeout(() => setToast({ message: "", visible: false }), 2500);
   };
 
+  useEffect(() => {
+    if (sessionStorage.getItem("password_reset_success") === "1") {
+      sessionStorage.removeItem("password_reset_success");
+      showToast("Password reset successfully");
+    }
+    if (sessionStorage.getItem("password_set_success") === "1") {
+      sessionStorage.removeItem("password_set_success");
+      showToast("Password set successfully");
+    }
+  }, []);
+
   const filteredItems = currentCategory === "all" ? products : products.filter((i) => i.category === currentCategory);
   const pageItems = filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
@@ -567,7 +578,7 @@ export default function Home() {
                             const groupKey = `${item.id}:${group.id}`;
                             const values = (group.values ?? [])
                               .filter((v) => v.available)
-                              .sort((a, b) => (group.name === "Size" ? Number(b.price_adjustment) - Number(a.price_adjustment) : 0));
+                              .sort((a, b) => a.display_order - b.display_order);
                             const hasVal = !!selectedOptions[groupKey];
                             return (
                               <div key={group.id} className="flex-1 min-w-0">

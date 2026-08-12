@@ -42,7 +42,6 @@ export interface OptionGroup {
   product: number;
   name: string;
   name_amharic: string;
-  price: string;
   is_active: boolean;
   required: boolean;
   multiple_choice: boolean;

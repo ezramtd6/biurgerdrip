@@ -8,6 +8,28 @@ const api = axios.create({
   },
 });
 
+let refreshPromise: Promise<string> | null = null;
+
+function refreshAccessToken(): Promise<string> {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post<{ access: string }>(
+        `${api.defaults.baseURL}/auth/token/refresh/`,
+        {},
+        { withCredentials: true }
+      )
+      .then((res) => {
+        const access = res.data.access;
+        localStorage.setItem("access_token", access);
+        return access;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+}
+
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("access_token");
@@ -26,26 +48,29 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      try {
-        const res = await axios.post(
-          `${api.defaults.baseURL}/auth/token/refresh/`,
-          {},
-          { withCredentials: true }
-        );
+      const access = localStorage.getItem("access_token");
+      const loggedOut = sessionStorage.getItem("auth_logged_out") === "1";
+      const isAuthEndpoint = originalRequest.url?.includes("/auth/") ?? false;
 
-        const { access } = res.data;
-        localStorage.setItem("access_token", access);
-        originalRequest.headers.Authorization = `Bearer ${access}`;
-
-        return api(originalRequest);
-      } catch {
+      if (access && !loggedOut && !isAuthEndpoint) {
+        try {
+          const fresh = await refreshAccessToken();
+          originalRequest.headers.Authorization = `Bearer ${fresh}`;
+          return api(originalRequest);
+        } catch {
+          sessionStorage.setItem("auth_logged_out", "1");
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("user");
+          const url = originalRequest.url || "";
+          if (typeof window !== "undefined" && !url.includes("/auth/logout/") && !url.includes("/auth/login/")) {
+            sessionStorage.setItem("auth_pending", "login");
+            window.location.replace("/");
+          }
+        }
+      } else if (typeof window !== "undefined" && !loggedOut) {
+        sessionStorage.setItem("auth_logged_out", "1");
         localStorage.removeItem("access_token");
         localStorage.removeItem("user");
-        const url = originalRequest.url || "";
-        if (typeof window !== "undefined" && !url.includes("/auth/logout/") && !url.includes("/auth/login/")) {
-          sessionStorage.setItem("auth_pending", "login");
-          window.location.replace("/");
-        }
       }
     }
 

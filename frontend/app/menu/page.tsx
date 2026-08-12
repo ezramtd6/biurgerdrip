@@ -406,7 +406,7 @@ export default function MenuPage() {
                         const groupKey = `${product.id}:${group.id}`;
                         const values = (group.values ?? [])
                           .filter((v) => v.available)
-                          .sort((a, b) => (group.name === "Size" ? Number(b.price_adjustment) - Number(a.price_adjustment) : 0));
+                          .sort((a, b) => a.display_order - b.display_order);
                         const hasVal = !!selectedOptions[groupKey];
                         return (
                           <div key={group.id} className="relative">
