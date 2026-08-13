@@ -1,4 +1,36 @@
 import axios from "axios";
+import { getValidAccessToken, removeAccessToken } from "@/lib/auth";
+
+const PUBLIC_PATHS = [
+  "/restaurant",
+  "/categories",
+  "/products",
+  "/branches",
+  "/social-links",
+  "/contacts",
+  "/promotions",
+];
+
+const NO_REFRESH_PATHS = [
+  "/auth/token/refresh",
+  "/auth/login",
+  "/auth/register",
+  "/auth/logout",
+];
+
+function isPublicPath(url: string | undefined): boolean {
+  if (!url) return false;
+  const index = url.indexOf("/api");
+  const path = index !== -1 ? url.slice(index + 4) : url;
+  return PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
+}
+
+function isNoRefreshPath(url: string | undefined): boolean {
+  if (!url) return false;
+  const index = url.indexOf("/api");
+  const path = index !== -1 ? url.slice(index + 4) : url;
+  return NO_REFRESH_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
+}
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api",
@@ -32,7 +64,7 @@ function refreshAccessToken(): Promise<string> {
 
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("access_token");
+    const token = getValidAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -46,13 +78,27 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      const noRefresh = isNoRefreshPath(originalRequest.url);
+      const method = (originalRequest.method || "get").toLowerCase();
+
+      if (isPublicPath(originalRequest.url) && method === "get") {
+        if (typeof window !== "undefined") {
+          removeAccessToken();
+        }
+        if (!originalRequest._anonymousRetry) {
+          originalRequest._anonymousRetry = true;
+          delete originalRequest.headers.Authorization;
+          return api(originalRequest);
+        }
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       const access = localStorage.getItem("access_token");
       const loggedOut = sessionStorage.getItem("auth_logged_out") === "1";
-      const isAuthEndpoint = originalRequest.url?.includes("/auth/") ?? false;
 
-      if (access && !loggedOut && !isAuthEndpoint) {
+      if (access && !loggedOut && !noRefresh) {
         try {
           const fresh = await refreshAccessToken();
           originalRequest.headers.Authorization = `Bearer ${fresh}`;
@@ -67,7 +113,7 @@ api.interceptors.response.use(
             window.location.replace("/");
           }
         }
-      } else if (typeof window !== "undefined" && !loggedOut) {
+      } else if (typeof window !== "undefined" && !loggedOut && !noRefresh) {
         sessionStorage.setItem("auth_logged_out", "1");
         localStorage.removeItem("access_token");
         localStorage.removeItem("user");

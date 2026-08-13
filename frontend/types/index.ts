@@ -29,6 +29,7 @@ export interface Product {
   description: string;
   description_amharic: string;
   price: number;
+  discounted_price: number | null;
   has_sizes: boolean;
   is_active: boolean;
   image: string | null;
@@ -115,6 +116,7 @@ export interface Order {
   discount: number;
   tax: number;
   total: number;
+  coupon: number | null;
   payment_method: "CASH" | "CARD" | "MOBILE" | null;
   status: "PENDING" | "PREPARING" | "READY" | "COMPLETED" | "CANCELLED";
   created_at: string;
@@ -154,9 +156,58 @@ export interface CreateOrderPayload {
   discount: number;
   tax: number;
   payment_method: string;
+  coupon_code?: string;
   items: {
     product: number;
     quantity: number;
     option_values: number[];
   }[];
+}
+
+export type PromotionType = "DISCOUNT" | "BANNER";
+
+export interface Promotion {
+  id: number;
+  type: PromotionType;
+  title: string;
+  description: string;
+  discount_percent: number | null;
+  discount_amount: number | null;
+  products: number[];
+  image: string | null;
+  link: string;
+  start_date: string | null;
+  end_date: string | null;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Coupon {
+  id: number;
+  code: string;
+  discount_percent: number | null;
+  discount_amount: number | null;
+  min_subtotal: number;
+  max_discount: number | null;
+  valid_from: string | null;
+  valid_until: string | null;
+  usage_limit: number | null;
+  times_used: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaymentSystem {
+  id: number;
+  name: string;
+  code: string;
+  icon: string | null;
+  details: string;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
 }

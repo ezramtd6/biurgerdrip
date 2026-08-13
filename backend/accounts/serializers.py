@@ -1,5 +1,4 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
 from .models import User
 
@@ -39,15 +38,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token["email"] = user.email
         token["role"] = user.role
         return token
-
-
-class CustomTokenRefreshSerializer(serializers.Serializer):
-    refresh = serializers.CharField()
-    
-    def validate(self, attrs):
-        refresh = RefreshToken(attrs["refresh"])
-        data = {"access": str(refresh.access_token)}
-        return data
 
 
 class CashierSerializer(serializers.ModelSerializer):

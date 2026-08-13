@@ -34,10 +34,15 @@ class OptionGroupSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(max_digits=8, decimal_places=2, min_value=Decimal("0"), required=False)
     option_groups = OptionGroupSerializer(many=True, read_only=True)
+    discounted_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = "__all__"
+
+    def get_discounted_price(self, obj):
+        discounted = obj.get_discounted_price()
+        return str(discounted) if discounted is not None else None
 
     def _ensure_size_group(self, instance):
         if not instance.has_sizes:

@@ -36,6 +36,13 @@ class Order(models.Model):
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    coupon = models.ForeignKey(
+        "promotions.Coupon",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
+    )
     payment_method = models.CharField(
         max_length=20,
         choices=PaymentMethod.choices,
@@ -97,3 +104,21 @@ class OrderItemOption(models.Model):
 
     def __str__(self):
         return f"{self.option_value.name if self.option_value else 'Deleted option'} (+{self.price_adjustment})"
+
+
+class PaymentSystem(models.Model):
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=20, unique=True)
+    icon = models.ImageField(upload_to="payment_systems/", blank=True, null=True)
+    details = models.TextField(blank=True, help_text="Instructions shown to the customer, e.g. account number")
+    is_active = models.BooleanField(default=True)
+    display_order = models.PositiveIntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["display_order", "name"]
+
+    def __str__(self):
+        return self.name

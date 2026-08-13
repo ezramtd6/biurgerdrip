@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "accounts",
     "products",
     "orders",
+    "promotions",
 ]
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
@@ -59,7 +60,6 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_OBTAIN_SERIALIZER": "accounts.serializers.CustomTokenObtainPairSerializer",
-    "TOKEN_REFRESH_SERIALIZER": "accounts.serializers.CustomTokenRefreshSerializer",
 }
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (

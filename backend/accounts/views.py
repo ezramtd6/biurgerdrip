@@ -97,20 +97,21 @@ class CustomTokenRefreshView(APIView):
             )
 
             if settings.SIMPLE_JWT.get("ROTATE_REFRESH_TOKENS"):
-                if settings.SIMPLE_JWT.get("BLACKLIST_AFTER_ROTATION"):
-                    try:
-                        refresh.blacklist()
-                    except AttributeError:
-                        pass
-
                 refresh.set_jti()
                 refresh.set_exp()
                 refresh.set_iat()
                 refresh.outstand()
+                new_refresh_token = str(refresh)
+
+                if settings.SIMPLE_JWT.get("BLACKLIST_AFTER_ROTATION"):
+                    try:
+                        RefreshToken(refresh_token).blacklist()
+                    except (AttributeError, TokenError):
+                        pass
 
                 response.set_cookie(
                     "refresh_token",
-                    str(refresh),
+                    new_refresh_token,
                     max_age=7 * 24 * 60 * 60,
                     httponly=True,
                     secure=not settings.DEBUG,

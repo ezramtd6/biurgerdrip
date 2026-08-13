@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
     OrderListCreateView,
     OrderDetailView,
@@ -7,7 +8,11 @@ from .views import (
     CashierOrderDetailView,
     CashierPaymentView,
     ReportsView,
+    PaymentSystemViewSet,
 )
+
+router = DefaultRouter()
+router.register(r"payment-systems", PaymentSystemViewSet)
 
 urlpatterns = [
     path("", OrderListCreateView.as_view(), name="order-list-create"),
@@ -17,4 +22,5 @@ urlpatterns = [
     path("cashier/<int:pk>/", CashierOrderDetailView.as_view(), name="cashier-order-detail"),
     path("cashier/<int:pk>/payment/", CashierPaymentView.as_view(), name="cashier-payment"),
     path("reports/", ReportsView.as_view(), name="reports"),
+    path("", include(router.urls)),
 ]

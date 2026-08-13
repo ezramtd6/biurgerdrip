@@ -11,7 +11,7 @@ interface TableProps<T> {
   emptyMessage?: string;
 }
 
-export default function Table<T extends Record<string, unknown>>({
+export default function Table<T>({
   columns,
   data,
   onRowClick,
@@ -53,7 +53,7 @@ export default function Table<T extends Record<string, unknown>>({
                   <td key={col.key} className="px-4 py-3">
                     {col.render
                       ? col.render(item)
-                      : (item[col.key] as React.ReactNode)}
+                      : ((item as Record<string, unknown>)[col.key] as React.ReactNode)}
                   </td>
                 ))}
               </tr>

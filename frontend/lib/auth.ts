@@ -13,6 +13,24 @@ export function removeAccessToken(): void {
   localStorage.removeItem("access_token");
 }
 
+export function isTokenExpired(token: string | null): boolean {
+  if (!token) return true;
+  try {
+    const part = token.split(".")[1];
+    if (!part) return true;
+    const payload = JSON.parse(atob(part));
+    return typeof payload.exp !== "number" || payload.exp * 1000 <= Date.now();
+  } catch {
+    return true;
+  }
+}
+
+export function getValidAccessToken(): string | null {
+  const token = getAccessToken();
+  if (!token || isTokenExpired(token)) return null;
+  return token;
+}
+
 export function getUser(): User | null {
   if (typeof window === "undefined") return null;
   const data = localStorage.getItem("user");

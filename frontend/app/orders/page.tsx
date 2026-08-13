@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useOrders, useCreateOrder } from "@/hooks/useOrders";
 import { useProducts } from "@/hooks/useProducts";
+import { usePaymentSystems } from "@/hooks/usePaymentSystems";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
 import HomeNavbar from "@/components/layout/HomeNavbar";
@@ -29,9 +30,13 @@ interface CartItem {
 export default function OrdersPage() {
   const { data: orders, isLoading } = useOrders();
   const { data: products } = useProducts();
+  const { data: paymentSystems } = usePaymentSystems();
   const createOrder = useCreateOrder();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [placed, setPlaced] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponError, setCouponError] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
 
   useEffect(() => {
     try {
@@ -47,6 +52,7 @@ export default function OrdersPage() {
 
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   const productMap = new Map((products ?? []).map((p) => [p.id, p]));
+  const selectedMethod = paymentMethod || paymentSystems?.[0]?.code || "";
 
   const placeOrder = () => {
     if (cart.length === 0) return;
@@ -56,13 +62,19 @@ export default function OrdersPage() {
       option_values: i.optionKey ? i.optionKey.split("-").map(Number) : [],
     }));
     createOrder.mutate(
-      { discount: 0, tax: 0, payment_method: "", items },
+      { discount: 0, tax: 0, payment_method: selectedMethod, coupon_code: couponCode.trim() || undefined, items },
       {
         onSuccess: () => {
           localStorage.setItem("cart", JSON.stringify([]));
           setCart([]);
           setPlaced(true);
+          setCouponError("");
           window.dispatchEvent(new Event("cart-updated"));
+        },
+        onError: (err) => {
+          const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
+          const msg = data?.coupon_code;
+          setCouponError(typeof msg === "string" ? msg : Array.isArray(msg) ? String(msg[0]) : "");
         },
       }
     );
@@ -122,6 +134,44 @@ export default function OrdersPage() {
                 <span className="text-lg font-black text-gray-900">ETB {cartTotal.toFixed(2)}</span>
               </div>
             </div>
+            <input
+              value={couponCode}
+              onChange={(e) => {
+                setCouponCode(e.target.value);
+                setCouponError("");
+              }}
+              placeholder="Coupon code (optional)"
+              className="mt-4 w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+            />
+            {couponError && (
+              <p className="mt-2 text-sm text-red-600">{couponError}</p>
+            )}
+            {paymentSystems && paymentSystems.length > 0 && (
+              <div className="mt-4">
+                <p className="text-sm font-semibold text-gray-700 mb-2">Payment Method</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {paymentSystems.map((method) => (
+                    <button
+                      key={method.code}
+                      type="button"
+                      onClick={() => setPaymentMethod(method.code)}
+                      className={`p-3 rounded-xl border-2 text-center transition-colors cursor-pointer ${
+                        selectedMethod === method.code
+                          ? "border-red-500 bg-red-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      {method.icon ? (
+                        <img src={method.icon} alt={method.name} className="w-8 h-8 object-contain mx-auto mb-1" />
+                      ) : (
+                        <span className="text-xl block mb-1">💳</span>
+                      )}
+                      <span className="text-xs font-medium">{method.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <button
               onClick={placeOrder}
               disabled={createOrder.isPending}

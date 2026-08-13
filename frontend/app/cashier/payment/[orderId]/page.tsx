@@ -6,8 +6,9 @@ import api from "@/services/api";
 import { Order } from "@/types";
 import { Button } from "@/components/ui";
 import { Loading } from "@/components/common/Loading";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRestaurant } from "@/hooks/useRestaurant";
+import { usePaymentSystems } from "@/hooks/usePaymentSystems";
 
 function printReceipt(order: Order, restaurantName?: string | null) {
   const w = window.open("", "_blank", "width=400,height=600");
@@ -53,7 +54,8 @@ export default function PaymentPage() {
   const queryClient = useQueryClient();
   const { data: restaurant } = useRestaurant();
   const orderId = Number(params.orderId);
-  const [paymentMethod, setPaymentMethod] = useState<string>("CASH");
+  const [paymentMethod, setPaymentMethod] = useState<string>("");
+  const { data: paymentSystems } = usePaymentSystems();
 
   const { data: order, isLoading } = useQuery<Order>({
     queryKey: ["cashier-order", orderId],
@@ -63,9 +65,17 @@ export default function PaymentPage() {
     },
   });
 
+  const activeSystems = paymentSystems ?? [];
+  const selectedMethod =
+    paymentMethod ||
+    (order?.payment_method && activeSystems.some((s) => s.code === order.payment_method)
+      ? order.payment_method
+      : activeSystems[0]?.code) ||
+    "";
+
   const processPayment = useMutation({
     mutationFn: () =>
-      api.post(`/orders/${orderId}/payment/`, { payment_method: paymentMethod }),
+      api.post(`/orders/${orderId}/payment/`, { payment_method: selectedMethod }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cashier-orders"] });
       queryClient.invalidateQueries({ queryKey: ["cashier-order", orderId] });
@@ -138,26 +148,32 @@ export default function PaymentPage() {
       {!isPaid && (
         <div className="bg-white rounded-xl border border-gray-100 p-6">
           <h2 className="font-medium text-gray-900 mb-4">Select Payment Method</h2>
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            {[
-              { value: "CASH", label: "Cash", icon: "💵" },
-              { value: "CARD", label: "Card", icon: "💳" },
-              { value: "MOBILE", label: "Mobile", icon: "📱" },
-            ].map((method) => (
-              <button
-                key={method.value}
-                onClick={() => setPaymentMethod(method.value)}
-                className={`p-4 rounded-xl border-2 text-center transition-colors cursor-pointer ${
-                  paymentMethod === method.value
-                    ? "border-orange-500 bg-orange-50"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <span className="text-2xl block mb-1">{method.icon}</span>
-                <span className="text-sm font-medium">{method.label}</span>
-              </button>
-            ))}
-          </div>
+          {!paymentSystems || paymentSystems.length === 0 ? (
+            <p className="text-center text-gray-500 text-sm py-6">
+              No payment methods available. Ask a manager to add one.
+            </p>
+          ) : (
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              {paymentSystems.map((method) => (
+                <button
+                  key={method.code}
+                  onClick={() => setPaymentMethod(method.code)}
+                  className={`p-4 rounded-xl border-2 text-center transition-colors cursor-pointer ${
+                    selectedMethod === method.code
+                      ? "border-orange-500 bg-orange-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  {method.icon ? (
+                    <img src={method.icon} alt={method.name} className="w-10 h-10 object-contain mx-auto mb-1" />
+                  ) : (
+                    <span className="text-2xl block mb-1">💳</span>
+                  )}
+                  <span className="text-sm font-medium">{method.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           <Button
             className="w-full"

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useCategories, useProducts, useRestaurant } from "@/hooks/useProducts";
+import { usePromotions } from "@/hooks/usePromotions";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { Loading } from "@/components/common/Loading";
@@ -21,6 +22,7 @@ export default function MenuPage() {
   const { data: categories, isLoading: loadingCategories } = useCategories();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const { data: products, isLoading: loadingProducts } = useProducts(selectedCategory);
+  const { data: promotions } = usePromotions();
   const { user, logout } = useAuth();
   const { openAuth } = useAuthModal();
   const { isDark, toggleDarkMode } = useTheme();
@@ -84,7 +86,10 @@ export default function MenuPage() {
     const selected = groups
       .map((g) => ({ group: g, value: g.values?.find((v) => v.id === selectedOptions[`${product.id}:${g.id}`]) }))
       .filter((x) => x.value) as { group: OptionGroup; value: OptionValue }[];
-    const price = Number(product.price) + selected.reduce((sum, x) => sum + Number(x.value.price_adjustment), 0);
+    const basePrice = product.discounted_price != null && Number(product.discounted_price) < Number(product.price)
+      ? Number(product.discounted_price)
+      : Number(product.price);
+    const price = basePrice + selected.reduce((sum, x) => sum + Number(x.value.price_adjustment), 0);
     const optionKey = selected.map((x) => x.value.id).sort((a, b) => a - b).join("-");
     const optionNames = selected.map((x) => `${x.group.name}: ${x.value.name}`).join(", ");
     setCart((prev) => {
@@ -333,6 +338,50 @@ export default function MenuPage() {
         </div>
       </section>
 
+      {/* Promotions Banner */}
+      {(promotions ?? []).some((p) => p.type === "BANNER" && p.image) && (
+        <section className="py-12 bg-white dark:bg-gray-800 border-b dark:border-gray-700 transition-colors duration-500">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-black text-gray-800 dark:text-white">Today&apos;s Deals</h2>
+                <div className="w-14 h-1 bg-orange-500 rounded-full mt-2" />
+              </div>
+            </div>
+            <div className="flex gap-5 overflow-x-auto scrollbar-hide pb-2">
+              {(promotions ?? [])
+                .filter((b) => b.type === "BANNER" && b.image)
+                .map((banner) => (
+                  <div key={banner.id} className="relative flex-shrink-0 w-[320px] sm:w-[400px] rounded-2xl overflow-hidden shadow-lg group">
+                    <img
+                      src={banner.image!}
+                      alt={banner.title}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-5">
+                      <h3 className="text-white font-black text-lg mb-1">{banner.title}</h3>
+                      {banner.description && (
+                        <p className="text-gray-200 text-sm line-clamp-2">{banner.description}</p>
+                      )}
+                      {banner.link && (
+                        <a
+                          href={banner.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-3 inline-block bg-orange-500 text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-orange-600 transition"
+                        >
+                          Learn more
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Menu Section */}
       <section ref={menuRef} id="menu" className="py-16 bg-white dark:bg-gray-800 transition-colors duration-500">
         <div className="max-w-7xl mx-auto px-4">
@@ -399,7 +448,14 @@ export default function MenuPage() {
                       {!sizeGroup && (
                         <span className="text-orange-600 leading-none">
                           <span className="text-[10px] font-bold uppercase tracking-widest mr-1 opacity-70 align-top">ETB</span>
-                          <span className="text-xl font-extrabold tracking-tight">{Number(product.price).toFixed(2)}</span>
+                          {product.discounted_price != null && Number(product.discounted_price) < Number(product.price) ? (
+                            <>
+                              <span className="text-sm font-semibold text-gray-400 line-through mr-2">{Number(product.price).toFixed(2)}</span>
+                              <span className="text-xl font-extrabold tracking-tight">{Number(product.discounted_price).toFixed(2)}</span>
+                            </>
+                          ) : (
+                            <span className="text-xl font-extrabold tracking-tight">{Number(product.price).toFixed(2)}</span>
+                          )}
                         </span>
                       )}
                       {groups.map((group) => {

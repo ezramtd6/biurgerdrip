@@ -62,6 +62,20 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    def get_discounted_price(self):
+        """Best discounted price from running discount promotions, or None."""
+        from decimal import Decimal
+        from promotions.models import Promotion
+
+        best = None
+        for promo in self.promotions.filter(type=Promotion.Type.DISCOUNT):
+            discounted = promo.discount_for(self.price)
+            if discounted is not None and (best is None or discounted < best):
+                best = discounted
+        if best is not None:
+            return best.quantize(Decimal("0.01"))
+        return None
+
 class OptionGroup(models.Model):
     product = models.ForeignKey(
         Product,

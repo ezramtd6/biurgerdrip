@@ -17,6 +17,7 @@ export default function NewOrderPage() {
   const router = useRouter();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [couponCode, setCouponCode] = useState("");
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["cashier-categories"],
@@ -107,11 +108,12 @@ export default function NewOrderPage() {
         discount: 0,
         tax: 0,
         payment_method: "",
+        coupon_code: couponCode.trim() || undefined,
         items,
       });
       router.push(`/cashier/payment/${res.data.id}`);
     } catch {
-      alert("Failed to create order");
+      alert("Failed to create order. Check that the coupon code is valid.");
     }
   };
 
@@ -157,6 +159,14 @@ export default function NewOrderPage() {
                 </div>
               )}
               <p className="text-sm font-medium">{product.name}</p>
+              {product.discounted_price != null && Number(product.discounted_price) < Number(product.price) ? (
+                <div className="mt-1">
+                  <span className="text-sm font-bold text-orange-500">ETB {Number(product.discounted_price).toFixed(2)}</span>
+                  <span className="ml-2 text-xs text-gray-400 line-through">ETB {Number(product.price).toFixed(2)}</span>
+                </div>
+              ) : (
+                <p className="text-sm font-semibold text-gray-600 mt-1">ETB {Number(product.price).toFixed(2)}</p>
+              )}
             </button>
           ))}
         </div>
@@ -226,6 +236,12 @@ export default function NewOrderPage() {
         </div>
 
         <div className="p-4 border-t">
+          <input
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value)}
+            placeholder="Coupon code (optional)"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
           <div className="flex justify-between mb-4">
             <span className="font-medium">Total</span>
             <span className="font-bold text-lg">${subtotal.toFixed(2)}</span>

@@ -42,17 +42,20 @@ export default function ProductDetailPage() {
   };
 
   const calculateTotal = () => {
-    let total = 0;
+    const base = product.discounted_price != null && Number(product.discounted_price) < Number(product.price)
+      ? Number(product.discounted_price)
+      : Number(product.price);
+    let options = 0;
     if (product.option_groups) {
       for (const group of product.option_groups) {
         const selected = selectedOptions[group.id] || [];
         for (const valueId of selected) {
           const value = group.values?.find((v: OptionValue) => v.id === valueId);
-          if (value) total += Number(value.price_adjustment);
+          if (value) options += Number(value.price_adjustment);
         }
       }
     }
-    return total * quantity;
+    return (base + options) * quantity;
   };
 
   const handleOrder = async () => {
@@ -109,6 +112,15 @@ export default function ProductDetailPage() {
 
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{product.name}</h1>
       <p className="text-gray-500 dark:text-gray-400 mt-2">{product.description}</p>
+
+      {product.discounted_price != null && Number(product.discounted_price) < Number(product.price) ? (
+        <p className="text-orange-600 font-bold mt-3 text-lg">
+          ETB {Number(product.discounted_price).toFixed(2)}
+          <span className="ml-2 text-sm text-gray-400 dark:text-gray-500 line-through font-normal">ETB {Number(product.price).toFixed(2)}</span>
+        </p>
+      ) : (
+        <p className="text-orange-600 font-bold mt-3 text-lg">ETB {Number(product.price).toFixed(2)}</p>
+      )}
 
       {product.option_groups && product.option_groups.length > 0 && (
         <div className="mt-8 space-y-6">

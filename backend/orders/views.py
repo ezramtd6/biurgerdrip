@@ -1,10 +1,27 @@
 from django.utils import timezone
 from django.db.models import Sum, Count
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Order
-from .serializers import OrderSerializer, OrderCreateSerializer
+from products.views import IsManager
+from .models import Order, PaymentSystem
+from .serializers import OrderSerializer, OrderCreateSerializer, PaymentSystemSerializer
+
+
+class PaymentSystemViewSet(viewsets.ModelViewSet):
+    queryset = PaymentSystem.objects.all()
+    serializer_class = PaymentSystemSerializer
+
+    def get_queryset(self):
+        qs = PaymentSystem.objects.all()
+        if self.request.user.role not in ("MANAGER", "ADMIN"):
+            qs = qs.filter(is_active=True)
+        return qs
+
+    def get_permissions(self):
+        if self.action in ("list", "retrieve"):
+            return [permissions.IsAuthenticated()]
+        return [IsManager()]
 
 
 class OrderListCreateView(generics.ListCreateAPIView):
@@ -74,7 +91,7 @@ class PaymentView(APIView):
             )
 
         payment_method = request.data.get("payment_method")
-        if payment_method not in dict(Order.PaymentMethod.choices):
+        if not PaymentSystem.objects.filter(code=payment_method).exists():
             return Response(
                 {"error": "Invalid payment method."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -137,7 +154,7 @@ class CashierPaymentView(APIView):
             )
 
         payment_method = request.data.get("payment_method")
-        if payment_method not in dict(Order.PaymentMethod.choices):
+        if not PaymentSystem.objects.filter(code=payment_method).exists():
             return Response(
                 {"error": "Invalid payment method."},
                 status=status.HTTP_400_BAD_REQUEST,
