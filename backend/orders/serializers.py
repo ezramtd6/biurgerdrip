@@ -40,7 +40,11 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def get_payment_proof(self, obj):
         if obj.payment_proof:
-            return obj.payment_proof.url
+            url = obj.payment_proof.url
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(url)
+            return url
         return None
 
 
