@@ -11,6 +11,7 @@ class Order(models.Model):
         READY = "READY", "Ready"
         COMPLETED = "COMPLETED", "Completed"
         CANCELLED = "CANCELLED", "Cancelled"
+        REJECTED = "REJECTED", "Payment Rejected"
 
     class PaymentMethod(models.TextChoices):
         CASH = "CASH", "Cash"
@@ -54,6 +55,10 @@ class Order(models.Model):
         blank=True,
         null=True,
         help_text="Picture the customer attaches as proof of payment",
+    )
+    proof_attempts = models.PositiveIntegerField(
+        default=0,
+        help_text="How many times the cashier has rejected this payment proof",
     )
     status = models.CharField(
         max_length=20,

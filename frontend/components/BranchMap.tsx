@@ -36,7 +36,7 @@ export default function BranchMap({ restaurant, branches }: BranchMapProps) {
     }
 
     branches.forEach((b) => {
-      if (b.latitude != null && b.longitude != null) {
+      if (!b.is_main && b.latitude != null && b.longitude != null) {
         points.push({
           lat: Number(b.latitude),
           lng: Number(b.longitude),

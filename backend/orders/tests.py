@@ -184,3 +184,53 @@ class PaymentSystemTests(TestCase):
         res = self.client_for(self.customer).get("/api/orders/notifications/")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
+
+    def test_rejection_after_three_attempts_marks_order_rejected(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            subtotal=Decimal("100.00"),
+            total=Decimal("100.00"),
+        )
+        client = self.client_for(self.cashier)
+
+        for attempt in (1, 2):
+            res = client.post(
+                f"/api/orders/{order.id}/payment/",
+                {"action": "reject", "reason": "bad"},
+            )
+            self.assertEqual(res.status_code, status.HTTP_200_OK)
+            self.assertFalse(res.data["final_rejection"])
+            order.refresh_from_db()
+            self.assertEqual(order.status, Order.Status.PENDING)
+
+        res = client.post(
+            f"/api/orders/{order.id}/payment/", {"action": "reject", "reason": "bad"}
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data["final_rejection"])
+        self.assertEqual(res.data["proof_attempts"], 3)
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.REJECTED)
+        self.assertIn("after 3 attempts", res.data["message"])
+        self.assertEqual(order.notifications.count(), 3)
+
+    def test_resubmit_proof_blocked_after_three_rejections(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            subtotal=Decimal("100.00"),
+            total=Decimal("100.00"),
+        )
+        client = self.client_for(self.cashier)
+        for _ in range(3):
+            client.post(f"/api/orders/{order.id}/payment/", {"action": "reject"})
+
+        res = self.client_for(self.customer).post(
+            f"/api/orders/{order.id}/resubmit-proof/",
+            {
+                "payment_proof": SimpleUploadedFile(
+                    "proof.png", TINY_PNG, content_type="image/png"
+                ),
+            },
+            format="multipart",
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)

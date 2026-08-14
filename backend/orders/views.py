@@ -96,23 +96,50 @@ def _handle_payment(request, order):
     if action == "reject":
         reason = (request.data.get("reason") or "").strip()
         phone = getattr(request.user, "phone", "") or ""
-        message = (
-            f"Your payment for order {order.order_number} was rejected."
-            + (
-                f" Please contact the cashier at {phone} to find out why."
-                if phone
-                else " Please contact the cashier for more information."
+        order.proof_attempts += 1
+        final_rejection = order.proof_attempts >= 3
+        if final_rejection:
+            order.status = Order.Status.REJECTED
+        order.save(update_fields=["proof_attempts", "status", "updated_at"])
+
+        if final_rejection:
+            message = (
+                f"Your payment for order {order.order_number} was rejected after 3 attempts "
+                "and can no longer be processed."
+                + (
+                    f" Please contact the cashier at {phone} for more information."
+                    if phone
+                    else ""
+                )
             )
-        )
-        if reason:
-            message += f" Reason: {reason}"
+        else:
+            remaining = 3 - order.proof_attempts
+            message = (
+                f"Your payment for order {order.order_number} was rejected."
+                + (
+                    f" Please contact the cashier at {phone} to find out why."
+                    if phone
+                    else ""
+                )
+            )
+            if reason:
+                message += f" Reason: {reason}"
+            message += f" You have {remaining} more attempt(s) remaining."
+
         if order.customer_id:
             OrderNotification.objects.create(
                 customer=order.customer,
                 order=order,
                 message=message,
             )
-        return Response({"status": "rejected", "message": message})
+        return Response(
+            {
+                "status": "rejected",
+                "message": message,
+                "proof_attempts": order.proof_attempts,
+                "final_rejection": final_rejection,
+            }
+        )
 
     payment_method = request.data.get("payment_method") or order.payment_method
     if not payment_method:
@@ -275,6 +302,14 @@ class ResubmitProofView(APIView):
         if order.status == Order.Status.COMPLETED:
             return Response(
                 {"error": "Order is already completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if order.status == Order.Status.REJECTED or order.proof_attempts >= 3:
+            return Response(
+                {
+                    "error": "This payment was rejected after 3 attempts and can no longer be re-submitted."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

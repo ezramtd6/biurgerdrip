@@ -15,6 +15,7 @@ const STATUS_COLORS: Record<string, string> = {
   READY: "bg-green-100 text-green-700",
   COMPLETED: "bg-gray-100 text-gray-700",
   CANCELLED: "bg-red-100 text-red-700",
+  REJECTED: "bg-red-100 text-red-700",
 };
 
 export default function OrderHistoryPage() {
@@ -73,14 +74,24 @@ export default function OrderHistoryPage() {
               return (
               <div key={order.id} className="bg-white rounded-xl border border-gray-100 p-5">
                 {rejected && (
-                  <div className="mb-4 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-start gap-3">
-                    <span className="w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-500 text-lg shrink-0">
+                  <div className={`mb-4 p-4 rounded-xl flex items-start gap-3 border ${
+                    order.status === "REJECTED"
+                      ? "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700"
+                      : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                  }`}>
+                    <span className={`w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0 ${
+                      order.status === "REJECTED"
+                        ? "bg-red-200 dark:bg-red-900/40 text-red-600"
+                        : "bg-red-100 dark:bg-red-900/40 text-red-500"
+                    }`}>
                       <i className="fas fa-circle-xmark"></i>
                     </span>
                     <div className="flex-1">
-                      <p className="font-bold text-red-700 dark:text-red-400 text-sm">Payment Rejected</p>
+                      <p className="font-bold text-red-700 dark:text-red-400 text-sm">
+                        {order.status === "REJECTED" ? "Payment Rejected After 3 Attempts" : "Payment Rejected"}
+                      </p>
                       <p className="text-sm text-red-600 dark:text-red-300 mt-1">{rejected.message}</p>
-                      {order.status !== "COMPLETED" && (
+                      {order.status !== "COMPLETED" && order.status !== "REJECTED" && (
                         <button
                           onClick={() => {
                             setPickingFor(order.id);

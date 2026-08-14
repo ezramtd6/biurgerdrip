@@ -15,6 +15,7 @@ const STATUS_COLORS: Record<string, string> = {
   READY: "bg-green-100 text-green-700",
   COMPLETED: "bg-gray-100 text-gray-700",
   CANCELLED: "bg-red-100 text-red-700",
+  REJECTED: "bg-red-100 text-red-700",
 };
 
 export default function CashierOrdersPage() {
@@ -51,7 +52,7 @@ export default function CashierOrdersPage() {
       </div>
 
       <div className="flex gap-2 mb-6 overflow-x-auto">
-        {["", "PENDING", "PREPARING", "READY", "COMPLETED"].map((status) => (
+        {["", "PENDING", "PREPARING", "READY", "COMPLETED", "REJECTED"].map((status) => (
           <button
             key={status}
             onClick={() => setFilter(status)}
@@ -83,6 +84,7 @@ export default function CashierOrdersPage() {
                   {order.payment_proof && order.status !== "COMPLETED" && (
                     <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
                       <i className="fas fa-paperclip mr-1"></i>Proof
+                      {order.proof_attempts > 0 && ` ${order.proof_attempts}/3`}
                     </span>
                   )}
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[order.status]}`}>
@@ -130,6 +132,9 @@ export default function CashierOrdersPage() {
                 )}
                 {order.status === "COMPLETED" && (
                   <span className="text-xs text-green-600">Paid</span>
+                )}
+                {order.status === "REJECTED" && (
+                  <span className="text-xs text-red-600">Payment rejected</span>
                 )}
               </div>
             </div>

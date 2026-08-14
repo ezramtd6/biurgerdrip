@@ -717,12 +717,12 @@ export default function Home() {
                 </a>
               </div>
             )}
-            {branches.filter((b) => b.latitude != null && b.longitude != null).map((b, index) => (
+            {branches.filter((b) => !b.is_main && b.latitude != null && b.longitude != null).map((b, index) => (
               <div key={b.id} className="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                 <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
                   <i className="fas fa-store text-red-600 text-xl"></i>
                 </div>
-                <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-2">Branch {index + 1}</h3>
+                <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-2">{b.name}</h3>
                 <p className="text-gray-500 dark:text-gray-400 text-sm">
                   {Number(b.latitude).toFixed(5)}, {Number(b.longitude).toFixed(5)}<br />Addis Ababa
                 </p>

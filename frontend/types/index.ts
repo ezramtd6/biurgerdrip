@@ -119,7 +119,8 @@ export interface Order {
   coupon: number | null;
   payment_method: "CASH" | "CARD" | "MOBILE" | string | null;
   payment_proof: string | null;
-  status: "PENDING" | "PREPARING" | "READY" | "COMPLETED" | "CANCELLED";
+  proof_attempts: number;
+  status: "PENDING" | "PREPARING" | "READY" | "COMPLETED" | "CANCELLED" | "REJECTED";
   created_at: string;
   updated_at: string;
   items: OrderItem[];
