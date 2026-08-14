@@ -705,7 +705,7 @@ export default function Home() {
                 </div>
                 <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-2">{restaurant.name || "Main Branch"}</h3>
                 <p className="text-gray-500 dark:text-gray-400 text-sm">
-                  {Number(restaurant.latitude).toFixed(5)}, {Number(restaurant.longitude).toFixed(5)}<br />Addis Ababa
+                  {Number(restaurant.latitude).toFixed(6)}, {Number(restaurant.longitude).toFixed(6)}<br />{restaurant.address || "Addis Ababa"}
                 </p>
                 <a
                   href={`https://www.google.com/maps/dir/?api=1&destination=${Number(restaurant.latitude)},${Number(restaurant.longitude)}`}
