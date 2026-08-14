@@ -27,7 +27,10 @@ const registerSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email"),
-  phone: z.string().optional(),
+  phone: z.string().regex(
+    /^(\+251|0)(?:\s?\d{3}\s?\d{3}\s?\d{3})$/,
+    "Phone must start with +251 or 0 and contain 9 digits, e.g. +251 911 234 567 or 0911 234 567"
+  ),
 });
 type RegisterForm = z.infer<typeof registerSchema>;
 
@@ -45,6 +48,20 @@ const roleRedirects: Record<string, string> = {
 
 const modalFieldClass = "dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500";
 const modalLabelClass = "dark:text-white";
+
+const readRegistrationError = (err: unknown): string => {
+  const data = (err as { response?: { data?: unknown } })?.response?.data;
+  if (typeof data === "string") return data;
+  if (data && typeof data === "object") {
+    const rec = data as Record<string, unknown>;
+    if (typeof rec.detail === "string") return rec.detail;
+    if (typeof rec.message === "string") return rec.message;
+    const first = rec.email ?? rec.phone ?? rec.first_name ?? rec.last_name;
+    if (Array.isArray(first)) return String(first[0]);
+    if (typeof first === "string") return first;
+  }
+  return "Registration failed. Please try again.";
+};
 
 export default function AuthModalProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -92,13 +109,27 @@ export default function AuthModalProvider({ children }: { children: React.ReactN
 function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; onSuccess: () => void }) {
   const router = useRouter();
   const { login } = useAuth();
+  const [resendState, setResendState] = useState<"idle" | "loading" | "done">("idle");
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
+
+  const handleResendActivation = async () => {
+    const email = getValues("email");
+    if (!email) return;
+    setResendState("loading");
+    try {
+      await api.post("/auth/resend-activation/", { email });
+    } catch {
+      // ignore - still show success to avoid leaking account existence
+    }
+    setResendState("done");
+  };
 
   const role = login.data?.user?.role as string;
 
@@ -106,7 +137,7 @@ function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; o
     if (login.isSuccess && role) {
       const timer = setTimeout(() => {
         onSuccess();
-        router.replace(roleRedirects[role] || "/menu");
+        router.replace(roleRedirects[role] || "/");
       }, 800);
       return () => clearTimeout(timer);
     }
@@ -138,9 +169,28 @@ function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; o
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
           {(() => {
             const detail = (login.error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-            return detail === "No active account found with the given credentials" || detail === "User is not allowed to authenticate"
-              ? "Email or password is wrong"
-              : detail || "Email or password is wrong";
+            const isWrongCreds = detail === "No active account found with the given credentials" || detail === "User is not allowed to authenticate";
+            const needsActivation = detail === "Please activate your account using the activation link sent to your email.";
+            const message = isWrongCreds ? "Email or password is wrong" : (detail || "Email or password is wrong");
+            return (
+              <>
+                <p>{message}</p>
+                {needsActivation && (
+                  <button
+                    type="button"
+                    onClick={handleResendActivation}
+                    disabled={resendState === "loading"}
+                    className="mt-2 underline font-medium cursor-pointer disabled:opacity-60"
+                  >
+                    {resendState === "loading"
+                      ? "Sending activation link..."
+                      : resendState === "done"
+                        ? "Activation link sent. Please check your email."
+                        : "Resend activation link"}
+                  </button>
+                )}
+              </>
+            );
           })()}
         </div>
       )}
@@ -198,7 +248,7 @@ function RegisterView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
   });
 
   const onSubmit = (data: RegisterForm) => {
-    registerUser.mutate({ ...data, phone: data.phone || "" });
+    registerUser.mutate({ ...data, phone: data.phone });
   };
 
   if (registerUser.isSuccess) {
@@ -226,7 +276,7 @@ function RegisterView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
 
       {registerUser.isError && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-          {(registerUser.error as any)?.response?.data?.email?.[0] || "Registration failed. Please try again."}
+          {readRegistrationError(registerUser.error)}
         </div>
       )}
 
@@ -236,7 +286,7 @@ function RegisterView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
           <FormField label="Last Name" placeholder="Doe" error={errors.last_name?.message} labelClassName={modalLabelClass} className={modalFieldClass} {...register("last_name")} />
         </div>
         <FormField label="Email" type="email" placeholder="you@example.com" error={errors.email?.message} labelClassName={modalLabelClass} className={modalFieldClass} {...register("email")} />
-        <FormField label="Phone (optional)" type="tel" placeholder="+1234567890" error={errors.phone?.message} labelClassName={modalLabelClass} className={modalFieldClass} {...register("phone")} />
+        <FormField label="Phone" type="tel" required placeholder="+251 911 234 567" error={errors.phone?.message} labelClassName={modalLabelClass} className={modalFieldClass} {...register("phone")} />
         <Button type="submit" variant="brand" className="w-full" disabled={registerUser.isPending}>
           {registerUser.isPending && <Loader2 className="animate-spin" />}
           Create Account
@@ -271,8 +321,8 @@ function ForgotView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
     try {
       await api.post("/auth/forgot-password/", data);
       setSuccess(true);
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err: any) {
+      setError(err?.response?.data?.error || "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }

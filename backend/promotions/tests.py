@@ -1,6 +1,8 @@
 import datetime
+import json
 from decimal import Decimal
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -8,6 +10,12 @@ from accounts.models import User
 from orders.models import Order
 from products.models import Category, Product
 from .models import Promotion, Coupon
+
+TINY_PNG = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+    b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01"
+    b"\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+)
 
 
 class PromotionModelTests(APITestCase):
@@ -89,11 +97,16 @@ class CouponOrderTests(APITestCase):
             "discount": 0,
             "tax": 0,
             "payment_method": "CASH",
-            "items": [{"product": self.product.id, "quantity": 2, "option_values": []}],
+            "payment_proof": SimpleUploadedFile(
+                "proof.png", TINY_PNG, content_type="image/png"
+            ),
+            "items": json.dumps(
+                [{"product": self.product.id, "quantity": 2, "option_values": []}]
+            ),
         }
         if coupon_code:
             payload["coupon_code"] = coupon_code
-        return self.client.post("/api/orders/", payload, format="json")
+        return self.client.post("/api/orders/", payload, format="multipart")
 
     def _latest_order(self):
         return Order.objects.latest("id")

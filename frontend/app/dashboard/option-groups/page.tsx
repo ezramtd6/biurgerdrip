@@ -301,6 +301,15 @@ function OptionValuesModal({ isOpen, onClose, group }: { isOpen: boolean; onClos
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-option-values", group.id] }),
   });
 
+  const toggleValueMutation = useMutation({
+    mutationFn: (id: number) => {
+      const value = values?.find((v: any) => v.id === id);
+      return api.patch(`/option-values/${id}/`, { available: !value?.available });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-option-values", group.id] }),
+    onError: (e: unknown) => setValueError(apiErrorMessage(e, "Failed to update value")),
+  });
+
   const reorderMutation = useMutation({
     mutationFn: ({ id, display_order }: { id: number; display_order: number }) =>
       api.patch(`/option-values/${id}/`, { display_order }),
@@ -325,10 +334,11 @@ function OptionValuesModal({ isOpen, onClose, group }: { isOpen: boolean; onClos
     <Modal isOpen={isOpen} onClose={onClose} title={`${group.name} - Values`} maxWidth="lg">
       <div className="space-y-3 mb-4">
         {values?.map((v: any, index: number) => (
-          <div key={v.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          <div key={v.id} className={`flex items-center justify-between p-3 rounded-lg ${v.available ? "bg-gray-50" : "bg-gray-100 opacity-70"}`}>
             <div>
               <span className="text-sm font-medium">{v.name}</span>
               {v.name_amharic && <span className="ml-1 text-sm text-gray-500">({v.name_amharic})</span>}
+              {!v.available && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">Frozen</span>}
               {Number(v.price_adjustment) > 0 && (
                 <span className="ml-2 text-xs text-green-600">+${Number(v.price_adjustment).toFixed(2)}</span>
               )}
@@ -352,6 +362,14 @@ function OptionValuesModal({ isOpen, onClose, group }: { isOpen: boolean; onClos
                   <ChevronDown className="w-4 h-4" />
                 </button>
               </div>
+              <Button
+                variant={v.available ? "secondary" : "brand"}
+                size="sm"
+                loading={toggleValueMutation.isPending && toggleValueMutation.variables === v.id}
+                onClick={() => toggleValueMutation.mutate(v.id)}
+              >
+                {v.available ? "Freeze" : "Unfreeze"}
+              </Button>
               <Button variant="ghost" size="sm" onClick={() => openEdit(v)}>Edit</Button>
               <Button variant="danger" size="sm" onClick={() => deleteMutation.mutate(v.id)}>Delete</Button>
             </div>
@@ -373,11 +391,11 @@ function OptionValuesModal({ isOpen, onClose, group }: { isOpen: boolean; onClos
             </Button>
             <Button variant="ghost" size="sm" onClick={resetForm}>Cancel</Button>
           </div>
-          {valueError && <p className="text-sm text-red-600">{valueError}</p>}
         </div>
       ) : (
         <Button size="sm" onClick={() => setShowAdd(true)}>+ Add Value</Button>
       )}
+      <ErrorDialog open={!!valueError} onClose={() => setValueError(null)} message={valueError || ""} />
     </Modal>
   );
 }

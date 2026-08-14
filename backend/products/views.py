@@ -149,6 +149,16 @@ class OptionValueViewSet(viewsets.ModelViewSet):
             qs = qs.filter(option_group_id=group_id)
         return qs
 
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        old_available = instance.available
+        new_available = serializer.validated_data.get("available", old_available)
+        if not old_available and new_available and not instance.option_group.is_active:
+            raise ValidationError(
+                {"detail": "Cannot unfreeze this option value because its option group is frozen. Unfreeze the option group first."}
+            )
+        serializer.save()
+
 
 class RestaurantInfoViewSet(ActiveStateMixin, viewsets.ModelViewSet):
     queryset = RestaurantInfo.objects.all()
@@ -163,7 +173,7 @@ class RestaurantInfoViewSet(ActiveStateMixin, viewsets.ModelViewSet):
         restaurant = serializer.save()
         Branch.objects.create(
             restaurant=restaurant,
-            name=restaurant.name or "Main Branch",
+            name="Main",
             is_main=True,
         )
 
@@ -171,14 +181,38 @@ class RestaurantInfoViewSet(ActiveStateMixin, viewsets.ModelViewSet):
         instance.categories.all().update(is_active=False)
         Product.objects.filter(category__restaurant=instance).update(is_active=False)
         OptionGroup.objects.filter(product__category__restaurant=instance).update(is_active=False)
+        from promotions.models import Promotion
+        from orders.models import PaymentSystem
+        from accounts.models import User
+        Promotion.objects.filter(products__category__restaurant=instance).update(is_active=False)
+        PaymentSystem.objects.all().update(is_active=False)
+        User.objects.filter(role=User.Role.CASHIER, branch__restaurant=instance).update(is_active=False)
+        User.objects.filter(role=User.Role.CUSTOMER, orders__isnull=False).update(is_active=False)
 
     def cascade_unfreeze(self, instance):
         instance.categories.all().update(is_active=True)
         Product.objects.filter(category__restaurant=instance).update(is_active=True)
         OptionGroup.objects.filter(product__category__restaurant=instance).update(is_active=True)
+        from promotions.models import Promotion
+        from orders.models import PaymentSystem
+        from accounts.models import User
+        Promotion.objects.filter(products__category__restaurant=instance).update(is_active=True)
+        PaymentSystem.objects.all().update(is_active=True)
+        User.objects.filter(role=User.Role.CASHIER, branch__restaurant=instance).update(is_active=True)
+        User.objects.filter(role=User.Role.CUSTOMER, orders__isnull=False).update(is_active=True)
 
     def check_unfreeze(self, instance):
         pass
+
+    def perform_destroy(self, instance):
+        from promotions.models import Promotion
+        from orders.models import PaymentSystem
+        from accounts.models import User
+        Promotion.objects.filter(products__category__restaurant=instance).distinct().delete()
+        PaymentSystem.objects.all().delete()
+        User.objects.filter(role=User.Role.CASHIER, branch__restaurant=instance).delete()
+        User.objects.filter(role=User.Role.CUSTOMER, orders__isnull=False).delete()
+        super().perform_destroy(instance)
 
 
 class BranchViewSet(viewsets.ModelViewSet):

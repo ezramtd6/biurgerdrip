@@ -1,4 +1,5 @@
 import re
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -84,6 +85,12 @@ class CustomTokenRefreshView(APIView):
         
         try:
             refresh = RefreshToken(refresh_token)
+            user = refresh.payload.get("user_id")
+            if user and not User.objects.filter(id=user, is_active=True).exists():
+                return Response(
+                    {"error": "Invalid refresh token"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
             access_token = str(refresh.access_token)
 
             response = Response({"access": access_token})
@@ -147,6 +154,8 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
     
     def get_object(self):
+        if not self.request.user.is_active:
+            raise PermissionDenied("Account is inactive")
         return self.request.user
 
 
@@ -202,6 +211,21 @@ class ForgotPasswordView(APIView):
                 status=status.HTTP_200_OK,
             )
 
+        if not user.is_active:
+            if not user.has_usable_password():
+                return Response(
+                    {"error": "Your account is not activated yet. Please use the activation link sent to your email to set your password first."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            from products.models import Contact
+            contact = Contact.objects.first()
+            manager_phone = contact.phone if contact else ""
+            return Response(
+                {"error": f"Your account is blocked. Please contact the manager at {manager_phone}."
+                 if manager_phone else "Your account is blocked. Please contact the manager."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         PasswordResetToken.objects.filter(user=user, is_used=False).update(is_used=True)
 
         token = secrets.token_urlsafe(64)
@@ -230,7 +254,7 @@ class ResetPasswordTokenView(APIView):
             )
 
         token_age = timezone.now() - reset_token.created_at
-        if token_age > timedelta(hours=24):
+        if token_age > timedelta(hours=48):
             reset_token.is_used = True
             reset_token.save()
             return Response(
@@ -276,7 +300,7 @@ class ResetPasswordView(APIView):
             )
 
         token_age = timezone.now() - reset_token.created_at
-        if token_age > timedelta(hours=24):
+        if token_age > timedelta(hours=48):
             reset_token.is_used = True
             reset_token.save()
             return Response(
@@ -325,6 +349,30 @@ class SetPasswordTokenView(APIView):
             "last_name": user.last_name,
             "role": user.role,
         })
+
+
+class ResendActivationView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email", "").strip()
+        if not email:
+            return Response(
+                {"error": "Email is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = User.objects.filter(email=email.lower()).first()
+        if user and user.role == User.Role.CUSTOMER and not user.is_active and not user.has_usable_password():
+            PasswordResetToken.objects.filter(user=user, is_used=False).update(is_used=True)
+            token = secrets.token_urlsafe(64)
+            PasswordResetToken.objects.create(user=user, token=token)
+            send_set_password_email(user.email, user.first_name, user.role, token)
+
+        return Response(
+            {"message": "If an account exists, a new activation link has been sent to your email."},
+            status=status.HTTP_200_OK,
+        )
 
 
 class SetPasswordView(APIView):

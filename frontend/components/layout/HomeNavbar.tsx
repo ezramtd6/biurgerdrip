@@ -26,6 +26,7 @@ const translations: Record<string, Record<string, string>> = {
     about_us: "About Us",
     my_account: "My Account",
     cart: "Cart",
+    orders: "Orders",
     my_orders: "My Orders",
     profile: "Profile",
   },
@@ -35,6 +36,7 @@ const translations: Record<string, Record<string, string>> = {
     about_us: "ስለ እኛ",
     my_account: "መለያዬ",
     cart: "ቅርጫት",
+    orders: "ትዕዛዞች",
     my_orders: "የእኔ ትዕዛዞች",
     profile: "መገለጫ",
   },
@@ -97,16 +99,13 @@ export default function HomeNavbar() {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-8">
-            <Link href="/menu" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 transition-colors py-2">
-              {t("menu")}
-            </Link>
             {user && mounted && (
               <>
                 <Link href="/orders" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 transition-colors py-2">
-                  {t("my_orders")}
+                  {t("orders")}
                 </Link>
-                <Link href="/profile" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 transition-colors py-2">
-                  {t("profile")}
+                <Link href="/orders/history" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 transition-colors py-2">
+                  {t("my_orders")}
                 </Link>
               </>
             )}
@@ -169,11 +168,10 @@ export default function HomeNavbar() {
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg">
           <div className="px-4 py-4 space-y-1">
-            <Link href="/menu" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("menu")}</Link>
             {user && mounted && (
               <>
-                <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("my_orders")}</Link>
-                <Link href="/profile" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("profile")}</Link>
+                <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("orders")}</Link>
+                <Link href="/orders/history" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("my_orders")}</Link>
               </>
             )}
             {user && mounted ? (

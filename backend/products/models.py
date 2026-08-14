@@ -244,8 +244,8 @@ class SocialLink(models.Model):
 
 class Contact(models.Model):
     phone_regex = RegexValidator(
-        regex=r"^\+251(?:\s?\d{3}\s?\d{3}\s?\d{3})$",
-        message="Phone must start with +251 followed by 9 digits, e.g. +251 911 234 567",
+        regex=r"^(\+251|0)(?:\s?\d{3}\s?\d{3}\s?\d{3})$",
+        message="Phone must start with +251 or 0 followed by 9 digits, e.g. +251 911 234 567 or 0911 234 567",
     )
     phone = models.CharField(max_length=20, validators=[phone_regex])
 

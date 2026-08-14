@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
-import { Button, Input, Modal, Table, Select } from "@/components/ui";
+import { Button, Input, Modal, Table } from "@/components/ui";
 import { User, Branch } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
+import { Search } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -32,6 +33,7 @@ export default function CashiersPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [createdToken, setCreatedToken] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: cashiers, isLoading } = useQuery<User[]>({
     queryKey: ["admin-cashiers"],
@@ -49,9 +51,8 @@ export default function CashiersPage() {
     },
   });
 
-  const branchName = (id: number | null | undefined) =>
-    branches?.find((b) => b.id === id)?.name || (id ? `Branch #${id}` : "—");
-
+  const defaultBranch = branches?.find((b) => b.is_main) ?? branches?.[0] ?? null;
+  
   const createMutation = useMutation({
     mutationFn: (data: CashierForm) => api.post("/auth/cashiers/", data),
     onSuccess: (res) => {
@@ -72,13 +73,29 @@ export default function CashiersPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-cashiers"] }),
   });
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<CashierForm>({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CashierForm>({
     resolver: zodResolver(schema),
   });
 
-  const openCreate = () => { reset({ email: "", first_name: "", last_name: "", phone: "", branch: null }); setCreatedToken(null); setIsOpen(true); };
+  const openCreate = () => {
+    reset({ email: "", first_name: "", last_name: "", phone: "", branch: null });
+    if (defaultBranch) setValue("branch", defaultBranch.id);
+    setCreatedToken(null);
+    setIsOpen(true);
+  };
 
   if (isLoading) return <Loading />;
+
+  const q = search.trim().toLowerCase();
+  const filtered = cashiers?.filter((c) => {
+    if (!q) return true;
+    return (
+      c.email.toLowerCase().includes(q) ||
+      (c.first_name || "").toLowerCase().includes(q) ||
+      (c.last_name || "").toLowerCase().includes(q) ||
+      (c.phone || "").toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div>
@@ -86,6 +103,18 @@ export default function CashiersPage() {
         <h1 className="text-2xl font-bold text-gray-900">Cashiers</h1>
         <Button onClick={openCreate}>Add Cashier</Button>
       </div>
+
+      {cashiers && cashiers.length > 0 && (
+        <div className="relative mb-4 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search cashiers..."
+            className="pl-9 pr-3 h-9"
+          />
+        </div>
+      )}
 
       {!cashiers || cashiers.length === 0 ? (
         <EmptyState message="No cashiers yet" />
@@ -97,9 +126,6 @@ export default function CashiersPage() {
             { key: "first_name", header: "First Name" },
             { key: "last_name", header: "Last Name" },
             { key: "phone", header: "Phone" },
-            { key: "branch", header: "Branch", render: (item: Record<string, unknown>) => (
-              <span>{branchName(item.branch as number | null | undefined)}</span>
-            ) },
             { key: "is_active", header: "Status", render: (item: Record<string, unknown>) => (
               <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                 {item.is_active ? "Active" : "Inactive"}
@@ -128,7 +154,8 @@ export default function CashiersPage() {
               ),
             },
           ]}
-          data={cashiers as unknown as Record<string, unknown>[]}
+          data={filtered as unknown as Record<string, unknown>[]}
+          emptyMessage="No cashiers match your search"
         />
       )}
 
@@ -161,13 +188,6 @@ export default function CashiersPage() {
               <Input label="Last Name" error={errors.last_name?.message} {...register("last_name")} />
             </div>
             <Input label="Phone" error={errors.phone?.message} {...register("phone")} />
-            <Select
-              label="Branch"
-              placeholder="Select branch"
-              error={errors.branch?.message}
-              options={(branches ?? []).map((b) => ({ value: b.id, label: b.name || `Branch #${b.id}` }))}
-              {...register("branch", { setValueAs: (v) => (v === "" || v === undefined ? null : Number(v)) })}
-            />
             <div className="flex gap-3 justify-end">
               <Button variant="secondary" type="button" onClick={() => setIsOpen(false)}>Cancel</Button>
               <Button type="submit" loading={createMutation.isPending}>Create</Button>

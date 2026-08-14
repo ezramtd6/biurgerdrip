@@ -55,6 +55,7 @@ export default function PaymentPage() {
   const { data: restaurant } = useRestaurant();
   const orderId = Number(params.orderId);
   const [paymentMethod, setPaymentMethod] = useState<string>("");
+  const [rejectReason, setRejectReason] = useState("");
   const { data: paymentSystems } = usePaymentSystems();
 
   const { data: order, isLoading } = useQuery<Order>({
@@ -74,8 +75,14 @@ export default function PaymentPage() {
     "";
 
   const processPayment = useMutation({
-    mutationFn: () =>
-      api.post(`/orders/${orderId}/payment/`, { payment_method: selectedMethod }),
+    mutationFn: async ({ action, reason }: { action: "accept" | "reject"; reason?: string }) => {
+      const res = await api.post(`/orders/${orderId}/payment/`, {
+        action,
+        payment_method: selectedMethod,
+        reason,
+      });
+      return res.data as { status?: string };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cashier-orders"] });
       queryClient.invalidateQueries({ queryKey: ["cashier-order", orderId] });
@@ -147,44 +154,120 @@ export default function PaymentPage() {
 
       {!isPaid && (
         <div className="bg-white rounded-xl border border-gray-100 p-6">
-          <h2 className="font-medium text-gray-900 mb-4">Select Payment Method</h2>
-          {!paymentSystems || paymentSystems.length === 0 ? (
-            <p className="text-center text-gray-500 text-sm py-6">
-              No payment methods available. Ask a manager to add one.
-            </p>
-          ) : (
-            <div className="grid grid-cols-3 gap-3 mb-6">
-              {paymentSystems.map((method) => (
-                <button
-                  key={method.code}
-                  onClick={() => setPaymentMethod(method.code)}
-                  className={`p-4 rounded-xl border-2 text-center transition-colors cursor-pointer ${
-                    selectedMethod === method.code
-                      ? "border-orange-500 bg-orange-50"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
+          {order.payment_proof ? (
+            <>
+              <h2 className="font-medium text-gray-900 mb-1">Verify Payment Proof</h2>
+              <p className="text-sm text-gray-500 mb-4">
+                The customer attached this proof of payment. Accept it to mark the order as paid, or reject it to notify the customer.
+              </p>
+
+              {order.payment_method && (
+                <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-xl text-sm">
+                  <span className="font-semibold text-orange-700">Payment Method: </span>
+                  <span className="text-orange-700">{order.payment_method}</span>
+                </div>
+              )}
+
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={order.payment_proof}
+                alt="Payment proof"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 mb-4 max-h-80 object-contain"
+              />
+
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Reason for rejection (optional) — sent to the customer"
+                className="w-full mb-4 p-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                rows={2}
+              />
+
+              <div className="flex gap-3">
+                <Button
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  onClick={() => processPayment.mutate({ action: "accept" })}
+                  loading={processPayment.isPending}
                 >
-                  {method.icon ? (
-                    <img src={method.icon} alt={method.name} className="w-10 h-10 object-contain mx-auto mb-1" />
-                  ) : (
-                    <span className="text-2xl block mb-1">💳</span>
-                  )}
-                  <span className="text-sm font-medium">{method.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
+                  <i className="fas fa-check mr-1"></i> Accept & Mark Paid
+                </Button>
+                <Button
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                  variant="secondary"
+                  onClick={() => processPayment.mutate({ action: "reject", reason: rejectReason })}
+                  loading={processPayment.isPending}
+                >
+                  <i className="fas fa-xmark mr-1"></i> Reject
+                </Button>
+              </div>
 
-          <Button
-            className="w-full"
-            onClick={() => processPayment.mutate()}
-            loading={processPayment.isPending}
-          >
-            Complete Payment - ${Number(order.total).toFixed(2)}
-          </Button>
+              {processPayment.isSuccess && (
+                <p className="text-center text-green-600 text-sm mt-3">
+                  {processPayment.data?.status === "rejected"
+                    ? "Payment rejected — the customer has been notified."
+                    : "Payment accepted — order marked as paid!"}
+                </p>
+              )}
+              {processPayment.isError && (
+                <p className="text-center text-red-600 text-sm mt-3">
+                  Something went wrong. Please try again.
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <h2 className="font-medium text-gray-900 mb-4">Select Payment Method</h2>
+              {!paymentSystems || paymentSystems.length === 0 ? (
+                <p className="text-center text-gray-500 text-sm py-6">
+                  No payment methods available. Ask a manager to add one.
+                </p>
+              ) : (
+                <>
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  {paymentSystems.map((method) => (
+                    <button
+                      key={method.code}
+                      onClick={() => setPaymentMethod(method.code)}
+                      className={`p-4 rounded-xl border-2 text-center transition-colors cursor-pointer ${
+                        selectedMethod === method.code
+                          ? "border-orange-500 bg-orange-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      {method.icon ? (
+                        <img src={method.icon} alt={method.name} className="w-10 h-10 object-contain mx-auto mb-1" />
+                      ) : (
+                        <span className="text-2xl block mb-1">💳</span>
+                      )}
+                      <span className="text-sm font-medium">{method.name}</span>
+                    </button>
+                  ))}
+                </div>
+                {(() => {
+                  const selected = paymentSystems.find((m) => m.code === selectedMethod);
+                  return selected ? (
+                    <div className="mb-6 p-3 bg-gray-50 rounded-xl text-sm">
+                      <p className="font-semibold text-gray-900">
+                        {selected.name} <span className="text-gray-500">({selected.code})</span>
+                      </p>
+                    </div>
+                  ) : null;
+                })()}
+                </>
+              )}
 
-          {processPayment.isSuccess && (
-            <p className="text-center text-green-600 text-sm mt-3">Payment successful!</p>
+              <Button
+                className="w-full"
+                onClick={() => processPayment.mutate({ action: "accept" })}
+                loading={processPayment.isPending}
+              >
+                Complete Payment - ${Number(order.total).toFixed(2)}
+              </Button>
+
+              {processPayment.isSuccess && (
+                <p className="text-center text-green-600 text-sm mt-3">Payment successful!</p>
+              )}
+            </>
           )}
         </div>
       )}

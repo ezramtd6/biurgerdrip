@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.core.validators import RegexValidator
 
 
 class UserManager(BaseUserManager):
@@ -27,7 +28,11 @@ class User(AbstractUser):
 
     username = None  # Remove username field
     email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=20, blank=True)
+    phone_regex = RegexValidator(
+        regex=r"^(\+251|0)(?:\s?\d{3}\s?\d{3}\s?\d{3})$",
+        message="Phone must start with +251 or 0 followed by 9 digits, e.g. +251 911 234 567 or 0911 234 567",
+    )
+    phone = models.CharField(max_length=20, blank=True, validators=[phone_regex])
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.CUSTOMER)
     branch = models.ForeignKey(
         "products.Branch",
@@ -41,6 +46,15 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ["first_name", "last_name"]
 
     objects = UserManager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["phone"],
+                condition=~models.Q(phone=""),
+                name="unique_phone_nonempty",
+            )
+        ]
 
 
 class PasswordResetToken(models.Model):

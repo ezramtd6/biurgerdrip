@@ -82,7 +82,7 @@ export default function ResetPasswordPage() {
           {error || "Invalid or expired token."}
         </div>
         <p className="mb-4 text-sm text-gray-500">Please request a new password reset link.</p>
-        <button onClick={() => openAuth("login")} className="text-orange-500 hover:text-orange-600 font-medium text-sm cursor-pointer">
+        <button onClick={() => router.replace("/")} className="text-orange-500 hover:text-orange-600 font-medium text-sm cursor-pointer">
           Go to Login
         </button>
       </div>

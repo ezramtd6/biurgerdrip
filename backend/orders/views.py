@@ -4,8 +4,13 @@ from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from products.views import IsManager
-from .models import Order, PaymentSystem
-from .serializers import OrderSerializer, OrderCreateSerializer, PaymentSystemSerializer
+from .models import Order, PaymentSystem, OrderNotification
+from .serializers import (
+    OrderSerializer,
+    OrderCreateSerializer,
+    PaymentSystemSerializer,
+    OrderNotificationSerializer,
+)
 
 
 class PaymentSystemViewSet(viewsets.ModelViewSet):
@@ -14,8 +19,13 @@ class PaymentSystemViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = PaymentSystem.objects.all()
-        if self.request.user.role not in ("MANAGER", "ADMIN"):
+        role = getattr(self.request.user, "role", None)
+        if role not in ("MANAGER", "ADMIN"):
             qs = qs.filter(is_active=True)
+            if role == "CASHIER":
+                qs = qs.filter(cashier_enabled=True)
+            elif role == "CUSTOMER":
+                qs = qs.filter(customer_enabled=True)
         return qs
 
     def get_permissions(self):
@@ -68,14 +78,68 @@ class OrderDetailView(generics.RetrieveUpdateAPIView):
         return super().partial_update(request, *args, **kwargs)
 
 
+def _handle_payment(request, order):
+    if request.user.role not in ("MANAGER", "CASHIER"):
+        return Response(
+            {"error": "You do not have permission to process payments."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    if order.status == Order.Status.COMPLETED:
+        return Response(
+            {"error": "Order is already completed."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    action = request.data.get("action", "accept")
+
+    if action == "reject":
+        reason = (request.data.get("reason") or "").strip()
+        phone = getattr(request.user, "phone", "") or ""
+        message = (
+            f"Your payment for order {order.order_number} was rejected."
+            + (
+                f" Please contact the cashier at {phone} to find out why."
+                if phone
+                else " Please contact the cashier for more information."
+            )
+        )
+        if reason:
+            message += f" Reason: {reason}"
+        if order.customer_id:
+            OrderNotification.objects.create(
+                customer=order.customer,
+                order=order,
+                message=message,
+            )
+        return Response({"status": "rejected", "message": message})
+
+    payment_method = request.data.get("payment_method") or order.payment_method
+    if not payment_method:
+        return Response(
+            {"error": "Please select a payment method."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    qs = PaymentSystem.objects.filter(code=payment_method, is_active=True)
+    if request.user.role == "CASHIER":
+        ps = qs.filter(cashier_enabled=True).first()
+    else:
+        ps = qs.first()
+    if not ps:
+        return Response(
+            {"error": "Invalid payment method."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    order.payment_method = payment_method
+    order.status = Order.Status.COMPLETED
+    order.save()
+
+    return Response(OrderSerializer(order).data)
+
+
 class PaymentView(APIView):
     def post(self, request, pk):
-        if request.user.role not in ("MANAGER", "CASHIER"):
-            return Response(
-                {"error": "You do not have permission to process payments."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
         try:
             order = Order.objects.get(id=pk)
         except Order.DoesNotExist:
@@ -83,25 +147,7 @@ class PaymentView(APIView):
                 {"error": "Order not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-
-        if order.status == Order.Status.COMPLETED:
-            return Response(
-                {"error": "Order is already completed."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        payment_method = request.data.get("payment_method")
-        if not PaymentSystem.objects.filter(code=payment_method).exists():
-            return Response(
-                {"error": "Invalid payment method."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        order.payment_method = payment_method
-        order.status = Order.Status.COMPLETED
-        order.save()
-
-        return Response(OrderSerializer(order).data)
+        return _handle_payment(request, order)
 
 
 class CashierOrderListCreateView(generics.ListCreateAPIView):
@@ -133,12 +179,6 @@ class CashierOrderDetailView(generics.RetrieveUpdateAPIView):
 
 class CashierPaymentView(APIView):
     def post(self, request, pk):
-        if request.user.role not in ("MANAGER", "CASHIER"):
-            return Response(
-                {"error": "You do not have permission to process payments."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
         try:
             order = Order.objects.get(id=pk)
         except Order.DoesNotExist:
@@ -146,25 +186,7 @@ class CashierPaymentView(APIView):
                 {"error": "Order not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-
-        if order.status == Order.Status.COMPLETED:
-            return Response(
-                {"error": "Order is already completed."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        payment_method = request.data.get("payment_method")
-        if not PaymentSystem.objects.filter(code=payment_method).exists():
-            return Response(
-                {"error": "Invalid payment method."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        order.payment_method = payment_method
-        order.status = Order.Status.COMPLETED
-        order.save()
-
-        return Response(OrderSerializer(order).data)
+        return _handle_payment(request, order)
 
 
 class ReportsView(APIView):
@@ -207,3 +229,27 @@ class ReportsView(APIView):
             ),
             "recent_orders": recent_orders,
         })
+
+
+class NotificationListView(generics.ListAPIView):
+    serializer_class = OrderNotificationSerializer
+
+    def get_queryset(self):
+        return OrderNotification.objects.filter(
+            customer=self.request.user
+        ).order_by("-created_at")
+
+
+class NotificationReadView(APIView):
+    def post(self, request, pk):
+        notification = OrderNotification.objects.filter(
+            id=pk, customer=request.user
+        ).first()
+        if not notification:
+            return Response(
+                {"error": "Notification not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        notification.is_read = True
+        notification.save(update_fields=["is_read"])
+        return Response(OrderNotificationSerializer(notification).data)

@@ -207,7 +207,9 @@ export default function NewOrderPage() {
 
                 {item.product.option_groups && (
                   <div className="mt-2 space-y-1">
-                    {item.product.option_groups.map((group: OptionGroup) => (
+                    {item.product.option_groups
+                      .filter((g: OptionGroup) => g.is_active)
+                      .map((group: OptionGroup) => (
                       <div key={group.id} className="flex flex-wrap gap-1">
                         <span className="text-xs text-gray-400 mr-1">{group.name}:</span>
                         {group.values

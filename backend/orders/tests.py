@@ -1,11 +1,20 @@
 from decimal import Decimal
+import json
 
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
 
+from django.core.files.uploadedfile import SimpleUploadedFile
+
+TINY_PNG = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+    b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01"
+    b"\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+)
+
 from accounts.models import User
-from orders.models import PaymentSystem, Order
+from orders.models import PaymentSystem, Order, OrderNotification
 from products.models import Category, Product, RestaurantInfo
 
 
@@ -72,12 +81,31 @@ class PaymentSystemTests(TestCase):
                 "discount": 0,
                 "tax": 0,
                 "payment_method": "TELEBIRR",
+                "payment_proof": SimpleUploadedFile(
+                    "proof.png", TINY_PNG, content_type="image/png"
+                ),
+                "items": json.dumps(
+                    [{"product": self.product.id, "quantity": 1, "option_values": []}]
+                ),
+            },
+            format="multipart",
+        )
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Order.objects.get(id=res.data["id"]).payment_method, "TELEBIRR")
+        self.assertIsNotNone(Order.objects.get(id=res.data["id"]).payment_proof)
+
+    def test_customer_cannot_create_order_without_payment_proof(self):
+        res = self.client_for(self.customer).post(
+            "/api/orders/",
+            {
+                "discount": 0,
+                "tax": 0,
+                "payment_method": "TELEBIRR",
                 "items": [{"product": self.product.id, "quantity": 1, "option_values": []}],
             },
             format="json",
         )
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Order.objects.get(id=res.data["id"]).payment_method, "TELEBIRR")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_customer_cannot_create_order_with_unknown_payment_method(self):
         res = self.client_for(self.customer).post(
@@ -116,3 +144,43 @@ class PaymentSystemTests(TestCase):
             f"/api/orders/{order.id}/payment/", {"payment_method": "BITCOIN"}
         )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_cashier_reject_payment_notifies_customer_with_phone(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            subtotal=Decimal("100.00"),
+            total=Decimal("100.00"),
+        )
+        self.cashier.phone = "0912345678"
+        self.cashier.save(update_fields=["phone"])
+        res = self.client_for(self.cashier).post(
+            f"/api/orders/{order.id}/payment/",
+            {"action": "reject", "reason": "Image unclear"},
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["status"], "rejected")
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.PENDING)
+        notif = order.notifications.first()
+        self.assertIsNotNone(notif)
+        self.assertEqual(notif.customer, self.customer)
+        self.assertIn("0912345678", notif.message)
+        self.assertIn("Image unclear", notif.message)
+
+    def test_customer_sees_own_notifications(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            subtotal=Decimal("100.00"),
+            total=Decimal("100.00"),
+        )
+        Order.objects.create(
+            customer=self.manager,
+            subtotal=Decimal("50.00"),
+            total=Decimal("50.00"),
+        )
+        OrderNotification.objects.create(
+            customer=self.customer, order=order, message="Rejected"
+        )
+        res = self.client_for(self.customer).get("/api/orders/notifications/")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)

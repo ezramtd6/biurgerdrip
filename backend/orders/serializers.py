@@ -1,5 +1,7 @@
+import json
+
 from rest_framework import serializers
-from .models import Order, OrderItem, OrderItemOption, PaymentSystem
+from .models import Order, OrderItem, OrderItemOption, PaymentSystem, OrderNotification
 
 class OrderItemOptionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,17 +17,31 @@ class OrderItemSerializer(serializers.ModelSerializer):
         fields = ["id", "product", "quantity", "unit_price", "total_price", "options"]
 
 
+class OrderNotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderNotification
+        fields = ["id", "order", "message", "is_read", "created_at"]
+
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
+    notifications = OrderNotificationSerializer(many=True, read_only=True)
+    payment_proof = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = [
             "id", "order_number", "customer", "cashier", "subtotal",
             "discount", "tax", "total", "coupon", "payment_method", "status",
+            "payment_proof", "notifications",
             "created_at", "updated_at", "items",
         ]
         read_only_fields = ["id", "order_number", "customer", "cashier", "created_at", "updated_at"]
+
+    def get_payment_proof(self, obj):
+        if obj.payment_proof:
+            return obj.payment_proof.url
+        return None
 
 
 class OrderCreateSerializer(serializers.Serializer):
@@ -34,14 +50,31 @@ class OrderCreateSerializer(serializers.Serializer):
     tax = serializers.DecimalField(max_digits=10, decimal_places=2, default=0)
     payment_method = serializers.CharField(required=False, allow_blank=True, max_length=20)
     coupon_code = serializers.CharField(required=False, allow_blank=True, max_length=50)
-    items = serializers.ListField(child=serializers.DictField(), write_only=True)
+    payment_proof = serializers.ImageField(required=False, allow_null=True)
+    items = serializers.JSONField(write_only=True)
 
     def validate_payment_method(self, value):
-        if value and not PaymentSystem.objects.filter(code=value).exists():
+        if not value:
+            return value
+        user = self.context["request"].user
+        role = getattr(user, "role", None)
+        qs = PaymentSystem.objects.filter(code=value, is_active=True)
+        if role == "CASHIER":
+            allowed = qs.filter(cashier_enabled=True).exists()
+        elif role == "CUSTOMER":
+            allowed = qs.filter(customer_enabled=True).exists()
+        else:
+            allowed = qs.exists()
+        if not allowed:
             raise serializers.ValidationError("Invalid payment method.")
         return value
 
     def validate_items(self, value):
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except (json.JSONDecodeError, TypeError):
+                raise serializers.ValidationError("Invalid items format.")
         if not value:
             raise serializers.ValidationError("At least one item is required.")
         for item in value:
@@ -50,6 +83,14 @@ class OrderCreateSerializer(serializers.Serializer):
             if "quantity" not in item or int(item["quantity"]) < 1:
                 raise serializers.ValidationError("Each item must have a 'quantity' >= 1.")
         return value
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+        if getattr(user, "role", None) == "CUSTOMER" and not attrs.get("payment_proof"):
+            raise serializers.ValidationError(
+                {"payment_proof": "Please attach proof of payment before placing your order."}
+            )
+        return attrs
 
     def _resolve_coupon(self, code, subtotal):
         from promotions.models import Coupon
@@ -104,6 +145,7 @@ class OrderCreateSerializer(serializers.Serializer):
             coupon=coupon,
             tax=validated_data.get("tax", 0),
             payment_method=validated_data.get("payment_method") or None,
+            payment_proof=validated_data.get("payment_proof"),
         )
 
         for product, quantity, unit_price, total_price, option_values in lines:

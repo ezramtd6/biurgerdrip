@@ -49,6 +49,12 @@ class Order(models.Model):
         blank=True,
         null=True
     )
+    payment_proof = models.ImageField(
+        upload_to="payment_proofs/",
+        blank=True,
+        null=True,
+        help_text="Picture the customer attaches as proof of payment",
+    )
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -64,6 +70,25 @@ class Order(models.Model):
 
     def __str__(self):
         return self.order_number
+
+
+class OrderNotification(models.Model):
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="order_notifications"
+    )
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="notifications"
+    )
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Notification for {self.order.order_number}"
 
 
 class OrderItem(models.Model):
@@ -112,6 +137,8 @@ class PaymentSystem(models.Model):
     icon = models.ImageField(upload_to="payment_systems/", blank=True, null=True)
     details = models.TextField(blank=True, help_text="Instructions shown to the customer, e.g. account number")
     is_active = models.BooleanField(default=True)
+    cashier_enabled = models.BooleanField(default=True, help_text="Available to cashiers")
+    customer_enabled = models.BooleanField(default=True, help_text="Available to customers")
     display_order = models.PositiveIntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)

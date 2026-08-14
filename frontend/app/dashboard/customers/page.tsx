@@ -3,15 +3,17 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
-import { Button, Table } from "@/components/ui";
+import { Button, Input, Table } from "@/components/ui";
 import { User } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
+import { Search } from "lucide-react";
 
 export default function CustomersPage() {
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: customers, isLoading } = useQuery<User[]>({
     queryKey: ["admin-customers"],
@@ -34,11 +36,34 @@ export default function CustomersPage() {
 
   if (isLoading) return <Loading />;
 
+  const q = search.trim().toLowerCase();
+  const filtered = customers?.filter((c) => {
+    if (!q) return true;
+    return (
+      c.email.toLowerCase().includes(q) ||
+      (c.first_name || "").toLowerCase().includes(q) ||
+      (c.last_name || "").toLowerCase().includes(q) ||
+      (c.phone || "").toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
       </div>
+
+      {customers && customers.length > 0 && (
+        <div className="relative mb-4 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search customers..."
+            className="pl-9 pr-3 h-9"
+          />
+        </div>
+      )}
 
       {!customers || customers.length === 0 ? (
         <EmptyState message="No customers yet" />
@@ -93,7 +118,8 @@ export default function CustomersPage() {
               ),
             },
           ]}
-          data={customers as unknown as Record<string, unknown>[]}
+          data={filtered as unknown as Record<string, unknown>[]}
+          emptyMessage="No customers match your search"
         />
       )}
 

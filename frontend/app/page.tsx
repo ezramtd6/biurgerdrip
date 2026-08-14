@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,6 +29,7 @@ const translations: Record<string, Record<string, string>> = {
     contact_us: "Contact Us",
     menu: "Menu",
     about_us: "About Us",
+    orders: "Orders",
     my_account: "Login",
     cart: "Cart",
     hero_title: "No One OutPizzas the Hut!",
@@ -82,6 +83,7 @@ const translations: Record<string, Record<string, string>> = {
     contact_us: "አግኙን",
     menu: "ምናሌ",
     about_us: "ስለ እኛ",
+    orders: "ትዕዛዞች",
     my_account: "የእኔ መለያ",
     cart: "ተራማጅ",
     hero_title: "ማንም ሆቱን አያሸንፍም!",
@@ -195,7 +197,12 @@ export default function Home() {
     }
   }, []);
 
+  const firstCartWrite = useRef(true);
   useEffect(() => {
+    if (firstCartWrite.current) {
+      firstCartWrite.current = false;
+      return;
+    }
     try {
       localStorage.setItem("cart", JSON.stringify(cart));
     } catch {
@@ -301,7 +308,7 @@ export default function Home() {
   const t = (key: string) => translations[currentLang]?.[key] || translations.en[key] || key;
 
   const addToCart = (item: Product) => {
-    const groups = (item.option_groups ?? []).filter((g) => (g.values ?? []).some((v) => v.available));
+    const groups = (item.option_groups ?? []).filter((g) => g.is_active && (g.values ?? []).some((v) => v.available));
     const selected = groups
       .map((g) => ({ group: g, value: g.values?.find((v) => v.id === selectedOptions[`${item.id}:${g.id}`]) }))
       .filter((x) => x.value) as { group: OptionGroup; value: OptionValue }[];
@@ -384,6 +391,9 @@ export default function Home() {
               <a href="#menu" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 transition-colors py-2">{t("menu")}</a>
               <a href="#store-locations" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 transition-colors py-2">{t("store_locations")}</a>
               <a href="#about-us" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 transition-colors py-2">{t("about_us")}</a>
+              {user && mounted && (
+                <Link href="/orders" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-red-600 transition-colors py-2">{t("orders")}</Link>
+              )}
             </nav>
             <div className="flex items-center gap-3">
               <button onClick={toggleDarkMode} className="dark-toggle w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm">
@@ -423,7 +433,7 @@ export default function Home() {
               <button onClick={() => setCartOpen(true)} className="relative bg-red-600 text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-red-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-red-600/30 hover:scale-105 active:scale-95">
                 <i className="fas fa-shopping-bag"></i>
                 <span className="hidden sm:inline">{t("cart")}</span>
-                <span className={`absolute -top-1.5 -right-1.5 bg-yellow-400 text-red-600 text-xs font-black w-5 h-5 rounded-full flex items-center justify-center badge-pulse ${totalQty === 0 ? "hidden" : ""}`}>{totalQty}</span>
+                <span className={`absolute -top-1.5 -right-1.5 bg-yellow-400 text-red-600 text-xs font-black w-5 h-5 rounded-full flex items-center justify-center badge-pulse ${!mounted || totalQty === 0 ? "hidden" : ""}`}>{mounted ? totalQty : 0}</span>
               </button>
               <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden text-gray-700 dark:text-gray-200 text-xl p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition">
                 <i className="fas fa-bars"></i>
@@ -436,6 +446,9 @@ export default function Home() {
             <a href="#menu" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("menu")}</a>
             <a href="#store-locations" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("store_locations")}</a>
             <a href="#about-us" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("about_us")}</a>
+            {user && mounted && (
+              <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("orders")}</Link>
+            )}
             {user && mounted ? (
               <button onClick={() => { logout.mutate(); setMobileMenuOpen(false); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">Logout</button>
             ) : (
@@ -549,7 +562,7 @@ export default function Home() {
                   const itemName = currentLang === "am" ? item.name_amharic || item.name : item.name;
                   const itemDesc = currentLang === "am" ? item.description_amharic || item.description : item.description;
                   const groups = [...(item.option_groups ?? [])]
-                    .filter((g) => (g.values ?? []).some((v) => v.available))
+                    .filter((g) => g.is_active && (g.values ?? []).some((v) => v.available))
                     .sort((a, b) => (a.name === "Size" ? -1 : b.name === "Size" ? 1 : a.display_order - b.display_order));
                   const sizeGroup = groups.find((g) => g.name === "Size");
                   const missingRequired = !!sizeGroup && !selectedOptions[`${item.id}:${sizeGroup.id}`];

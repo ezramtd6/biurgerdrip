@@ -72,7 +72,7 @@ export default function CashierOrdersPage() {
         <div className="bg-white rounded-xl border border-gray-100 divide-y">
           {filtered.map((order) => (
             <div key={order.id} className="p-5">
-              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2">
                 <div>
                   <p className="font-medium">{order.order_number}</p>
                   <p className="text-xs text-gray-400">
@@ -80,6 +80,11 @@ export default function CashierOrdersPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
+                  {order.payment_proof && order.status !== "COMPLETED" && (
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                      <i className="fas fa-paperclip mr-1"></i>Proof
+                    </span>
+                  )}
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[order.status]}`}>
                     {order.status}
                   </span>
@@ -116,6 +121,11 @@ export default function CashierOrdersPage() {
                 {order.status === "READY" && (
                   <Link href={`/cashier/payment/${order.id}`}>
                     <Button size="sm">Process Payment</Button>
+                  </Link>
+                )}
+                {order.payment_proof && order.status === "PENDING" && (
+                  <Link href={`/cashier/payment/${order.id}`}>
+                    <Button size="sm" variant="secondary">Verify Payment</Button>
                   </Link>
                 )}
                 {order.status === "COMPLETED" && (

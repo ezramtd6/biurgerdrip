@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
 import { Button, Input, Modal, Select, Textarea } from "@/components/ui";
-import { RestaurantInfo, Branch, Contact, SocialLink, SocialPlatform } from "@/types";
+import { RestaurantInfo, Contact, SocialLink, SocialPlatform } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import { useForm } from "react-hook-form";
@@ -35,14 +35,6 @@ const aboutSchema = z.object({
 });
 
 type AboutForm = z.infer<typeof aboutSchema>;
-
-const branchSchema = z.object({
-  name: z.string().min(1, "Branch name is required"),
-  latitude: z.coerce.number().refine((v) => !Number.isNaN(v) && v >= -90 && v <= 90, "Invalid latitude").optional(),
-  longitude: z.coerce.number().refine((v) => !Number.isNaN(v) && v >= -180 && v <= 180, "Invalid longitude").optional(),
-});
-
-type BranchForm = z.infer<typeof branchSchema>;
 
 const platformOptions: { value: SocialPlatform; label: string; icon: string }[] = [
   { value: "facebook", label: "Facebook", icon: "fab fa-facebook-f" },
@@ -82,10 +74,7 @@ export default function RestaurantPage() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [aboutEditing, setAboutEditing] = useState(false);
-  const [branchOpen, setBranchOpen] = useState(false);
-  const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [deleteRestaurant, setDeleteRestaurant] = useState(false);
-  const [deleteBranch, setDeleteBranch] = useState<Branch | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -100,16 +89,6 @@ export default function RestaurantPage() {
       const results = res.data.results || res.data;
       return (Array.isArray(results) ? results[0] : results) ?? null;
     },
-  });
-
-  const { data: branches, isLoading: branchesLoading } = useQuery<Branch[]>({
-    queryKey: ["branches"],
-    queryFn: async () => {
-      const res = await api.get("/branches/");
-      const results = res.data.results || res.data;
-      return Array.isArray(results) ? results : [];
-    },
-    enabled: !!info,
   });
 
   const { data: contact, isLoading: contactLoading } = useQuery<Contact | null>({
@@ -205,46 +184,6 @@ export default function RestaurantPage() {
     },
   });
 
-  const branchMutation = useMutation({
-    mutationFn: async (data: BranchForm) => {
-      const payload = { ...data, restaurant: info!.id };
-      if (editingBranch) return api.put(`/branches/${editingBranch.id}/`, payload);
-      return api.post("/branches/", payload);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["branches"] });
-      setError(null);
-      setBranchOpen(false);
-      setEditingBranch(null);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    },
-    onError: (e: unknown) => {
-      setSuccess(false);
-      setError(extractError(e));
-    },
-  });
-
-  const branchDeleteMutation = useMutation({
-    mutationFn: (id: number) => api.delete(`/branches/${id}/`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["branches"] });
-      setError(null);
-    },
-    onError: (e: unknown) => setError(extractError(e)),
-  });
-
-  const setMainMutation = useMutation({
-    mutationFn: (id: number) => api.patch(`/branches/${id}/`, { is_main: true }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["branches"] });
-      setError(null);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    },
-    onError: (e: unknown) => setError(extractError(e)),
-  });
-
   const socialSaveMutation = useMutation({
     mutationFn: (data: SocialLinkForm & { id?: number }) =>
       data.id
@@ -297,35 +236,6 @@ export default function RestaurantPage() {
         }
       : undefined,
   });
-
-  const branchForm = useForm<BranchForm>({
-    resolver: zodResolver(branchSchema),
-    values: editingBranch
-      ? {
-          name: editingBranch.name,
-          latitude: editingBranch.latitude ?? undefined,
-          longitude: editingBranch.longitude ?? undefined,
-        }
-      : undefined,
-  });
-
-  const openAddBranch = () => {
-    setEditingBranch(null);
-    branchForm.reset();
-    setError(null);
-    setBranchOpen(true);
-  };
-
-  const openEditBranch = (branch: Branch) => {
-    setEditingBranch(branch);
-    branchForm.reset({
-      name: branch.name,
-      latitude: branch.latitude ?? undefined,
-      longitude: branch.longitude ?? undefined,
-    });
-    setError(null);
-    setBranchOpen(true);
-  };
 
   const socialForm = useForm<SocialLinkForm>({
     resolver: zodResolver(socialLinkSchema),
@@ -558,63 +468,6 @@ export default function RestaurantPage() {
 
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Branches</h2>
-          <Button onClick={openAddBranch} disabled={!info}>
-            <span className="text-lg leading-none mr-1">+</span> Add Branch
-          </Button>
-        </div>
-
-        {!info ? (
-          <p className="text-sm text-gray-500">Save the restaurant information first to add branches.</p>
-        ) : branchesLoading ? (
-          <Loading />
-        ) : (branches ?? []).length === 0 ? (
-          <p className="text-sm text-gray-500">No branches added yet.</p>
-        ) : (
-          <div className="space-y-3">
-            {(branches ?? []).map((branch) => (
-              <div key={branch.id} className="bg-white rounded-xl border border-gray-100 p-4 flex items-center justify-between">
-                <div className="text-sm text-gray-900 flex items-center gap-3">
-                  <span className="font-semibold text-gray-900">{branch.name || `Branch #${branch.id}`}</span>
-                  {branch.is_main && (
-                    <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Main</span>
-                  )}
-                  <span className="text-gray-500">
-                    <span className="font-medium">Lat:</span> {branch.latitude ?? "—"}
-                    <span className="mx-3 font-medium">Lng:</span> {branch.longitude ?? "—"}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  {!branch.is_main && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      loading={setMainMutation.isPending && setMainMutation.variables === branch.id}
-                      onClick={() => setMainMutation.mutate(branch.id)}
-                    >
-                      Set as Main
-                    </Button>
-                  )}
-                  <Button variant="ghost" size="sm" onClick={() => openEditBranch(branch)}>
-                    Edit
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    loading={branchDeleteMutation.isPending && branchDeleteMutation.variables === branch.id}
-                    onClick={() => setDeleteBranch(branch)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">Social Media Links</h2>
           <Button onClick={openAddSocial} disabled={!info}>
             <span className="text-lg leading-none mr-1">+</span> Add Link
@@ -683,43 +536,12 @@ export default function RestaurantPage() {
         </form>
       </Modal>
 
-      <Modal
-        isOpen={branchOpen}
-        onClose={() => { setBranchOpen(false); setEditingBranch(null); }}
-        title={editingBranch ? "Edit Branch" : "Add Branch"}
-      >
-        <form onSubmit={branchForm.handleSubmit((data) => branchMutation.mutate(data))} className="space-y-4">
-          <Input label="Branch Name" placeholder="e.g. Bole, Piassa, Bishoftu" error={branchForm.formState.errors.name?.message} {...branchForm.register("name")} />
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Latitude" placeholder="e.g. 9.0054" error={branchForm.formState.errors.latitude?.message} {...branchForm.register("latitude")} />
-            <Input label="Longitude" placeholder="e.g. 38.7636" error={branchForm.formState.errors.longitude?.message} {...branchForm.register("longitude")} />
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="secondary" onClick={() => setBranchOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={branchMutation.isPending}>
-              {editingBranch ? "Save Changes" : "Add Branch"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
       <ConfirmDialog
         open={deleteRestaurant}
         onClose={() => setDeleteRestaurant(false)}
         onConfirm={handleDelete}
         title="Delete restaurant"
-        description="Are you sure you want to delete this restaurant? All its branches will also be deleted."
-        confirmLabel="Delete"
-        destructive
-      />
-      <ConfirmDialog
-        open={!!deleteBranch}
-        onClose={() => setDeleteBranch(null)}
-        onConfirm={() => { if (deleteBranch) branchDeleteMutation.mutate(deleteBranch.id); setDeleteBranch(null); }}
-        title="Delete branch"
-        description="Are you sure you want to delete this branch?"
+        description="Are you sure you want to delete this restaurant?"
         confirmLabel="Delete"
         destructive
       />

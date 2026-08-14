@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
-import { Order, CreateOrderPayload } from "@/types";
+import { Order, CreateOrderPayload, OrderNotification } from "@/types";
 
 export function useOrders() {
   return useQuery<Order[]>({
@@ -64,8 +64,22 @@ export function useCashierUpdateOrderStatus() {
 export function useCashierProcessPayment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, payment_method }: { id: number; payment_method: string }) => {
-      const res = await api.post(`/orders/cashier/${id}/payment/`, { payment_method });
+    mutationFn: async ({
+      id,
+      action = "accept",
+      payment_method,
+      reason,
+    }: {
+      id: number;
+      action?: "accept" | "reject";
+      payment_method?: string;
+      reason?: string;
+    }) => {
+      const res = await api.post(`/orders/cashier/${id}/payment/`, {
+        action,
+        payment_method,
+        reason,
+      });
       return res.data;
     },
     onSuccess: () => {
@@ -77,21 +91,10 @@ export function useCashierProcessPayment() {
 export function useCreateOrder() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: CreateOrderPayload) => {
-      const res = await api.post("/orders/", data);
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-    },
-  });
-}
-
-export function useUpdateOrderStatus() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const res = await api.patch(`/orders/${id}/`, { status });
+    mutationFn: async (formData: FormData) => {
+      const res = await api.post("/orders/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       return res.data;
     },
     onSuccess: () => {
@@ -103,12 +106,36 @@ export function useUpdateOrderStatus() {
 export function useProcessPayment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, payment_method }: { id: number; payment_method: string }) => {
-      const res = await api.post(`/orders/${id}/payment/`, { payment_method });
+    mutationFn: async ({
+      id,
+      action = "accept",
+      payment_method,
+      reason,
+    }: {
+      id: number;
+      action?: "accept" | "reject";
+      payment_method?: string;
+      reason?: string;
+    }) => {
+      const res = await api.post(`/orders/${id}/payment/`, {
+        action,
+        payment_method,
+        reason,
+      });
       return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
+export function useNotifications() {
+  return useQuery<OrderNotification[]>({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const res = await api.get("/orders/notifications/");
+      return res.data.results || res.data;
     },
   });
 }

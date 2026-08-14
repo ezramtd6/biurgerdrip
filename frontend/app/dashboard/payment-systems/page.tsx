@@ -18,6 +18,8 @@ interface PaymentSystemForm {
   details: string;
   display_order: string;
   is_active: boolean;
+  cashier_enabled: boolean;
+  customer_enabled: boolean;
 }
 
 const emptyForm: PaymentSystemForm = {
@@ -26,6 +28,8 @@ const emptyForm: PaymentSystemForm = {
   details: "",
   display_order: "0",
   is_active: true,
+  cashier_enabled: true,
+  customer_enabled: true,
 };
 
 export default function PaymentSystemsPage() {
@@ -95,6 +99,8 @@ export default function PaymentSystemsPage() {
       details: s.details,
       display_order: String(s.display_order),
       is_active: s.is_active,
+      cashier_enabled: s.cashier_enabled,
+      customer_enabled: s.customer_enabled,
     });
     setImageFile(null);
     setImagePreview(s.icon || null);
@@ -109,6 +115,8 @@ export default function PaymentSystemsPage() {
       details: form.details,
       display_order: Number(form.display_order) || 0,
       is_active: form.is_active,
+      cashier_enabled: form.cashier_enabled,
+      customer_enabled: form.customer_enabled,
     };
     if (imageFile) {
       const fd = new FormData();
@@ -272,15 +280,35 @@ export default function PaymentSystemsPage() {
             value={form.display_order}
             onChange={(e) => setForm({ ...form, display_order: e.target.value })}
           />
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="rounded"
-              checked={form.is_active}
-              onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-            />
-            Active
-          </label>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="rounded"
+                checked={form.is_active}
+                onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+              />
+              Active
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="rounded"
+                checked={form.cashier_enabled}
+                onChange={(e) => setForm({ ...form, cashier_enabled: e.target.checked })}
+              />
+              For Cashier
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="rounded"
+                checked={form.customer_enabled}
+                onChange={(e) => setForm({ ...form, customer_enabled: e.target.checked })}
+              />
+              For Customer
+            </label>
+          </div>
 
           {formError && <p className="text-sm text-red-500">{formError}</p>}
 

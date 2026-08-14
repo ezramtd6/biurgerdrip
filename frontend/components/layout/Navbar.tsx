@@ -32,7 +32,7 @@ export default function Navbar() {
     <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl shadow-sm sticky top-0 z-50 transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-18 py-3">
-          <Link href="/menu" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-3 group">
             <div className="w-11 h-11 bg-orange-500 rounded-full flex items-center justify-center shadow-lg group-hover:shadow-orange-500/30 group-hover:scale-110 transition-all duration-300 overflow-hidden">
               {restaurant?.logo ? (
                 <img src={restaurant.logo} alt={restaurant.name || "Restaurant"} className="w-full h-full object-cover" />
@@ -54,16 +54,10 @@ export default function Navbar() {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-8">
-            <Link href="/menu" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-orange-500 transition-colors py-2">
-              Menu
-            </Link>
             {user && mounted && (
               <>
-                <Link href="/orders" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-orange-500 transition-colors py-2">
+                <Link href="/orders/history" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-orange-500 transition-colors py-2">
                   My Orders
-                </Link>
-                <Link href="/profile" className="nav-link text-sm font-bold text-gray-700 dark:text-gray-200 hover:text-orange-500 transition-colors py-2">
-                  Profile
                 </Link>
               </>
             )}
@@ -124,16 +118,10 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg">
           <div className="px-4 py-4 space-y-1">
-            <Link href="/menu" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-500 rounded-xl transition-all">
-              Menu
-            </Link>
             {user && mounted && (
               <>
-                <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-500 rounded-xl transition-all">
+                <Link href="/orders/history" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-500 rounded-xl transition-all">
                   My Orders
-                </Link>
-                <Link href="/profile" onClick={() => setMobileMenuOpen(false)} className="block py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-gray-700 hover:text-orange-500 rounded-xl transition-all">
-                  Profile
                 </Link>
               </>
             )}

@@ -9,6 +9,8 @@ from .views import (
     CashierPaymentView,
     ReportsView,
     PaymentSystemViewSet,
+    NotificationListView,
+    NotificationReadView,
 )
 
 router = DefaultRouter()
@@ -22,5 +24,7 @@ urlpatterns = [
     path("cashier/<int:pk>/", CashierOrderDetailView.as_view(), name="cashier-order-detail"),
     path("cashier/<int:pk>/payment/", CashierPaymentView.as_view(), name="cashier-payment"),
     path("reports/", ReportsView.as_view(), name="reports"),
+    path("notifications/", NotificationListView.as_view(), name="notifications-list"),
+    path("notifications/<int:pk>/read/", NotificationReadView.as_view(), name="notifications-read"),
     path("", include(router.urls)),
 ]

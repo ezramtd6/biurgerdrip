@@ -117,11 +117,21 @@ export interface Order {
   tax: number;
   total: number;
   coupon: number | null;
-  payment_method: "CASH" | "CARD" | "MOBILE" | null;
+  payment_method: "CASH" | "CARD" | "MOBILE" | string | null;
+  payment_proof: string | null;
   status: "PENDING" | "PREPARING" | "READY" | "COMPLETED" | "CANCELLED";
   created_at: string;
   updated_at: string;
   items: OrderItem[];
+  notifications?: OrderNotification[];
+}
+
+export interface OrderNotification {
+  id: number;
+  order: number;
+  message: string;
+  is_read: boolean;
+  created_at: string;
 }
 
 export interface OrderItem {
@@ -207,6 +217,8 @@ export interface PaymentSystem {
   icon: string | null;
   details: string;
   is_active: boolean;
+  cashier_enabled: boolean;
+  customer_enabled: boolean;
   display_order: number;
   created_at: string;
   updated_at: string;

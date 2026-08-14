@@ -8,7 +8,6 @@ import { z } from "zod";
 import { Button, Input } from "@/components/ui";
 import api from "@/services/api";
 import { Loading } from "@/components/common/Loading";
-import { useAuthModal } from "@/components/auth/auth-modal-context";
 import SiteBrand from "@/components/layout/SiteBrand";
 
 const schema = z
@@ -33,7 +32,6 @@ interface UserInfo {
 export default function SetPasswordPage() {
   const params = useParams();
   const router = useRouter();
-  const { openAuth } = useAuthModal();
   const token = params.token as string;
 
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -85,7 +83,7 @@ export default function SetPasswordPage() {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
         <div className="text-red-500 text-sm mb-4">{error}</div>
-        <button onClick={() => openAuth("login")} className="text-orange-500 hover:text-orange-600 font-medium text-sm cursor-pointer">
+        <button onClick={() => router.replace("/")} className="text-orange-500 hover:text-orange-600 font-medium text-sm cursor-pointer">
           Go to Login
         </button>
       </div>

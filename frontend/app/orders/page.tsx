@@ -1,20 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useOrders, useCreateOrder } from "@/hooks/useOrders";
-import { useProducts } from "@/hooks/useProducts";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useCreateOrder } from "@/hooks/useOrders";
 import { usePaymentSystems } from "@/hooks/usePaymentSystems";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
 import HomeNavbar from "@/components/layout/HomeNavbar";
-
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-700",
-  PREPARING: "bg-blue-100 text-blue-700",
-  READY: "bg-green-100 text-green-700",
-  COMPLETED: "bg-gray-100 text-gray-700",
-  CANCELLED: "bg-red-100 text-red-700",
-};
 
 interface CartItem {
   id: number;
@@ -27,60 +19,95 @@ interface CartItem {
   optionNames?: string;
 }
 
+const readCart = (): CartItem[] => {
+  try {
+    const saved = localStorage.getItem("cart");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {
+    // ignore malformed storage
+  }
+  return [];
+};
+
 export default function OrdersPage() {
-  const { data: orders, isLoading } = useOrders();
-  const { data: products } = useProducts();
   const { data: paymentSystems } = usePaymentSystems();
   const createOrder = useCreateOrder();
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartReady, setCartReady] = useState(false);
   const [placed, setPlaced] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [couponError, setCouponError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
+  const [proofError, setProofError] = useState("");
+  const proofInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("cart");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) setCart(parsed);
-      }
-    } catch {
-      // ignore malformed storage
-    }
+    setCart(readCart());
+    setCartReady(true);
   }, []);
 
+  const handleProofChange = (file: File | undefined | null) => {
+    setProofError("");
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setProofError("Please attach an image file (screenshot or photo).");
+      setProofFile(null);
+      setProofPreview(null);
+      return;
+    }
+    setProofFile(file);
+    setProofPreview(URL.createObjectURL(file));
+  };
+
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
-  const productMap = new Map((products ?? []).map((p) => [p.id, p]));
   const selectedMethod = paymentMethod || paymentSystems?.[0]?.code || "";
 
   const placeOrder = () => {
     if (cart.length === 0) return;
+    if (!proofFile) {
+      setProofError("Please attach your payment proof before placing the order.");
+      return;
+    }
     const items = cart.map((i) => ({
       product: i.id,
       quantity: i.qty,
       option_values: i.optionKey ? i.optionKey.split("-").map(Number) : [],
     }));
-    createOrder.mutate(
-      { discount: 0, tax: 0, payment_method: selectedMethod, coupon_code: couponCode.trim() || undefined, items },
-      {
-        onSuccess: () => {
-          localStorage.setItem("cart", JSON.stringify([]));
-          setCart([]);
-          setPlaced(true);
-          setCouponError("");
-          window.dispatchEvent(new Event("cart-updated"));
-        },
-        onError: (err) => {
-          const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
-          const msg = data?.coupon_code;
-          setCouponError(typeof msg === "string" ? msg : Array.isArray(msg) ? String(msg[0]) : "");
-        },
-      }
-    );
+    const formData = new FormData();
+    formData.append("discount", "0");
+    formData.append("tax", "0");
+    formData.append("payment_method", selectedMethod);
+    if (couponCode.trim()) formData.append("coupon_code", couponCode.trim());
+    formData.append("items", JSON.stringify(items));
+    formData.append("payment_proof", proofFile);
+    createOrder.mutate(formData, {
+      onSuccess: () => {
+        localStorage.setItem("cart", JSON.stringify([]));
+        setCart([]);
+        setPlaced(true);
+        setCouponError("");
+        setProofFile(null);
+        setProofPreview(null);
+        window.dispatchEvent(new Event("cart-updated"));
+      },
+      onError: (err) => {
+        const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
+        const msg = data?.coupon_code;
+        setCouponError(typeof msg === "string" ? msg : Array.isArray(msg) ? String(msg[0]) : "");
+        const proof = (data as { payment_proof?: string[] })?.payment_proof;
+        if (Array.isArray(proof) && proof[0]) {
+          setProofError(proof[0]);
+        }
+      },
+    });
   };
 
-  if (isLoading) {
+  if (!cartReady) {
     return (
       <>
         <HomeNavbar />
@@ -89,13 +116,40 @@ export default function OrdersPage() {
     );
   }
 
+  if (cart.length === 0 && createOrder.isIdle) {
+    return (
+      <>
+        <HomeNavbar />
+        <div className="max-w-4xl mx-auto px-4 py-16 flex flex-col items-center text-center">
+          <EmptyState message="Your cart is empty" />
+          <Link
+            href="/orders/history"
+            className="mt-4 inline-flex items-center gap-2 bg-red-600 text-white px-5 py-3 rounded-2xl text-sm font-bold hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-red-600/30"
+          >
+            View Order History <i className="fas fa-clock-rotate-left"></i>
+          </Link>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <HomeNavbar />
       <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Your Cart & Checkout</h1>
+          <Link
+            href="/orders/history"
+            className="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300"
+          >
+            Order History <i className="fas fa-clock-rotate-left"></i>
+          </Link>
+        </div>
         {placed && (
           <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl text-green-700 dark:text-green-400 text-sm font-semibold">
             Your order has been placed successfully!
+            <Link href="/orders/history" className="underline ml-2">View order history</Link>
           </div>
         )}
 
@@ -170,11 +224,75 @@ export default function OrdersPage() {
                     </button>
                   ))}
                 </div>
+                {(() => {
+                  const selected = paymentSystems.find((m) => m.code === selectedMethod);
+                  return selected ? (
+                    <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl text-sm">
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">
+                        {selected.name} <span className="text-gray-500">({selected.code})</span>
+                      </p>
+                      {selected.details && (
+                        <p className="mt-1 text-gray-600 dark:text-gray-400 whitespace-pre-line">{selected.details}</p>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
               </div>
             )}
+
+            <div className="mt-5">
+              <p className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <i className="fas fa-camera-retro text-red-500"></i> Payment Proof
+              </p>
+              <p className="text-xs text-gray-500 mb-3">
+                Attach a screenshot or photo of your payment receipt so the cashier can verify it.
+              </p>
+              <input
+                ref={proofInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleProofChange(e.target.files?.[0])}
+              />
+              {!proofPreview ? (
+                <button
+                  type="button"
+                  onClick={() => proofInputRef.current?.click()}
+                  className="w-full p-6 rounded-2xl border-2 border-dashed border-gray-300 hover:border-red-400 hover:bg-red-50/50 dark:hover:bg-red-900/10 transition-all cursor-pointer flex flex-col items-center gap-2"
+                >
+                  <span className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-500 text-xl">
+                    <i className="fas fa-cloud-arrow-up"></i>
+                  </span>
+                  <span className="text-sm font-semibold text-gray-700">Tap to upload proof of payment</span>
+                  <span className="text-xs text-gray-400">PNG or JPG photo of your receipt</span>
+                </button>
+              ) : (
+                <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={proofPreview} alt="Payment proof preview" className="w-full max-h-64 object-contain" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProofFile(null);
+                      setProofPreview(null);
+                      if (proofInputRef.current) proofInputRef.current.value = "";
+                    }}
+                    className="absolute top-2 right-2 bg-black/60 text-white text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-black/80 transition-all cursor-pointer"
+                  >
+                    <i className="fas fa-xmark mr-1"></i> Remove
+                  </button>
+                </div>
+              )}
+              {proofError && (
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1.5">
+                  <i className="fas fa-circle-exclamation"></i> {proofError}
+                </p>
+              )}
+            </div>
+
             <button
               onClick={placeOrder}
-              disabled={createOrder.isPending}
+              disabled={createOrder.isPending || !proofFile}
               className="mt-4 w-full bg-red-600 text-white py-4 rounded-2xl font-black text-lg hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-red-600/30 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {createOrder.isPending ? (
@@ -185,58 +303,6 @@ export default function OrdersPage() {
                 </>
               )}
             </button>
-          </div>
-        )}
-
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">My Orders</h1>
-
-        {!orders || orders.length === 0 ? (
-          <EmptyState message={cart.length === 0 ? "You haven't placed any orders yet" : "Your cart items will appear here once you place the order"} />
-        ) : (
-          <div className="space-y-4">
-            {orders.map((order) => (
-              <div key={order.id} className="bg-white rounded-xl border border-gray-100 p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="font-medium text-gray-900">{order.order_number}</p>
-                    <p className="text-xs text-gray-400">
-                      {new Date(order.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[order.status]}`}
-                  >
-                    {order.status}
-                  </span>
-                </div>
-
-                {order.items && order.items.length > 0 && (
-                  <div className="border-t pt-3 space-y-2">
-                    {order.items.map((item) => {
-                      const product = productMap.get(item.product);
-                      return (
-                        <div key={item.id} className="flex justify-between text-sm">
-                          <span className="text-gray-600">
-                            {item.quantity}x {product?.name || `Product #${item.product}`}
-                            {item.options && item.options.length > 0 && (
-                              <span className="text-gray-400">
-                                {" "}(+{item.options.length} option{item.options.length > 1 ? "s" : ""})
-                              </span>
-                            )}
-                          </span>
-                          <span className="text-gray-900">ETB {Number(item.total_price).toFixed(2)}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <div className="border-t mt-3 pt-3 flex justify-between">
-                  <span className="text-sm font-medium text-gray-900">Total</span>
-                  <span className="font-bold text-gray-900">ETB {Number(order.total).toFixed(2)}</span>
-                </div>
-              </div>
-            ))}
           </div>
         )}
       </div>
