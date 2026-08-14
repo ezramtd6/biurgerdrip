@@ -1,7 +1,8 @@
 "use client";
 
+import { useState, useRef } from "react";
 import Link from "next/link";
-import { useOrders, useNotifications } from "@/hooks/useOrders";
+import { useOrders, useNotifications, useResubmitProof } from "@/hooks/useOrders";
 import { useProducts } from "@/hooks/useProducts";
 import type { OrderNotification } from "@/types";
 import { Loading } from "@/components/common/Loading";
@@ -20,6 +21,9 @@ export default function OrderHistoryPage() {
   const { data: orders, isLoading } = useOrders();
   const { data: notifications } = useNotifications();
   const { data: products } = useProducts();
+  const resubmit = useResubmitProof();
+  const [pickingFor, setPickingFor] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const productMap = new Map((products ?? []).map((p) => [p.id, p]));
 
@@ -29,6 +33,13 @@ export default function OrderHistoryPage() {
       notificationByOrder.set(n.order, n);
     }
   }
+
+  const handleProofPick = (orderId: number, file: File | undefined | null) => {
+    setPickingFor(null);
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    resubmit.mutate({ id: orderId, file });
+  };
 
   if (isLoading) {
     return (
@@ -66,9 +77,27 @@ export default function OrderHistoryPage() {
                     <span className="w-9 h-9 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-500 text-lg shrink-0">
                       <i className="fas fa-circle-xmark"></i>
                     </span>
-                    <div>
+                    <div className="flex-1">
                       <p className="font-bold text-red-700 dark:text-red-400 text-sm">Payment Rejected</p>
                       <p className="text-sm text-red-600 dark:text-red-300 mt-1">{rejected.message}</p>
+                      {order.status !== "COMPLETED" && (
+                        <button
+                          onClick={() => {
+                            setPickingFor(order.id);
+                            setTimeout(() => fileInputRef.current?.click(), 0);
+                          }}
+                          disabled={resubmit.isPending}
+                          className="mt-3 inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-700 transition-all cursor-pointer disabled:opacity-50"
+                        >
+                          <i className="fas fa-camera"></i>
+                          {resubmit.isPending && pickingFor === order.id ? "Uploading..." : "Re-upload payment proof"}
+                        </button>
+                      )}
+                      {resubmit.isSuccess && pickingFor === null && (
+                        <p className="mt-2 text-xs text-green-600 font-semibold">
+                          New proof uploaded — the cashier will verify it again.
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -129,6 +158,13 @@ export default function OrderHistoryPage() {
           </div>
         )}
       </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleProofPick(pickingFor ?? 0, e.target.files?.[0])}
+      />
     </>
   );
 }

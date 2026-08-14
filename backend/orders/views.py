@@ -253,3 +253,43 @@ class NotificationReadView(APIView):
         notification.is_read = True
         notification.save(update_fields=["is_read"])
         return Response(OrderNotificationSerializer(notification).data)
+
+
+class ResubmitProofView(APIView):
+    def post(self, request, pk):
+        user = request.user
+        if user.role != "CUSTOMER":
+            return Response(
+                {"error": "Only customers can re-submit payment proof."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            order = Order.objects.get(id=pk, customer=user)
+        except Order.DoesNotExist:
+            return Response(
+                {"error": "Order not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if order.status == Order.Status.COMPLETED:
+            return Response(
+                {"error": "Order is already completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        proof = request.FILES.get("payment_proof")
+        if not proof:
+            return Response(
+                {"error": "Please attach a new payment proof image."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        order.payment_proof = proof
+        order.status = Order.Status.PENDING
+        order.save(update_fields=["payment_proof", "status", "updated_at"])
+        order.notifications.filter(is_read=False).update(is_read=True)
+
+        return Response(
+            OrderSerializer(order, context={"request": request}).data
+        )

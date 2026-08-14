@@ -140,6 +140,24 @@ export function useNotifications() {
   });
 }
 
+export function useResubmitProof() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, file }: { id: number; file: File }) => {
+      const formData = new FormData();
+      formData.append("payment_proof", file);
+      const res = await api.post(`/orders/${id}/resubmit-proof/`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
 export interface ReportsData {
   total_orders: number;
   total_revenue: number;

@@ -11,6 +11,7 @@ from .views import (
     PaymentSystemViewSet,
     NotificationListView,
     NotificationReadView,
+    ResubmitProofView,
 )
 
 router = DefaultRouter()
@@ -20,6 +21,7 @@ urlpatterns = [
     path("", OrderListCreateView.as_view(), name="order-list-create"),
     path("<int:pk>/", OrderDetailView.as_view(), name="order-detail"),
     path("<int:pk>/payment/", PaymentView.as_view(), name="order-payment"),
+    path("<int:pk>/resubmit-proof/", ResubmitProofView.as_view(), name="order-resubmit-proof"),
     path("cashier/", CashierOrderListCreateView.as_view(), name="cashier-order-list-create"),
     path("cashier/<int:pk>/", CashierOrderDetailView.as_view(), name="cashier-order-detail"),
     path("cashier/<int:pk>/payment/", CashierPaymentView.as_view(), name="cashier-payment"),
