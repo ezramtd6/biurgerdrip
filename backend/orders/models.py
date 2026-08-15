@@ -78,10 +78,11 @@ class Order(models.Model):
 
 
 class OrderNotification(models.Model):
-    customer = models.ForeignKey(
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="order_notifications"
+        related_name="order_notifications",
+        help_text="Recipient of the notification (customer or cashier)",
     )
     order = models.ForeignKey(
         Order,
@@ -94,6 +95,17 @@ class OrderNotification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.order.order_number}"
+
+
+def notify_cashiers(order, message):
+    from accounts.models import User
+
+    for cashier in User.objects.filter(role=User.Role.CASHIER, is_active=True):
+        OrderNotification.objects.create(user=cashier, order=order, message=message)
+
+
+def notify_user(user, order, message):
+    OrderNotification.objects.create(user=user, order=order, message=message)
 
 
 class OrderItem(models.Model):

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useCreateOrder } from "@/hooks/useOrders";
 import { usePaymentSystems } from "@/hooks/usePaymentSystems";
+import { useValidateCoupon } from "@/hooks/usePromotions";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
 import HomeNavbar from "@/components/layout/HomeNavbar";
@@ -17,6 +18,12 @@ interface CartItem {
   qty: number;
   optionKey?: string;
   optionNames?: string;
+}
+
+interface CouponStatus {
+  state: "idle" | "checking" | "valid" | "invalid";
+  message?: string;
+  discount?: number;
 }
 
 const readCart = (): CartItem[] => {
@@ -35,11 +42,13 @@ const readCart = (): CartItem[] => {
 export default function OrdersPage() {
   const { data: paymentSystems } = usePaymentSystems();
   const createOrder = useCreateOrder();
+  const validateCoupon = useValidateCoupon();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartReady, setCartReady] = useState(false);
   const [placed, setPlaced] = useState(false);
   const [couponCode, setCouponCode] = useState("");
-  const [couponError, setCouponError] = useState("");
+  const [couponStatus, setCouponStatus] = useState<CouponStatus>({ state: "idle" });
+  const couponDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
@@ -49,6 +58,9 @@ export default function OrdersPage() {
   useEffect(() => {
     setCart(readCart());
     setCartReady(true);
+    return () => {
+      if (couponDebounceRef.current) clearTimeout(couponDebounceRef.current);
+    };
   }, []);
 
   const handleProofChange = (file: File | undefined | null) => {
@@ -65,7 +77,41 @@ export default function OrdersPage() {
   };
 
   const cartTotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const couponDiscount = couponStatus.state === "valid" ? couponStatus.discount ?? 0 : 0;
+  const grandTotal = cartTotal - couponDiscount;
   const selectedMethod = paymentMethod || paymentSystems?.[0]?.code || "";
+
+  const handleCouponChange = (value: string) => {
+    setCouponCode(value);
+    if (couponDebounceRef.current) clearTimeout(couponDebounceRef.current);
+    const code = value.trim();
+    if (!code) {
+      setCouponStatus({ state: "idle" });
+      return;
+    }
+    setCouponStatus({ state: "checking" });
+    couponDebounceRef.current = setTimeout(() => {
+      validateCoupon.mutate(
+        { code, subtotal: cartTotal },
+        {
+          onSuccess: (data) => {
+            if (data.valid) {
+              setCouponStatus({
+                state: "valid",
+                message: `Coupon ${data.code} applied`,
+                discount: Number(data.discount ?? 0),
+              });
+            } else {
+              setCouponStatus({ state: "invalid", message: data.error || "Invalid coupon code." });
+            }
+          },
+          onError: () => {
+            setCouponStatus({ state: "idle" });
+          },
+        }
+      );
+    }, 400);
+  };
 
   const placeOrder = () => {
     if (cart.length === 0) return;
@@ -90,7 +136,8 @@ export default function OrdersPage() {
         localStorage.setItem("cart", JSON.stringify([]));
         setCart([]);
         setPlaced(true);
-        setCouponError("");
+        setCouponCode("");
+        setCouponStatus({ state: "idle" });
         setProofFile(null);
         setProofPreview(null);
         window.dispatchEvent(new Event("cart-updated"));
@@ -98,7 +145,9 @@ export default function OrdersPage() {
       onError: (err) => {
         const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
         const msg = data?.coupon_code;
-        setCouponError(typeof msg === "string" ? msg : Array.isArray(msg) ? String(msg[0]) : "");
+        if (typeof msg === "string" || Array.isArray(msg)) {
+          setCouponStatus({ state: "invalid", message: typeof msg === "string" ? msg : String(msg[0]) });
+        }
         const proof = (data as { payment_proof?: string[] })?.payment_proof;
         if (Array.isArray(proof) && proof[0]) {
           setProofError(proof[0]);
@@ -184,21 +233,40 @@ export default function OrdersPage() {
                 </div>
               ))}
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-b-xl">
-                <span className="text-sm font-semibold text-gray-700">Total</span>
+                <span className="text-sm font-semibold text-gray-700">Subtotal</span>
                 <span className="text-lg font-black text-gray-900">ETB {cartTotal.toFixed(2)}</span>
+              </div>
+              {couponDiscount > 0 && (
+                <div className="flex items-center justify-between px-4 py-2 bg-green-50 dark:bg-green-900/20 border-t border-green-100 dark:border-green-800">
+                  <span className="text-sm font-semibold text-green-700 dark:text-green-400">Coupon discount</span>
+                  <span className="text-sm font-bold text-green-600 dark:text-green-400">-ETB {couponDiscount.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 border-t border-red-100 dark:border-red-800 rounded-b-xl">
+                <span className="text-sm font-bold text-gray-900">Total</span>
+                <span className="text-xl font-black text-gray-900">ETB {grandTotal.toFixed(2)}</span>
               </div>
             </div>
             <input
               value={couponCode}
-              onChange={(e) => {
-                setCouponCode(e.target.value);
-                setCouponError("");
-              }}
+              onChange={(e) => handleCouponChange(e.target.value)}
               placeholder="Coupon code (optional)"
               className="mt-4 w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
-            {couponError && (
-              <p className="mt-2 text-sm text-red-600">{couponError}</p>
+            {couponStatus.state === "checking" && (
+              <p className="mt-2 text-sm text-gray-500 flex items-center gap-1.5">
+                <i className="fas fa-spinner fa-spin"></i> Checking coupon...
+              </p>
+            )}
+            {couponStatus.state === "valid" && (
+              <p className="mt-2 text-sm text-green-600 flex items-center gap-1.5">
+                <i className="fas fa-circle-check"></i> {couponStatus.message}
+              </p>
+            )}
+            {couponStatus.state === "invalid" && (
+              <p className="mt-2 text-sm text-red-600 flex items-center gap-1.5">
+                <i className="fas fa-circle-exclamation"></i> {couponStatus.message}
+              </p>
             )}
             {paymentSystems && paymentSystems.length > 0 && (
               <div className="mt-4">

@@ -18,6 +18,59 @@ TINY_PNG = (
 )
 
 
+class CouponValidateEndpointTests(APITestCase):
+    def setUp(self):
+        self.customer = User.objects.create_user(
+            email="customer@test.com",
+            password="Password@123",
+            role=User.Role.CUSTOMER,
+        )
+        self.coupon = Coupon.objects.create(
+            code="SAVE20",
+            discount_percent=Decimal("20.00"),
+            min_subtotal=Decimal("100.00"),
+        )
+
+    def _validate(self, code, subtotal):
+        return self.client.post(
+            "/api/coupons/validate/",
+            {"code": code, "subtotal": subtotal},
+            format="json",
+        )
+
+    def test_requires_authentication(self):
+        response = self._validate("SAVE20", 200)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_valid_coupon(self):
+        self.client.force_authenticate(self.customer)
+        response = self._validate("save20", 200)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["valid"])
+        self.assertEqual(response.data["code"], "SAVE20")
+        self.assertEqual(response.data["discount"], "40.00")
+
+    def test_invalid_coupon(self):
+        self.client.force_authenticate(self.customer)
+        response = self._validate("NOPE", 200)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data["valid"])
+        self.assertEqual(response.data["error"], "Invalid coupon code.")
+
+    def test_min_subtotal_not_met(self):
+        self.client.force_authenticate(self.customer)
+        response = self._validate("SAVE20", 50)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data["valid"])
+        self.assertIn("minimum subtotal", response.data["error"])
+
+    def test_validation_does_not_increment_usage(self):
+        self.client.force_authenticate(self.customer)
+        self._validate("SAVE20", 200)
+        self.coupon.refresh_from_db()
+        self.assertEqual(self.coupon.times_used, 0)
+
+
 class PromotionModelTests(APITestCase):
     def setUp(self):
         self.category = Category.objects.create(name="Burgers")

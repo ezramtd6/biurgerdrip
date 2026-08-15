@@ -9,6 +9,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { useRestaurant } from "@/hooks/useRestaurant";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
+import NotificationBell from "@/components/NotificationBell";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -115,6 +116,10 @@ export default function HomeNavbar() {
             <button onClick={toggleDarkMode} className="dark-toggle w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm">
               {isDark ? <i className="fas fa-sun text-lg"></i> : <i className="fas fa-moon text-lg"></i>}
             </button>
+
+            {user && mounted && (
+              <NotificationBell triggerClassName="w-10 h-10 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm" />
+            )}
 
             <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full p-1 shadow-inner">
               <button onClick={() => setCurrentLang("en")} className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${currentLang === "en" ? "bg-red-600 text-white shadow" : "text-gray-600 dark:text-gray-300"}`}>EN</button>

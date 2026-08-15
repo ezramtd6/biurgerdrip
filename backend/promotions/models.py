@@ -133,6 +133,12 @@ class Coupon(models.Model):
             return "This coupon has reached its usage limit."
         return None
 
+    def validate_for(self, subtotal):
+        """Return an error message if this coupon cannot be used for the subtotal, else None."""
+        if subtotal < self.min_subtotal:
+            return f"This coupon requires a minimum subtotal of ETB {self.min_subtotal:.2f}."
+        return self.error_message()
+
     def calculate_discount(self, subtotal):
         if self.discount_percent:
             discount = subtotal * self.discount_percent / Decimal("100")

@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import { useOrders, useNotifications, useResubmitProof } from "@/hooks/useOrders";
 import { useProducts } from "@/hooks/useProducts";
+import { usePaymentSystems } from "@/hooks/usePaymentSystems";
 import type { OrderNotification } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
@@ -22,17 +23,20 @@ export default function OrderHistoryPage() {
   const { data: orders, isLoading } = useOrders();
   const { data: notifications } = useNotifications();
   const { data: products } = useProducts();
+  const { data: paymentSystems } = usePaymentSystems();
   const resubmit = useResubmitProof();
   const [pickingFor, setPickingFor] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const productMap = new Map((products ?? []).map((p) => [p.id, p]));
+  const paymentMethodName = (code: string | null | undefined) =>
+    paymentSystems?.find((s) => s.code === code)?.name || code || "";
 
-  const notificationByOrder = new Map<number, OrderNotification>();
+  const notificationsByOrder = new Map<number, OrderNotification[]>();
   for (const n of notifications ?? []) {
-    if (!notificationByOrder.has(n.order)) {
-      notificationByOrder.set(n.order, n);
-    }
+    const list = notificationsByOrder.get(n.order) ?? [];
+    list.push(n);
+    notificationsByOrder.set(n.order, list);
   }
 
   const handleProofPick = (orderId: number, file: File | undefined | null) => {
@@ -70,46 +74,62 @@ export default function OrderHistoryPage() {
         ) : (
           <div className="space-y-4">
             {orders.map((order) => {
-              const rejected = notificationByOrder.get(order.id);
+              const orderNotifications = notificationsByOrder.get(order.id) ?? [];
               return (
               <div key={order.id} className="bg-white rounded-xl border border-gray-100 p-5">
-                {rejected && (
-                  <div className={`mb-4 p-4 rounded-xl flex items-start gap-3 border ${
-                    order.status === "REJECTED"
-                      ? "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700"
-                      : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
-                  }`}>
-                    <span className={`w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0 ${
-                      order.status === "REJECTED"
-                        ? "bg-red-200 dark:bg-red-900/40 text-red-600"
-                        : "bg-red-100 dark:bg-red-900/40 text-red-500"
-                    }`}>
-                      <i className="fas fa-circle-xmark"></i>
-                    </span>
-                    <div className="flex-1">
-                      <p className="font-bold text-red-700 dark:text-red-400 text-sm">
-                        {order.status === "REJECTED" ? "Payment Rejected After 3 Attempts" : "Payment Rejected"}
-                      </p>
-                      <p className="text-sm text-red-600 dark:text-red-300 mt-1">{rejected.message}</p>
-                      {order.status !== "COMPLETED" && order.status !== "REJECTED" && (
-                        <button
-                          onClick={() => {
-                            setPickingFor(order.id);
-                            setTimeout(() => fileInputRef.current?.click(), 0);
-                          }}
-                          disabled={resubmit.isPending}
-                          className="mt-3 inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-700 transition-all cursor-pointer disabled:opacity-50"
-                        >
-                          <i className="fas fa-camera"></i>
-                          {resubmit.isPending && pickingFor === order.id ? "Uploading..." : "Re-upload payment proof"}
-                        </button>
-                      )}
-                      {resubmit.isSuccess && pickingFor === null && (
-                        <p className="mt-2 text-xs text-green-600 font-semibold">
-                          New proof uploaded — the cashier will verify it again.
-                        </p>
-                      )}
-                    </div>
+                {orderNotifications.length > 0 && (
+                  <div className="mb-4 space-y-2">
+                    {orderNotifications.map((n) => {
+                      const isRejection = n.message.toLowerCase().includes("reject");
+                      return (
+                        <div key={n.id} className={`p-4 rounded-xl flex items-start gap-3 border ${
+                          isRejection
+                            ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
+                            : order.status === "COMPLETED"
+                              ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+                              : "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                        }`}>
+                          <span className={`w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0 ${
+                            isRejection
+                              ? "bg-red-100 dark:bg-red-900/40 text-red-500"
+                              : order.status === "COMPLETED"
+                                ? "bg-green-100 dark:bg-green-900/40 text-green-600"
+                                : "bg-blue-100 dark:bg-blue-900/40 text-blue-500"
+                          }`}>
+                            {isRejection ? <i className="fas fa-circle-xmark"></i> : <i className="fas fa-circle-check"></i>}
+                          </span>
+                          <div className="flex-1">
+                            <p className="text-sm text-gray-700 dark:text-gray-200">{n.message}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {new Date(n.created_at).toLocaleString()}
+                            </p>
+                            {order.status === "REJECTED" && isRejection && (
+                              <p className="font-bold text-red-700 dark:text-red-400 text-sm mt-2">
+                                Payment Rejected After 3 Attempts
+                              </p>
+                            )}
+                            {isRejection && order.status !== "COMPLETED" && order.status !== "REJECTED" && (
+                              <button
+                                onClick={() => {
+                                  setPickingFor(order.id);
+                                  setTimeout(() => fileInputRef.current?.click(), 0);
+                                }}
+                                disabled={resubmit.isPending}
+                                className="mt-3 inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-700 transition-all cursor-pointer disabled:opacity-50"
+                              >
+                                <i className="fas fa-camera"></i>
+                                {resubmit.isPending && pickingFor === order.id ? "Uploading..." : "Re-upload payment proof"}
+                              </button>
+                            )}
+                            {resubmit.isSuccess && pickingFor === null && (
+                              <p className="mt-2 text-xs text-green-600 font-semibold">
+                                New proof uploaded — the cashier will verify it again.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -119,6 +139,11 @@ export default function OrderHistoryPage() {
                     <p className="text-xs text-gray-400">
                       {new Date(order.created_at).toLocaleString()}
                     </p>
+                    {order.payment_method && (
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Payment: {paymentMethodName(order.payment_method)}
+                      </p>
+                    )}
                   </div>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[order.status]}`}
@@ -145,7 +170,7 @@ export default function OrderHistoryPage() {
                       return (
                         <div key={item.id} className="flex justify-between text-sm">
                           <span className="text-gray-600">
-                            {item.quantity}x {product?.name || `Product #${item.product}`}
+                            {item.quantity}x {item.product_name || product?.name || `Product #${item.product}`}
                             {item.options && item.options.length > 0 && (
                               <span className="text-gray-400">
                                 {" "}(+{item.options.length} option{item.options.length > 1 ? "s" : ""})

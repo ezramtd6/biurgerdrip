@@ -138,6 +138,7 @@ export interface OrderNotification {
 export interface OrderItem {
   id: number;
   product: number;
+  product_name: string;
   quantity: number;
   unit_price: number;
   total_price: number;
@@ -147,6 +148,7 @@ export interface OrderItem {
 export interface OrderItemOption {
   id: number;
   option_value: number;
+  option_name: string;
   price_adjustment: number;
 }
 
@@ -209,6 +211,13 @@ export interface Coupon {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface CouponValidationResult {
+  valid: boolean;
+  code?: string;
+  discount?: string;
+  error?: string;
 }
 
 export interface PaymentSystem {

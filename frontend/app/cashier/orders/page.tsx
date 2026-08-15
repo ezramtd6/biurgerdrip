@@ -98,7 +98,7 @@ export default function CashierOrdersPage() {
                 <div className="text-sm text-gray-500 mb-3">
                   {order.items.map((item) => (
                     <span key={item.id} className="mr-3">
-                      {item.quantity}x Product #{item.product}
+                      {item.quantity}x {item.product_name}
                     </span>
                   ))}
                 </div>
@@ -110,9 +110,11 @@ export default function CashierOrdersPage() {
                     <Button size="sm" onClick={() => updateStatus.mutate({ id: order.id, status: "PREPARING" })}>
                       Start Preparing
                     </Button>
-                    <Button size="sm" variant="danger" onClick={() => updateStatus.mutate({ id: order.id, status: "CANCELLED" })}>
-                      Cancel
-                    </Button>
+                    {order.cashier && (
+                      <Button size="sm" variant="danger" onClick={() => updateStatus.mutate({ id: order.id, status: "CANCELLED" })}>
+                        Cancel
+                      </Button>
+                    )}
                   </>
                 )}
                 {order.status === "PREPARING" && (

@@ -15,8 +15,8 @@ function printReceipt(order: Order, restaurantName?: string | null) {
   if (!w) return;
 
   const items = order.items?.map((item) => {
-    const opts = item.options?.map((o) => `  ${o.option_value} ($${Number(o.price_adjustment).toFixed(2)})`).join("\n") || "";
-    return `  ${item.quantity}x $${Number(item.unit_price).toFixed(2)} = $${Number(item.total_price).toFixed(2)}\n${opts}`;
+    const opts = item.options?.map((o) => `  - ${o.option_name} (+$${Number(o.price_adjustment).toFixed(2)})`).join("\n") || "";
+    return `  ${item.quantity}x ${item.product_name}\n  $${Number(item.unit_price).toFixed(2)} each = $${Number(item.total_price).toFixed(2)}\n${opts}`;
   }).join("\n") || "";
 
   w.document.write(`
@@ -93,6 +93,8 @@ export default function PaymentPage() {
   if (!order) return <div className="text-center py-12 text-gray-500">Order not found</div>;
 
   const isPaid = order.status === "COMPLETED";
+  const paymentMethodName = (code: string | null | undefined) =>
+    activeSystems.find((s) => s.code === code)?.name || code || "";
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -105,6 +107,11 @@ export default function PaymentPage() {
             <p className="text-sm text-gray-400">
               {new Date(order.created_at).toLocaleString()}
             </p>
+            {order.payment_method && (
+              <p className="text-sm text-gray-500 mt-1">
+                Payment: <span className="font-semibold text-gray-700">{paymentMethodName(order.payment_method)}</span>
+              </p>
+            )}
           </div>
           <span
             className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -119,9 +126,20 @@ export default function PaymentPage() {
           <div className="space-y-2 mb-4">
             {order.items.map((item) => (
               <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-gray-600">
-                  {item.quantity}x Product #{item.product}
-                </span>
+                <div>
+                  <span className="text-gray-900">
+                    {item.quantity}x {item.product_name}
+                  </span>
+                  {item.options && item.options.length > 0 && (
+                    <div className="text-xs text-gray-400">
+                      {item.options.map((o) => (
+                        <span key={o.id} className="mr-2">
+                          + {o.option_name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <span className="text-gray-900">${Number(item.total_price).toFixed(2)}</span>
               </div>
             ))}
@@ -152,7 +170,7 @@ export default function PaymentPage() {
         </div>
       </div>
 
-      {!isPaid && (
+      {!isPaid && order.status !== "CANCELLED" && order.status !== "REJECTED" && (
         <div className="bg-white rounded-xl border border-gray-100 p-6">
           {order.payment_proof ? (
             <>
@@ -164,7 +182,7 @@ export default function PaymentPage() {
               {order.payment_method && (
                 <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-xl text-sm">
                   <span className="font-semibold text-orange-700">Payment Method: </span>
-                  <span className="text-orange-700">{order.payment_method}</span>
+                  <span className="text-orange-700">{paymentMethodName(order.payment_method)}</span>
                 </div>
               )}
 
@@ -278,6 +296,20 @@ export default function PaymentPage() {
           <Button variant="secondary" onClick={() => printReceipt(order, restaurant?.name)}>
             Print Receipt
           </Button>
+        </div>
+      )}
+
+      {order.status === "CANCELLED" && (
+        <div className="text-center space-y-4">
+          <p className="text-red-600 font-medium">This order has been cancelled</p>
+        </div>
+      )}
+
+      {order.status === "REJECTED" && (
+        <div className="text-center space-y-4">
+          <p className="text-red-600 font-medium">
+            This order was rejected after too many payment proof attempts
+          </p>
         </div>
       )}
 

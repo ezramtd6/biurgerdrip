@@ -137,6 +137,20 @@ export function useNotifications() {
       const res = await api.get("/orders/notifications/");
       return res.data.results || res.data;
     },
+    refetchInterval: 15000,
+  });
+}
+
+export function useMarkNotificationRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await api.post(`/orders/notifications/${id}/read/`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
 }
 

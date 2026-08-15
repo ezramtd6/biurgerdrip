@@ -4,17 +4,26 @@ from rest_framework import serializers
 from .models import Order, OrderItem, OrderItemOption, PaymentSystem, OrderNotification
 
 class OrderItemOptionSerializer(serializers.ModelSerializer):
+    option_name = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderItemOption
-        fields = ["id", "option_value", "price_adjustment"]
+        fields = ["id", "option_value", "option_name", "price_adjustment"]
+
+    def get_option_name(self, obj):
+        return obj.option_value.name if obj.option_value else "Deleted option"
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
     options = OrderItemOptionSerializer(many=True, read_only=True)
+    product_name = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
-        fields = ["id", "product", "quantity", "unit_price", "total_price", "options"]
+        fields = ["id", "product", "product_name", "quantity", "unit_price", "total_price", "options"]
+
+    def get_product_name(self, obj):
+        return obj.product.name if obj.product else "Deleted product"
 
 
 class OrderNotificationSerializer(serializers.ModelSerializer):
@@ -102,11 +111,7 @@ class OrderCreateSerializer(serializers.Serializer):
         coupon = Coupon.resolve(code) if code else None
         if not coupon:
             raise serializers.ValidationError({"coupon_code": "Invalid coupon code."})
-        if subtotal < coupon.min_subtotal:
-            raise serializers.ValidationError(
-                {"coupon_code": f"This coupon requires a minimum subtotal of ETB {coupon.min_subtotal:.2f}."}
-            )
-        reason = coupon.error_message()
+        reason = coupon.validate_for(subtotal)
         if reason:
             raise serializers.ValidationError({"coupon_code": reason})
         return coupon
@@ -172,6 +177,11 @@ class OrderCreateSerializer(serializers.Serializer):
         order.subtotal = subtotal
         order.total = subtotal - order.discount + order.tax
         order.save()
+
+        if user.role == "CUSTOMER":
+            from .models import notify_cashiers
+
+            notify_cashiers(order, f"New order {order.order_number} placed — total ETB {order.total:.2f}.")
 
         return order
 

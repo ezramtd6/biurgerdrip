@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/services/api";
 import { Product, Category, OptionGroup, OptionValue } from "@/types";
+import { useValidateCoupon } from "@/hooks/usePromotions";
 import { Button } from "@/components/ui";
 import { useRouter } from "next/navigation";
 
@@ -13,11 +14,26 @@ interface CartItem {
   selectedOptions: Record<number, number[]>;
 }
 
+interface CouponStatus {
+  state: "idle" | "checking" | "valid" | "invalid";
+  message?: string;
+  discount?: number;
+}
+
 export default function NewOrderPage() {
   const router = useRouter();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [couponCode, setCouponCode] = useState("");
+  const [couponStatus, setCouponStatus] = useState<CouponStatus>({ state: "idle" });
+  const couponDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const validateCoupon = useValidateCoupon();
+
+  useEffect(() => {
+    return () => {
+      if (couponDebounceRef.current) clearTimeout(couponDebounceRef.current);
+    };
+  }, []);
 
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["cashier-categories"],
@@ -78,8 +94,11 @@ export default function NewOrderPage() {
     );
   };
 
-  const calculateItemTotal = (item: CartItem) => {
-    let price = 0;
+  const calculateItemUnitPrice = (item: CartItem) => {
+    let price =
+      item.product.discounted_price != null
+        ? Number(item.product.discounted_price)
+        : Number(item.product.price);
     if (item.product.option_groups) {
       for (const group of item.product.option_groups) {
         const selected = item.selectedOptions[group.id] || [];
@@ -89,10 +108,50 @@ export default function NewOrderPage() {
         }
       }
     }
-    return price * item.quantity;
+    return price;
   };
 
+  const calculateItemTotal = (item: CartItem) => calculateItemUnitPrice(item) * item.quantity;
+
   const subtotal = cart.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+  const couponDiscount = couponStatus.state === "valid" ? couponStatus.discount ?? 0 : 0;
+  const grandTotal = subtotal - couponDiscount;
+
+  const handleCouponChange = (value: string) => {
+    setCouponCode(value);
+    if (couponDebounceRef.current) clearTimeout(couponDebounceRef.current);
+    const code = value.trim();
+    if (!code) {
+      setCouponStatus({ state: "idle" });
+      return;
+    }
+    if (subtotal <= 0) {
+      setCouponStatus({ state: "idle" });
+      return;
+    }
+    setCouponStatus({ state: "checking" });
+    couponDebounceRef.current = setTimeout(() => {
+      validateCoupon.mutate(
+        { code, subtotal },
+        {
+          onSuccess: (data) => {
+            if (data.valid) {
+              setCouponStatus({
+                state: "valid",
+                message: `Coupon ${data.code} applied`,
+                discount: Number(data.discount ?? 0),
+              });
+            } else {
+              setCouponStatus({ state: "invalid", message: data.error || "Invalid coupon code." });
+            }
+          },
+          onError: () => {
+            setCouponStatus({ state: "idle" });
+          },
+        }
+      );
+    }, 400);
+  };
 
   const handleOrder = async () => {
     if (cart.length === 0) return;
@@ -240,13 +299,38 @@ export default function NewOrderPage() {
         <div className="p-4 border-t">
           <input
             value={couponCode}
-            onChange={(e) => setCouponCode(e.target.value)}
+            onChange={(e) => handleCouponChange(e.target.value)}
             placeholder="Coupon code (optional)"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           />
+          {couponStatus.state === "checking" && (
+            <p className="text-sm text-gray-500 flex items-center gap-1.5 mb-3">
+              <i className="fas fa-spinner fa-spin"></i> Checking coupon...
+            </p>
+          )}
+          {couponStatus.state === "valid" && (
+            <p className="text-sm text-green-600 flex items-center gap-1.5 mb-3">
+              <i className="fas fa-circle-check"></i> {couponStatus.message}
+            </p>
+          )}
+          {couponStatus.state === "invalid" && (
+            <p className="text-sm text-red-600 flex items-center gap-1.5 mb-3">
+              <i className="fas fa-circle-exclamation"></i> {couponStatus.message}
+            </p>
+          )}
+          <div className="flex justify-between mb-1">
+            <span className="font-medium">Subtotal</span>
+            <span className="font-bold">${subtotal.toFixed(2)}</span>
+          </div>
+          {couponDiscount > 0 && (
+            <div className="flex justify-between mb-1 text-green-600">
+              <span className="font-medium">Coupon discount</span>
+              <span className="font-bold">-${couponDiscount.toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between mb-4">
-            <span className="font-medium">Total</span>
-            <span className="font-bold text-lg">${subtotal.toFixed(2)}</span>
+            <span className="font-bold">Total</span>
+            <span className="font-bold text-lg">${grandTotal.toFixed(2)}</span>
           </div>
           <Button
             className="w-full"

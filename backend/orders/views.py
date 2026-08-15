@@ -128,7 +128,7 @@ def _handle_payment(request, order):
 
         if order.customer_id:
             OrderNotification.objects.create(
-                customer=order.customer,
+                user=order.customer,
                 order=order,
                 message=message,
             )
@@ -161,6 +161,13 @@ def _handle_payment(request, order):
     order.payment_method = payment_method
     order.status = Order.Status.COMPLETED
     order.save()
+
+    if order.customer_id:
+        OrderNotification.objects.create(
+            user=order.customer,
+            order=order,
+            message=f"Your payment for order {order.order_number} was accepted. Thank you!",
+        )
 
     return Response(OrderSerializer(order).data)
 
@@ -201,7 +208,18 @@ class CashierOrderDetailView(generics.RetrieveUpdateAPIView):
         )
 
     def partial_update(self, request, *args, **kwargs):
-        return super().partial_update(request, *args, **kwargs)
+        instance = self.get_object()
+        old_status = instance.status
+        response = super().partial_update(request, *args, **kwargs)
+        instance.refresh_from_db()
+        if instance.status != old_status and instance.customer_id:
+            label = dict(Order.Status.choices).get(instance.status, instance.status)
+            OrderNotification.objects.create(
+                user=instance.customer,
+                order=instance,
+                message=f"Your order {instance.order_number} status is now {label}.",
+            )
+        return response
 
 
 class CashierPaymentView(APIView):
@@ -263,14 +281,14 @@ class NotificationListView(generics.ListAPIView):
 
     def get_queryset(self):
         return OrderNotification.objects.filter(
-            customer=self.request.user
+            user=self.request.user
         ).order_by("-created_at")
 
 
 class NotificationReadView(APIView):
     def post(self, request, pk):
         notification = OrderNotification.objects.filter(
-            id=pk, customer=request.user
+            id=pk, user=request.user
         ).first()
         if not notification:
             return Response(
@@ -324,6 +342,13 @@ class ResubmitProofView(APIView):
         order.status = Order.Status.PENDING
         order.save(update_fields=["payment_proof", "status", "updated_at"])
         order.notifications.filter(is_read=False).update(is_read=True)
+
+        from .models import notify_cashiers
+
+        notify_cashiers(
+            order,
+            f"Order {order.order_number} re-uploaded payment proof and needs re-verification.",
+        )
 
         return Response(
             OrderSerializer(order, context={"request": request}).data

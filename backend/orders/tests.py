@@ -163,7 +163,7 @@ class PaymentSystemTests(TestCase):
         self.assertEqual(order.status, Order.Status.PENDING)
         notif = order.notifications.first()
         self.assertIsNotNone(notif)
-        self.assertEqual(notif.customer, self.customer)
+        self.assertEqual(notif.user, self.customer)
         self.assertIn("0912345678", notif.message)
         self.assertIn("Image unclear", notif.message)
 
@@ -179,7 +179,7 @@ class PaymentSystemTests(TestCase):
             total=Decimal("50.00"),
         )
         OrderNotification.objects.create(
-            customer=self.customer, order=order, message="Rejected"
+            user=self.customer, order=order, message="Rejected"
         )
         res = self.client_for(self.customer).get("/api/orders/notifications/")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -234,3 +234,129 @@ class PaymentSystemTests(TestCase):
             format="multipart",
         )
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_cashier_notified_on_customer_order_placed(self):
+        res = self.client_for(self.customer).post(
+            "/api/orders/",
+            {
+                "discount": 0,
+                "tax": 0,
+                "payment_method": "TELEBIRR",
+                "payment_proof": SimpleUploadedFile(
+                    "proof.png", TINY_PNG, content_type="image/png"
+                ),
+                "items": json.dumps(
+                    [{"product": self.product.id, "quantity": 1, "option_values": []}]
+                ),
+            },
+            format="multipart",
+        )
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        order = Order.objects.get(id=res.data["id"])
+        notif = OrderNotification.objects.filter(
+            user=self.cashier, order=order
+        ).first()
+        self.assertIsNotNone(notif)
+        self.assertIn(order.order_number, notif.message)
+
+    def test_cashier_not_notified_when_cashier_creates_order(self):
+        res = self.client_for(self.cashier).post(
+            "/api/orders/cashier/",
+            {
+                "discount": 0,
+                "tax": 0,
+                "payment_method": "",
+                "items": [
+                    {"product": self.product.id, "quantity": 1, "option_values": []}
+                ],
+            },
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        order = Order.objects.get(id=res.data["id"])
+        self.assertFalse(
+            OrderNotification.objects.filter(order=order).exists()
+        )
+
+    def test_customer_notified_on_status_change(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            subtotal=Decimal("100.00"),
+            total=Decimal("100.00"),
+        )
+        res = self.client_for(self.cashier).patch(
+            f"/api/orders/cashier/{order.id}/", {"status": "PREPARING"}
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        notif = OrderNotification.objects.filter(
+            user=self.customer, order=order
+        ).first()
+        self.assertIsNotNone(notif)
+        self.assertIn("Preparing", notif.message)
+
+    def test_customer_notified_on_payment_accepted(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            subtotal=Decimal("100.00"),
+            total=Decimal("100.00"),
+        )
+        res = self.client_for(self.cashier).post(
+            f"/api/orders/{order.id}/payment/", {"payment_method": "CASH"}
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        notif = OrderNotification.objects.filter(
+            user=self.customer, order=order
+        ).first()
+        self.assertIsNotNone(notif)
+        self.assertIn("accepted", notif.message)
+
+    def test_cashier_notified_on_proof_resubmit(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            subtotal=Decimal("100.00"),
+            total=Decimal("100.00"),
+        )
+        res = self.client_for(self.customer).post(
+            f"/api/orders/{order.id}/resubmit-proof/",
+            {
+                "payment_proof": SimpleUploadedFile(
+                    "proof.png", TINY_PNG, content_type="image/png"
+                ),
+            },
+            format="multipart",
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        notif = OrderNotification.objects.filter(
+            user=self.cashier, order=order
+        ).first()
+        self.assertIsNotNone(notif)
+        self.assertIn("re-uploaded", notif.message)
+
+    def test_cashier_sees_own_notifications(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            subtotal=Decimal("100.00"),
+            total=Decimal("100.00"),
+        )
+        OrderNotification.objects.create(
+            user=self.cashier, order=order, message="New order"
+        )
+        res = self.client_for(self.cashier).get("/api/orders/notifications/")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+
+    def test_notification_read_marks_as_read(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            subtotal=Decimal("100.00"),
+            total=Decimal("100.00"),
+        )
+        notif = OrderNotification.objects.create(
+            user=self.customer, order=order, message="New order"
+        )
+        res = self.client_for(self.customer).post(
+            f"/api/orders/notifications/{notif.id}/read/"
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        notif.refresh_from_db()
+        self.assertTrue(notif.is_read)
