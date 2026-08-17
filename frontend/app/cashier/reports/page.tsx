@@ -74,17 +74,39 @@ export default function CashierReportsPage() {
           <h2 className="font-medium text-gray-900 mb-4">Recent Orders</h2>
           <div className="space-y-3">
             {report.recent_orders.map((order) => (
-              <div key={order.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="text-sm font-medium">{order.order_number}</p>
-                  <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleString()}</p>
+              <div key={order.id} className="p-3 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-medium">{order.order_number}</p>
+                    <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">ETB {Number(order.total).toFixed(2)}</p>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[order.status] || "bg-gray-100 text-gray-600"}`}>
+                      {order.status}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium">ETB {Number(order.total).toFixed(2)}</p>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[order.status] || "bg-gray-100 text-gray-600"}`}>
-                    {order.status}
-                  </span>
-                </div>
+                {order.status === "REJECTED" && (
+                  <div className="mt-2 p-2 bg-red-50 rounded-lg border border-red-200">
+                    {order.rejection_reason && (
+                      <p className="text-xs text-red-600 mb-1">
+                        <span className="font-semibold">Reason:</span> {order.rejection_reason}
+                      </p>
+                    )}
+                    {order.payment_proof && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-gray-500">Proof:</p>
+                        <img
+                          src={order.payment_proof}
+                          alt="Payment proof"
+                          className="h-16 w-16 object-cover rounded border border-gray-200 cursor-pointer hover:scale-105 transition-transform"
+                          onClick={() => window.open(order.payment_proof!, "_blank")}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

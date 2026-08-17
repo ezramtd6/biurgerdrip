@@ -1,14 +1,12 @@
 "use client";
 
 import {
-  AlertDialog,
-  AlertDialogPopup,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
-import { buttonVariants } from "@/components/ui/button";
+  Dialog,
+  DialogPopup,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -32,20 +30,29 @@ export default function ConfirmDialog({
   destructive = false,
 }: ConfirmDialogProps) {
   return (
-    <AlertDialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <AlertDialogPopup>
-        <AlertDialogTitle>{title}</AlertDialogTitle>
-        {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogPopup>
+        <DialogTitle>{title}</DialogTitle>
+        {description && <DialogDescription>{description}</DialogDescription>}
         <div className="flex justify-end gap-3 pt-2">
-          <AlertDialogCancel onClick={onClose}>{cancelLabel}</AlertDialogCancel>
-          <AlertDialogAction
+          <DialogClose
+            onClick={onClose}
+            className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            {cancelLabel}
+          </DialogClose>
+          <DialogClose
             onClick={onConfirm}
-            className={destructive ? buttonVariants({ variant: "destructive" }) : undefined}
+            className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
+              destructive
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "bg-gray-900 text-white hover:bg-gray-800"
+            }`}
           >
             {confirmLabel}
-          </AlertDialogAction>
+          </DialogClose>
         </div>
-      </AlertDialogPopup>
-    </AlertDialog>
+      </DialogPopup>
+    </Dialog>
   );
 }

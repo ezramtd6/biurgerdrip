@@ -163,7 +163,27 @@ export default function CashierOrdersPage() {
                     <span className="text-xs text-green-600">Paid</span>
                   )}
                   {order.status === "REJECTED" && (
-                    <span className="text-xs text-red-600">Payment rejected</span>
+                    <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
+                      <p className="text-xs font-semibold text-red-700 mb-1">
+                        <i className="fas fa-ban mr-1"></i>Payment Rejected
+                      </p>
+                      {order.rejection_reason && (
+                        <p className="text-sm text-red-600 mb-2">
+                          Reason: {order.rejection_reason}
+                        </p>
+                      )}
+                      {order.payment_proof && (
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Payment Proof:</p>
+                          <img
+                            src={order.payment_proof}
+                            alt="Payment proof"
+                            className="h-24 w-24 object-cover rounded-lg border border-gray-200 cursor-pointer hover:scale-105 transition-transform"
+                            onClick={() => window.open(order.payment_proof!, "_blank")}
+                          />
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

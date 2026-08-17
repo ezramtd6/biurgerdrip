@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RestaurantInfo, Category, Product, Branch, SocialLink, Contact, OptionValue, OptionGroup } from "@/types";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 import dynamic from "next/dynamic";
 
 const BranchMap = dynamic(() => import("@/components/BranchMap"), { ssr: false });
@@ -174,6 +175,7 @@ export default function Home() {
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: "", visible: false });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -418,7 +420,7 @@ export default function Home() {
                       <DropdownMenuItem onClick={() => setPwdOpen(true)}>
                         Change Password
                       </DropdownMenuItem>
-                      <DropdownMenuItem variant="destructive" onClick={() => logout.mutate()}>
+                      <DropdownMenuItem variant="destructive" onClick={() => setLogoutOpen(true)}>
                         Logout
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -450,7 +452,7 @@ export default function Home() {
               <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("orders")}</Link>
             )}
             {user && mounted ? (
-              <button onClick={() => { logout.mutate(); setMobileMenuOpen(false); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">Logout</button>
+              <button onClick={() => { setLogoutOpen(true); setMobileMenuOpen(false); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">Logout</button>
             ) : (
               <button onClick={() => { setMobileMenuOpen(false); openAuth("login"); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all cursor-pointer">{t("my_account")}</button>
             )}
@@ -935,6 +937,16 @@ export default function Home() {
       <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className={`fixed bottom-8 right-8 w-12 h-12 bg-red-600 text-white rounded-full shadow-xl hover:scale-110 transition-all duration-300 z-40 items-center justify-center hover:shadow-red-600/40 ${showScrollTop ? "flex" : "hidden"}`}>
         <i className="fas fa-arrow-up"></i>
       </button>
+
+      <ConfirmDialog
+        open={logoutOpen}
+        onClose={() => setLogoutOpen(false)}
+        onConfirm={() => { setLogoutOpen(false); logout.mutate(); }}
+        title="Logout"
+        description="Are you sure you want to logout?"
+        confirmLabel="Logout"
+        destructive
+      />
     </div>
   );
 }

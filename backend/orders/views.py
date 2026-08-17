@@ -97,10 +97,11 @@ def _handle_payment(request, order):
         reason = (request.data.get("reason") or "").strip()
         phone = getattr(request.user, "phone", "") or ""
         order.proof_attempts += 1
+        order.rejection_reason = reason
         final_rejection = order.proof_attempts >= 3
         if final_rejection:
             order.status = Order.Status.REJECTED
-        order.save(update_fields=["proof_attempts", "status", "updated_at"])
+        order.save(update_fields=["proof_attempts", "rejection_reason", "status", "updated_at"])
 
         if final_rejection:
             message = (
@@ -256,7 +257,8 @@ class CashierReportsView(APIView):
         )
 
         recent_orders = OrderSerializer(
-            cashier_orders.order_by("-created_at")[:10], many=True
+            cashier_orders.order_by("-created_at")[:10], many=True,
+            context={"request": request},
         ).data
 
         from products.models import Category, Product
@@ -298,7 +300,8 @@ class ReportsView(APIView):
         )
 
         recent_orders = OrderSerializer(
-            Order.objects.all()[:10], many=True
+            Order.objects.all()[:10], many=True,
+            context={"request": request},
         ).data
 
         from products.models import Category, Product

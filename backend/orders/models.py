@@ -60,6 +60,11 @@ class Order(models.Model):
         default=0,
         help_text="How many times the cashier has rejected this payment proof",
     )
+    rejection_reason = models.TextField(
+        blank=True,
+        default="",
+        help_text="Reason provided by the cashier when rejecting payment proof",
+    )
     status = models.CharField(
         max_length=20,
         choices=Status.choices,

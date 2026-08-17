@@ -120,6 +120,7 @@ export interface Order {
   payment_method: "CASH" | "CARD" | "MOBILE" | string | null;
   payment_proof: string | null;
   proof_attempts: number;
+  rejection_reason: string;
   status: "PENDING" | "PREPARING" | "READY" | "COMPLETED" | "CANCELLED" | "REJECTED";
   created_at: string;
   updated_at: string;

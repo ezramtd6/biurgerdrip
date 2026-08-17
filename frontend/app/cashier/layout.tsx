@@ -7,6 +7,7 @@ import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { useEffect, useState } from "react";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import SiteBrand from "@/components/layout/SiteBrand";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 const links = [
   { href: "/cashier", label: "Dashboard", icon: "📊" },
@@ -21,6 +22,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -78,7 +80,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
           <div className="flex flex-col items-start gap-2">
             <ChangePasswordDialog />
             <button
-              onClick={() => logout.mutate()}
+              onClick={() => setShowLogoutConfirm(true)}
               className="text-sm text-red-500 hover:text-red-600 cursor-pointer"
             >
               Logout
@@ -88,6 +90,15 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
       </aside>
 
       <main className="flex-1 p-8 overflow-auto">{children}</main>
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={() => { setShowLogoutConfirm(false); logout.mutate(); }}
+        title="Logout"
+        description="Are you sure you want to logout?"
+        confirmLabel="Logout"
+        destructive
+      />
     </div>
   );
 }

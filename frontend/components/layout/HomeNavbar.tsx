@@ -9,6 +9,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { useRestaurant } from "@/hooks/useRestaurant";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 import NotificationBell from "@/components/NotificationBell";
 import {
   DropdownMenu,
@@ -52,6 +53,7 @@ export default function HomeNavbar() {
   const [currentLang, setCurrentLang] = useState("en");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [totalQty, setTotalQty] = useState(0);
 
@@ -83,6 +85,7 @@ export default function HomeNavbar() {
   }, []);
 
   return (
+    <>
     <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl shadow-sm sticky top-0 z-50 transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-18 py-3">
@@ -141,7 +144,7 @@ export default function HomeNavbar() {
                     <DropdownMenuItem onClick={() => setPwdOpen(true)}>
                       Change Password
                     </DropdownMenuItem>
-                    <DropdownMenuItem variant="destructive" onClick={() => logout.mutate()}>
+                    <DropdownMenuItem variant="destructive" onClick={() => setLogoutOpen(true)}>
                       Logout
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -180,7 +183,7 @@ export default function HomeNavbar() {
               </>
             )}
             {user && mounted ? (
-              <button onClick={() => { logout.mutate(); setMobileMenuOpen(false); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">Logout</button>
+              <button onClick={() => { setLogoutOpen(true); setMobileMenuOpen(false); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">Logout</button>
             ) : (
               <button onClick={() => { setMobileMenuOpen(false); openAuth("login"); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all cursor-pointer">{t("my_account")}</button>
             )}
@@ -188,5 +191,16 @@ export default function HomeNavbar() {
         </div>
       )}
     </header>
+
+    <ConfirmDialog
+      open={logoutOpen}
+      onClose={() => setLogoutOpen(false)}
+      onConfirm={() => { setLogoutOpen(false); logout.mutate(); }}
+      title="Logout"
+      description="Are you sure you want to logout?"
+      confirmLabel="Logout"
+      destructive
+    />
+    </>
   );
 }

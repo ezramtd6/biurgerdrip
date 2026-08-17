@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { useRestaurant } from "@/hooks/useRestaurant";
 import { useAuthModal } from "@/components/auth/auth-modal-context";
+import ConfirmDialog from "@/components/common/ConfirmDialog";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -17,6 +18,7 @@ export default function Navbar() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -25,10 +27,11 @@ export default function Navbar() {
   const isActive = (path: string) => pathname === path;
 
   const handleLogout = () => {
-    logout.mutate();
+    setLogoutOpen(true);
   };
 
   return (
+    <>
     <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl shadow-sm sticky top-0 z-50 transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-18 py-3">
@@ -138,5 +141,16 @@ export default function Navbar() {
         </div>
       )}
     </header>
+
+    <ConfirmDialog
+      open={logoutOpen}
+      onClose={() => setLogoutOpen(false)}
+      onConfirm={() => { setLogoutOpen(false); logout.mutate(); }}
+      title="Logout"
+      description="Are you sure you want to logout?"
+      confirmLabel="Logout"
+      destructive
+    />
+    </>
   );
 }
