@@ -28,6 +28,7 @@ export default function NewOrderPage() {
   const [couponStatus, setCouponStatus] = useState<CouponStatus>({ state: "idle" });
   const couponDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const validateCoupon = useValidateCoupon();
+  const [productOptions, setProductOptions] = useState<Record<string, Record<number, number>>>({});
 
   useEffect(() => {
     return () => {
@@ -43,54 +44,75 @@ export default function NewOrderPage() {
     },
   });
 
-  const { data: products } = useQuery<Product[]>({
-    queryKey: ["cashier-products", selectedCategory],
+  const { data: allProducts } = useQuery<Product[]>({
+    queryKey: ["cashier-products"],
     queryFn: async () => {
-      const url = selectedCategory ? `/products/?category=${selectedCategory}` : "/products/";
-      const res = await api.get(url);
+      const res = await api.get("/products/");
       return res.data.results || res.data;
     },
   });
 
-  const addToCart = (product: Product) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
+  const products = selectedCategory
+    ? allProducts?.filter((p) => p.category === selectedCategory)
+    : allProducts;
+
+  const setProductOption = (productId: number, groupId: number, value: string) => {
+    setProductOptions((prev) => {
+      const productOpts = { ...(prev[String(productId)] || {}) };
+      if (value === "") {
+        delete productOpts[groupId];
+      } else {
+        productOpts[groupId] = Number(value);
       }
-      return [...prev, { product, quantity: 1, selectedOptions: {} }];
+      return { ...prev, [String(productId)]: productOpts };
     });
   };
 
-  const updateQuantity = (productId: number, delta: number) => {
+  const addToCart = (product: Product) => {
+    const rawOpts = productOptions[String(product.id)] || {};
+    const selectedOptions: Record<number, number[]> = {};
+    for (const [groupId, valueId] of Object.entries(rawOpts)) {
+      selectedOptions[Number(groupId)] = [valueId];
+    }
+    const optionKey = Object.values(selectedOptions)
+      .flat()
+      .sort((a, b) => a - b)
+      .join("-");
+    setCart((prev) => {
+      const existing = prev.find(
+        (item) => item.product.id === product.id && optionKeyForItem(item) === optionKey
+      );
+      if (existing) {
+        return prev.map((item) =>
+          item.product.id === product.id && optionKeyForItem(item) === optionKey
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prev, { product, quantity: 1, selectedOptions }];
+    });
+    setProductOptions((prev) => {
+      const next = { ...prev };
+      delete next[String(product.id)];
+      return next;
+    });
+  };
+
+  const optionKeyForItem = (item: CartItem) =>
+    Object.values(item.selectedOptions)
+      .flat()
+      .sort((a, b) => a - b)
+      .join("-");
+
+  const updateQuantity = (productId: number, optionKey: string, delta: number) => {
     setCart((prev) =>
       prev
         .map((item) =>
-          item.product.id === productId
+          item.product.id === productId && optionKeyForItem(item) === optionKey
             ? { ...item, quantity: Math.max(0, item.quantity + delta) }
             : item
         )
         .filter((item) => item.quantity > 0)
-    );
-  };
-
-  const toggleOption = (productId: number, groupId: number, valueId: number, multiple: boolean) => {
-    setCart((prev) =>
-      prev.map((item) => {
-        if (item.product.id !== productId) return item;
-        const current = item.selectedOptions[groupId] || [];
-        let updated: number[];
-        if (multiple) {
-          updated = current.includes(valueId)
-            ? current.filter((id) => id !== valueId)
-            : [...current, valueId];
-        } else {
-          updated = [valueId];
-        }
-        return { ...item, selectedOptions: { ...item.selectedOptions, [groupId]: updated } };
-      })
     );
   };
 
@@ -204,30 +226,83 @@ export default function NewOrderPage() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-          {products?.map((product) => (
-            <button
-              key={product.id}
-              onClick={() => addToCart(product)}
-              className="bg-white rounded-lg border border-gray-100 p-3 text-left hover:border-orange-300 transition-colors cursor-pointer"
-            >
-              {product.image ? (
-                <img src={product.image} alt={product.name} className="w-full h-24 object-cover rounded mb-2" />
-              ) : (
-                <div className="w-full h-24 bg-gray-100 rounded mb-2 flex items-center justify-center text-gray-400 text-xs">
-                  No Image
+          {products?.map((product) => {
+            const groups = (product.option_groups ?? [])
+              .filter((g: OptionGroup) => g.is_active && (g.values ?? []).some((v: OptionValue) => v.available))
+              .sort((a: OptionGroup, b: OptionGroup) => (a.name === "Size" ? -1 : b.name === "Size" ? 1 : a.display_order - b.display_order));
+            const sizeGroup = groups.find((g: OptionGroup) => g.name === "Size");
+            const opts = productOptions[String(product.id)] || {};
+            const missingRequired = !!sizeGroup && opts[sizeGroup.id] == null;
+            return (
+              <div
+                key={product.id}
+                className="bg-white rounded-lg border border-gray-100 p-3 hover:border-orange-300 transition-colors"
+              >
+                {product.image ? (
+                  <img src={product.image} alt={product.name} className="w-full h-24 object-cover rounded mb-2" />
+                ) : (
+                  <div className="w-full h-24 bg-gray-100 rounded mb-2 flex items-center justify-center text-gray-400 text-xs">
+                    No Image
+                  </div>
+                )}
+                <p className="text-sm font-medium">{product.name}</p>
+                {!sizeGroup && (
+                  <>
+                    {product.discounted_price != null && Number(product.discounted_price) < Number(product.price) ? (
+                      <div className="mt-1">
+                        <span className="text-sm font-bold text-orange-500">ETB {Number(product.discounted_price).toFixed(2)}</span>
+                        <span className="ml-2 text-xs text-gray-400 line-through">ETB {Number(product.price).toFixed(2)}</span>
+                      </div>
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-600 mt-1">ETB {Number(product.price).toFixed(2)}</p>
+                    )}
+                  </>
+                )}
+                <div className="flex flex-col gap-1.5 mt-2">
+                  {groups.map((group: OptionGroup) => {
+                    const values = (group.values ?? [])
+                      .filter((v: OptionValue) => v.available)
+                      .sort((a: OptionValue, b: OptionValue) => a.display_order - b.display_order);
+                    const hasVal = opts[group.id] != null;
+                    return (
+                      <div key={group.id} className="relative">
+                        <select
+                          value={opts[group.id] ?? ""}
+                          onChange={(e) => setProductOption(product.id, group.id, e.target.value)}
+                          className={`w-full appearance-none bg-transparent pr-6 py-0.5 cursor-pointer outline-none text-xs transition-colors ${
+                            hasVal ? "text-orange-600 font-bold" : "text-gray-400 font-medium"
+                          }`}
+                        >
+                          <option value="" disabled={group.name === "Size"}>
+                            {group.name === "Size"
+                              ? `Select ${group.name} *`
+                              : hasVal
+                                ? "Unselect"
+                                : `Select ${group.name}`}
+                          </option>
+                          {values.map((v: OptionValue) => (
+                            <option key={v.id} value={v.id}>
+                              {v.name} ETB {Number(v.price_adjustment).toFixed(2)}
+                            </option>
+                          ))}
+                        </select>
+                        <span className={`absolute inset-y-0 right-2 flex items-center pointer-events-none transition-colors ${hasVal ? "text-orange-600" : "text-gray-400"}`}>
+                          <i className="fas fa-chevron-down text-[10px]"></i>
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <button
+                    onClick={() => addToCart(product)}
+                    disabled={missingRequired}
+                    className="w-full bg-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-orange-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-orange-500 mt-1"
+                  >
+                    + Add
+                  </button>
                 </div>
-              )}
-              <p className="text-sm font-medium">{product.name}</p>
-              {product.discounted_price != null && Number(product.discounted_price) < Number(product.price) ? (
-                <div className="mt-1">
-                  <span className="text-sm font-bold text-orange-500">ETB {Number(product.discounted_price).toFixed(2)}</span>
-                  <span className="ml-2 text-xs text-gray-400 line-through">ETB {Number(product.price).toFixed(2)}</span>
-                </div>
-              ) : (
-                <p className="text-sm font-semibold text-gray-600 mt-1">ETB {Number(product.price).toFixed(2)}</p>
-              )}
-            </button>
-          ))}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -240,59 +315,45 @@ export default function NewOrderPage() {
           {cart.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-8">Click products to add them</p>
           ) : (
-            cart.map((item) => (
-              <div key={item.product.id} className="bg-gray-50 rounded-lg p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{item.product.name}</span>
-                  <span className="text-sm font-medium">
-                    ${calculateItemTotal(item).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => updateQuantity(item.product.id, -1)}
-                    className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center text-xs cursor-pointer"
-                  >
-                    -
-                  </button>
-                  <span className="text-sm w-6 text-center">{item.quantity}</span>
-                  <button
-                    onClick={() => updateQuantity(item.product.id, 1)}
-                    className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center text-xs cursor-pointer"
-                  >
-                    +
-                  </button>
-                </div>
-
-                {item.product.option_groups && (
-                  <div className="mt-2 space-y-1">
-                    {item.product.option_groups
-                      .filter((g: OptionGroup) => g.is_active)
-                      .map((group: OptionGroup) => (
-                      <div key={group.id} className="flex flex-wrap gap-1">
-                        <span className="text-xs text-gray-400 mr-1">{group.name}:</span>
-                        {group.values
-                          ?.filter((v: OptionValue) => v.available)
-                          .map((value: OptionValue) => {
-                            const selected = (item.selectedOptions[group.id] || []).includes(value.id);
-                            return (
-                              <button
-                                key={value.id}
-                                onClick={() => toggleOption(item.product.id, group.id, value.id, group.multiple_choice)}
-                                className={`px-2 py-0.5 rounded text-xs cursor-pointer ${
-                                  selected ? "bg-orange-500 text-white" : "bg-gray-200 text-gray-600"
-                                }`}
-                              >
-                                {value.name}
-                              </button>
-                            );
-                          })}
-                      </div>
-                    ))}
+            cart.map((item) => {
+              const optionNames = item.product.option_groups
+                ?.filter((g: OptionGroup) => g.is_active)
+                .flatMap((g: OptionGroup) =>
+                  (item.selectedOptions[g.id] || [])
+                    .map((vid) => g.values?.find((v: OptionValue) => v.id === vid))
+                    .filter(Boolean)
+                    .map((v) => `${g.name}: ${v!.name}`)
+                )
+                .join(", ");
+              return (
+                <div key={`${item.product.id}-${optionKeyForItem(item)}`} className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium">{item.product.name}</span>
+                    <span className="text-sm font-medium">
+                      ETB {calculateItemTotal(item).toFixed(2)}
+                    </span>
                   </div>
-                )}
-              </div>
-            ))
+                  {optionNames && (
+                    <p className="text-xs text-gray-400 mb-2">{optionNames}</p>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => updateQuantity(item.product.id, optionKeyForItem(item), -1)}
+                      className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center text-xs cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <span className="text-sm w-6 text-center">{item.quantity}</span>
+                    <button
+                      onClick={() => updateQuantity(item.product.id, optionKeyForItem(item), 1)}
+                      className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center text-xs cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
 
@@ -320,17 +381,17 @@ export default function NewOrderPage() {
           )}
           <div className="flex justify-between mb-1">
             <span className="font-medium">Subtotal</span>
-            <span className="font-bold">${subtotal.toFixed(2)}</span>
+            <span className="font-bold">ETB {subtotal.toFixed(2)}</span>
           </div>
           {couponDiscount > 0 && (
             <div className="flex justify-between mb-1 text-green-600">
               <span className="font-medium">Coupon discount</span>
-              <span className="font-bold">-${couponDiscount.toFixed(2)}</span>
+              <span className="font-bold">-ETB {couponDiscount.toFixed(2)}</span>
             </div>
           )}
           <div className="flex justify-between mb-4">
             <span className="font-bold">Total</span>
-            <span className="font-bold text-lg">${grandTotal.toFixed(2)}</span>
+            <span className="font-bold text-lg">ETB {grandTotal.toFixed(2)}</span>
           </div>
           <Button
             className="w-full"

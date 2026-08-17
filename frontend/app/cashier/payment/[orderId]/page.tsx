@@ -15,8 +15,8 @@ function printReceipt(order: Order, restaurantName?: string | null) {
   if (!w) return;
 
   const items = order.items?.map((item) => {
-    const opts = item.options?.map((o) => `  - ${o.option_name} (+$${Number(o.price_adjustment).toFixed(2)})`).join("\n") || "";
-    return `  ${item.quantity}x ${item.product_name}\n  $${Number(item.unit_price).toFixed(2)} each = $${Number(item.total_price).toFixed(2)}\n${opts}`;
+    const opts = item.options?.map((o) => `  - ${o.option_name} (+ETB ${Number(o.price_adjustment).toFixed(2)})`).join("\n") || "";
+    return `  ${item.quantity}x ${item.product_name}\n  ETB ${Number(item.unit_price).toFixed(2)} each = ETB ${Number(item.total_price).toFixed(2)}\n${opts}`;
   }).join("\n") || "";
 
   w.document.write(`
@@ -34,11 +34,11 @@ function printReceipt(order: Order, restaurantName?: string | null) {
       <div class="line"></div>
       <pre style="font-size:0.85em;white-space:pre-wrap">${items}</pre>
       <div class="line"></div>
-      <div class="row"><span>Subtotal:</span><span>$${Number(order.subtotal).toFixed(2)}</span></div>
-      ${Number(order.discount) > 0 ? `<div class="row"><span>Discount:</span><span>-$${Number(order.discount).toFixed(2)}</span></div>` : ""}
-      ${Number(order.tax) > 0 ? `<div class="row"><span>Tax:</span><span>$${Number(order.tax).toFixed(2)}</span></div>` : ""}
+      <div class="row"><span>Subtotal:</span><span>ETB ${Number(order.subtotal).toFixed(2)}</span></div>
+      ${Number(order.discount) > 0 ? `<div class="row"><span>Discount:</span><span>-ETB ${Number(order.discount).toFixed(2)}</span></div>` : ""}
+      ${Number(order.tax) > 0 ? `<div class="row"><span>Tax:</span><span>ETB ${Number(order.tax).toFixed(2)}</span></div>` : ""}
       <div class="line"></div>
-      <div class="row total"><span>TOTAL:</span><span>$${Number(order.total).toFixed(2)}</span></div>
+      <div class="row total"><span>TOTAL:</span><span>ETB ${Number(order.total).toFixed(2)}</span></div>
       <div class="line"></div>
       <p style="text-align:center;font-size:0.8em">Payment: ${order.payment_method || "—"}</p>
       <p style="text-align:center;font-size:0.8em">Thank you!</p>
@@ -140,7 +140,7 @@ export default function PaymentPage() {
                     </div>
                   )}
                 </div>
-                <span className="text-gray-900">${Number(item.total_price).toFixed(2)}</span>
+                <span className="text-gray-900">ETB {Number(item.total_price).toFixed(2)}</span>
               </div>
             ))}
           </div>
@@ -149,23 +149,23 @@ export default function PaymentPage() {
         <div className="border-t pt-3 space-y-1">
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Subtotal</span>
-            <span>${Number(order.subtotal).toFixed(2)}</span>
+            <span>ETB {Number(order.subtotal).toFixed(2)}</span>
           </div>
           {Number(order.discount) > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Discount</span>
-              <span className="text-green-600">-${Number(order.discount).toFixed(2)}</span>
+              <span className="text-green-600">-ETB {Number(order.discount).toFixed(2)}</span>
             </div>
           )}
           {Number(order.tax) > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Tax</span>
-              <span>${Number(order.tax).toFixed(2)}</span>
+              <span>ETB {Number(order.tax).toFixed(2)}</span>
             </div>
           )}
           <div className="flex justify-between font-bold text-lg pt-2 border-t">
             <span>Total</span>
-            <span>${Number(order.total).toFixed(2)}</span>
+            <span>ETB {Number(order.total).toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -279,7 +279,7 @@ export default function PaymentPage() {
                 onClick={() => processPayment.mutate({ action: "accept" })}
                 loading={processPayment.isPending}
               >
-                Complete Payment - ${Number(order.total).toFixed(2)}
+                Complete Payment - ETB {Number(order.total).toFixed(2)}
               </Button>
 
               {processPayment.isSuccess && (

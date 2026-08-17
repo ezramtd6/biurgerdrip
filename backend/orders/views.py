@@ -234,6 +234,49 @@ class CashierPaymentView(APIView):
         return _handle_payment(request, order)
 
 
+class CashierReportsView(APIView):
+    def get(self, request):
+        if request.user.role != "CASHIER":
+            return Response(
+                {"error": "Permission denied."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        today = timezone.now().date()
+        cashier_orders = Order.objects.filter(cashier=request.user)
+        today_orders = cashier_orders.filter(created_at__date=today)
+
+        total_orders = cashier_orders.count()
+        total_revenue = cashier_orders.filter(status=Order.Status.COMPLETED).aggregate(
+            total=Sum("total")
+        )["total"] or 0
+
+        orders_by_status = dict(
+            cashier_orders.values_list("status").annotate(count=Count("id")).values_list("status", "count")
+        )
+
+        recent_orders = OrderSerializer(
+            cashier_orders.order_by("-created_at")[:10], many=True
+        ).data
+
+        from products.models import Category, Product
+
+        return Response({
+            "total_orders": total_orders,
+            "total_revenue": float(total_revenue),
+            "total_categories": Category.objects.count(),
+            "total_products": Product.objects.count(),
+            "orders_by_status": orders_by_status,
+            "today_orders_count": today_orders.count(),
+            "today_revenue": float(
+                today_orders.filter(status=Order.Status.COMPLETED).aggregate(
+                    total=Sum("total")
+                )["total"] or 0
+            ),
+            "recent_orders": recent_orders,
+        })
+
+
 class ReportsView(APIView):
     def get(self, request):
         if request.user.role not in ("MANAGER", "ADMIN"):
@@ -298,6 +341,14 @@ class NotificationReadView(APIView):
         notification.is_read = True
         notification.save(update_fields=["is_read"])
         return Response(OrderNotificationSerializer(notification).data)
+
+
+class NotificationReadAllView(APIView):
+    def post(self, request):
+        count = OrderNotification.objects.filter(
+            user=request.user, is_read=False
+        ).update(is_read=True)
+        return Response({"marked": count})
 
 
 class ResubmitProofView(APIView):

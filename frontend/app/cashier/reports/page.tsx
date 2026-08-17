@@ -1,10 +1,19 @@
 "use client";
 
-import { useReports } from "@/hooks/useOrders";
+import { useCashierReports } from "@/hooks/useOrders";
 import { Loading } from "@/components/common/Loading";
 
-export default function ReportsPage() {
-  const { data: report, isLoading } = useReports();
+const STATUS_COLORS: Record<string, string> = {
+  PENDING: "bg-yellow-100 text-yellow-700",
+  PREPARING: "bg-blue-100 text-blue-700",
+  READY: "bg-green-100 text-green-700",
+  COMPLETED: "bg-gray-100 text-gray-700",
+  CANCELLED: "bg-red-100 text-red-700",
+  REJECTED: "bg-red-100 text-red-700",
+};
+
+export default function CashierReportsPage() {
+  const { data: report, isLoading } = useCashierReports();
 
   if (isLoading) return <Loading />;
 
@@ -14,19 +23,19 @@ export default function ReportsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-xl border border-gray-100 p-6">
-          <p className="text-sm text-gray-500">Total Orders</p>
+          <p className="text-sm text-gray-500">My Total Orders</p>
           <p className="text-3xl font-bold text-gray-900 mt-1">{report?.total_orders ?? 0}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-6">
-          <p className="text-sm text-gray-500">Total Revenue</p>
+          <p className="text-sm text-gray-500">My Total Revenue</p>
           <p className="text-3xl font-bold text-gray-900 mt-1">ETB {(report?.total_revenue ?? 0).toFixed(2)}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-6">
-          <p className="text-sm text-gray-500">Today's Orders</p>
+          <p className="text-sm text-gray-500">Today&apos;s Orders</p>
           <p className="text-3xl font-bold text-orange-600 mt-1">{report?.today_orders_count ?? 0}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-6">
-          <p className="text-sm text-gray-500">Today's Revenue</p>
+          <p className="text-sm text-gray-500">Today&apos;s Revenue</p>
           <p className="text-3xl font-bold text-orange-600 mt-1">ETB {(report?.today_revenue ?? 0).toFixed(2)}</p>
         </div>
       </div>
@@ -47,8 +56,12 @@ export default function ReportsPage() {
           <h2 className="font-medium text-gray-900 mb-4">Orders by Status</h2>
           <div className="space-y-2">
             {Object.entries(report.orders_by_status).map(([status, count]) => (
-              <div key={status} className="flex justify-between text-sm">
-                <span className="text-gray-600">{status}</span>
+              <div key={status} className="flex items-center justify-between text-sm py-1">
+                <span className="flex items-center gap-2">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[status] || "bg-gray-100 text-gray-600"}`}>
+                    {status}
+                  </span>
+                </span>
                 <span className="font-medium">{count as number}</span>
               </div>
             ))}
@@ -68,7 +81,9 @@ export default function ReportsPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium">ETB {Number(order.total).toFixed(2)}</p>
-                  <p className="text-xs text-gray-400">{order.status}</p>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[order.status] || "bg-gray-100 text-gray-600"}`}>
+                    {order.status}
+                  </span>
                 </div>
               </div>
             ))}

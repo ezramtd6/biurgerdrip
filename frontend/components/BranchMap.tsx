@@ -12,8 +12,10 @@ interface BranchMapProps {
 
 export default function BranchMap({ restaurant, branches }: BranchMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const aliveRef = useRef(true);
 
   useEffect(() => {
+    aliveRef.current = true;
     const container = containerRef.current;
     if (!container) return;
 
@@ -84,6 +86,7 @@ export default function BranchMap({ restaurant, branches }: BranchMapProps) {
       if (!navigator.geolocation) return;
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          if (!aliveRef.current) return;
           const { latitude, longitude } = pos.coords;
           L.marker([latitude, longitude], { icon: userPin })
             .addTo(map)
@@ -138,6 +141,7 @@ export default function BranchMap({ restaurant, branches }: BranchMapProps) {
     }
 
     return () => {
+      aliveRef.current = false;
       map.remove();
     };
   }, [restaurant, branches]);

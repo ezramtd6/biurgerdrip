@@ -54,6 +54,7 @@ export default function OrdersPage() {
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [proofError, setProofError] = useState("");
   const proofInputRef = useRef<HTMLInputElement>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     setCart(readCart());
@@ -359,7 +360,7 @@ export default function OrdersPage() {
             </div>
 
             <button
-              onClick={placeOrder}
+              onClick={() => setConfirmOpen(true)}
               disabled={createOrder.isPending || !proofFile}
               className="mt-4 w-full bg-red-600 text-white py-4 rounded-2xl font-black text-lg hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-red-600/30 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
@@ -374,6 +375,42 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
+
+      {confirmOpen && (
+        <>
+          <div onClick={() => setConfirmOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+              </div>
+              <h2 className="text-xl font-black text-gray-900 mb-2">Final Confirmation</h2>
+              <p className="text-sm text-gray-500 mb-2">
+                Are you sure this is your final choice?
+              </p>
+              <p className="text-sm font-semibold text-red-600 mb-6">
+                <i className="fas fa-ban mr-1"></i>
+                No refunds will be issued once the order is placed.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmOpen(false)}
+                  className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition cursor-pointer"
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={() => { setConfirmOpen(false); placeOrder(); }}
+                  disabled={createOrder.isPending}
+                  className="flex-1 px-4 py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {createOrder.isPending ? "Placing..." : "Yes, Place Order"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }

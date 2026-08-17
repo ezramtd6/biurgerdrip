@@ -10,9 +10,9 @@ export default function DashboardPage() {
 
   const cards = [
     { label: "Total Orders", value: stats?.total_orders ?? 0, icon: "📦" },
-    { label: "Revenue", value: `$${(stats?.total_revenue ?? 0).toFixed(2)}`, icon: "💰" },
+    { label: "Revenue", value: `ETB ${(stats?.total_revenue ?? 0).toFixed(2)}`, icon: "💰" },
     { label: "Today's Orders", value: stats?.today_orders_count ?? 0, icon: "📊" },
-    { label: "Today's Revenue", value: `$${(stats?.today_revenue ?? 0).toFixed(2)}`, icon: "💵" },
+    { label: "Today's Revenue", value: `ETB ${(stats?.today_revenue ?? 0).toFixed(2)}`, icon: "💵" },
     { label: "Products", value: stats?.total_products ?? 0, icon: "🍔" },
     { label: "Categories", value: stats?.total_categories ?? 0, icon: "📁" },
   ];

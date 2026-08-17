@@ -192,3 +192,13 @@ export function useReports() {
     },
   });
 }
+
+export function useCashierReports() {
+  return useQuery<ReportsData>({
+    queryKey: ["cashier-reports"],
+    queryFn: async () => {
+      const res = await api.get("/orders/cashier/reports/");
+      return res.data;
+    },
+  });
+}

@@ -7,12 +7,12 @@ import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { useEffect, useState } from "react";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import SiteBrand from "@/components/layout/SiteBrand";
-import NotificationBell from "@/components/NotificationBell";
 
 const links = [
   { href: "/cashier", label: "Dashboard", icon: "📊" },
   { href: "/cashier/orders", label: "Orders", icon: "📋" },
   { href: "/cashier/new-order", label: "New Order", icon: "➕" },
+  { href: "/cashier/reports", label: "Reports", icon: "📈" },
 ];
 
 export default function CashierLayout({ children }: { children: React.ReactNode }) {
@@ -74,7 +74,6 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
         <div className="p-4 border-t">
           <div className="flex items-center justify-between mb-2">
             <div className="text-sm text-gray-600">{user.first_name} {user.last_name}</div>
-            <NotificationBell triggerClassName="w-9 h-9 bg-gray-100 text-gray-600 hover:bg-gray-200" />
           </div>
           <div className="flex flex-col items-start gap-2">
             <ChangePasswordDialog />

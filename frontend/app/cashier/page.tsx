@@ -35,7 +35,7 @@ export default function CashierDashboardPage() {
     { label: "Pending", value: pendingCount, color: "bg-yellow-500" },
     { label: "Preparing", value: preparingCount, color: "bg-blue-500" },
     { label: "Ready", value: readyCount, color: "bg-green-500" },
-    { label: "Today's Revenue", value: `$${todayRevenue.toFixed(2)}`, color: "bg-orange-500" },
+    { label: "Today's Revenue", value: `ETB ${todayRevenue.toFixed(2)}`, color: "bg-orange-500" },
   ];
 
   return (
@@ -76,7 +76,7 @@ export default function CashierDashboardPage() {
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[order.status]}`}>
                     {order.status}
                   </span>
-                  <span className="font-medium text-sm">${Number(order.total).toFixed(2)}</span>
+                  <span className="font-medium text-sm">ETB {Number(order.total).toFixed(2)}</span>
                 </div>
               </Link>
             ))}

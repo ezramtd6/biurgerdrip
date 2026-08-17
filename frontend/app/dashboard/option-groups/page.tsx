@@ -340,7 +340,7 @@ function OptionValuesModal({ isOpen, onClose, group }: { isOpen: boolean; onClos
               {v.name_amharic && <span className="ml-1 text-sm text-gray-500">({v.name_amharic})</span>}
               {!v.available && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">Frozen</span>}
               {Number(v.price_adjustment) > 0 && (
-                <span className="ml-2 text-xs text-green-600">+${Number(v.price_adjustment).toFixed(2)}</span>
+                <span className="ml-2 text-xs text-green-600">+ETB {Number(v.price_adjustment).toFixed(2)}</span>
               )}
             </div>
             <div className="flex gap-2 items-center">
