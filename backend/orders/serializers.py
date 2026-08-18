@@ -126,13 +126,23 @@ class OrderCreateSerializer(serializers.Serializer):
         for item_data in items_data:
             from products.models import Product, OptionValue
 
-            product = Product.objects.get(id=item_data["product"])
+            try:
+                product = Product.objects.get(id=item_data["product"])
+            except Product.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"items": f"Product with id {item_data['product']} does not exist."}
+                )
             quantity = int(item_data["quantity"])
 
             option_values = item_data.get("option_values", [])
             unit_price = product.get_discounted_price() or product.price
             for ov_id in option_values:
-                ov = OptionValue.objects.get(id=ov_id)
+                try:
+                    ov = OptionValue.objects.get(id=ov_id)
+                except OptionValue.DoesNotExist:
+                    raise serializers.ValidationError(
+                        {"items": f"Option value with id {ov_id} does not exist."}
+                    )
                 unit_price += ov.price_adjustment
 
             total_price = unit_price * quantity
@@ -167,7 +177,12 @@ class OrderCreateSerializer(serializers.Serializer):
             )
 
             for ov_id in option_values:
-                ov = OptionValue.objects.get(id=ov_id)
+                try:
+                    ov = OptionValue.objects.get(id=ov_id)
+                except OptionValue.DoesNotExist:
+                    raise serializers.ValidationError(
+                        {"items": f"Option value with id {ov_id} does not exist."}
+                    )
                 OrderItemOption.objects.create(
                     order_item=order_item,
                     option_value=ov,

@@ -13,6 +13,16 @@ from .serializers import (
 )
 
 
+class IsCashier(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == "CASHIER"
+
+
+class IsCashierOrManager(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role in ("CASHIER", "MANAGER", "ADMIN")
+
+
 class PaymentSystemViewSet(viewsets.ModelViewSet):
     queryset = PaymentSystem.objects.all()
     serializer_class = PaymentSystemSerializer
@@ -174,6 +184,7 @@ def _handle_payment(request, order):
 
 
 class PaymentView(APIView):
+    permission_classes = [IsCashierOrManager]
     def post(self, request, pk):
         try:
             order = Order.objects.get(id=pk)
@@ -186,6 +197,7 @@ class PaymentView(APIView):
 
 
 class CashierOrderListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsCashier]
     def get_serializer_class(self):
         if self.request.method == "POST":
             return OrderCreateSerializer
@@ -201,6 +213,7 @@ class CashierOrderListCreateView(generics.ListCreateAPIView):
 
 
 class CashierOrderDetailView(generics.RetrieveUpdateAPIView):
+    permission_classes = [IsCashier]
     serializer_class = OrderSerializer
 
     def get_queryset(self):
@@ -224,6 +237,7 @@ class CashierOrderDetailView(generics.RetrieveUpdateAPIView):
 
 
 class CashierPaymentView(APIView):
+    permission_classes = [IsCashier]
     def post(self, request, pk):
         try:
             order = Order.objects.get(id=pk)
@@ -236,6 +250,7 @@ class CashierPaymentView(APIView):
 
 
 class CashierReportsView(APIView):
+    permission_classes = [IsCashier]
     def get(self, request):
         if request.user.role != "CASHIER":
             return Response(
@@ -280,6 +295,7 @@ class CashierReportsView(APIView):
 
 
 class ReportsView(APIView):
+    permission_classes = [IsManager]
     def get(self, request):
         if request.user.role not in ("MANAGER", "ADMIN"):
             return Response(
@@ -323,6 +339,7 @@ class ReportsView(APIView):
 
 
 class NotificationListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderNotificationSerializer
 
     def get_queryset(self):
@@ -332,6 +349,7 @@ class NotificationListView(generics.ListAPIView):
 
 
 class NotificationReadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     def post(self, request, pk):
         notification = OrderNotification.objects.filter(
             id=pk, user=request.user
@@ -347,6 +365,7 @@ class NotificationReadView(APIView):
 
 
 class NotificationReadAllView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     def post(self, request):
         count = OrderNotification.objects.filter(
             user=request.user, is_read=False
@@ -355,6 +374,7 @@ class NotificationReadAllView(APIView):
 
 
 class ResubmitProofView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     def post(self, request, pk):
         user = request.user
         if user.role != "CUSTOMER":

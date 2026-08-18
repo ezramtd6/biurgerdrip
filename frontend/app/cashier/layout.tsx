@@ -45,7 +45,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="min-h-screen flex bg-gray-50 force-light">
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+      <aside className="w-64 fixed inset-y-0 left-0 bg-white border-r border-gray-200 flex flex-col z-40">
         <div className="p-6 border-b">
           <Link href="/cashier" className="text-lg font-bold text-orange-500">
             <SiteBrand />
@@ -89,7 +89,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
         </div>
       </aside>
 
-      <main className="flex-1 p-8 overflow-auto">{children}</main>
+      <main className="flex-1 p-8 overflow-auto ml-64">{children}</main>
       <ConfirmDialog
         open={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}

@@ -225,7 +225,7 @@ export default function NewOrderPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {products?.map((product) => {
             const groups = (product.option_groups ?? [])
               .filter((g: OptionGroup) => g.is_active && (g.values ?? []).some((v: OptionValue) => v.available))
@@ -236,69 +236,84 @@ export default function NewOrderPage() {
             return (
               <div
                 key={product.id}
-                className="bg-white rounded-lg border border-gray-100 p-3 hover:border-orange-300 transition-colors"
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-orange-200 transition-all duration-200 overflow-hidden group"
               >
                 {product.image ? (
-                  <img src={product.image} alt={product.name} className="w-full h-24 object-cover rounded mb-2" />
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    {product.discounted_price != null && Number(product.discounted_price) < Number(product.price) && (
+                      <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                        SALE
+                      </span>
+                    )}
+                  </div>
                 ) : (
-                  <div className="w-full h-24 bg-gray-100 rounded mb-2 flex items-center justify-center text-gray-400 text-xs">
-                    No Image
+                  <div className="w-full h-36 bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center text-gray-300">
+                    <i className="fas fa-image text-3xl"></i>
                   </div>
                 )}
-                <p className="text-sm font-medium">{product.name}</p>
-                {!sizeGroup && (
-                  <>
-                    {product.discounted_price != null && Number(product.discounted_price) < Number(product.price) ? (
-                      <div className="mt-1">
-                        <span className="text-sm font-bold text-orange-500">ETB {Number(product.discounted_price).toFixed(2)}</span>
-                        <span className="ml-2 text-xs text-gray-400 line-through">ETB {Number(product.price).toFixed(2)}</span>
-                      </div>
-                    ) : (
-                      <p className="text-sm font-semibold text-gray-600 mt-1">ETB {Number(product.price).toFixed(2)}</p>
-                    )}
-                  </>
-                )}
-                <div className="flex flex-col gap-1.5 mt-2">
-                  {groups.map((group: OptionGroup) => {
-                    const values = (group.values ?? [])
-                      .filter((v: OptionValue) => v.available)
-                      .sort((a: OptionValue, b: OptionValue) => a.display_order - b.display_order);
-                    const hasVal = opts[group.id] != null;
-                    return (
-                      <div key={group.id} className="relative">
-                        <select
-                          value={opts[group.id] ?? ""}
-                          onChange={(e) => setProductOption(product.id, group.id, e.target.value)}
-                          className={`w-full appearance-none bg-transparent pr-6 py-0.5 cursor-pointer outline-none text-xs transition-colors ${
-                            hasVal ? "text-orange-600 font-bold" : "text-gray-400 font-medium"
-                          }`}
-                        >
-                          <option value="" disabled={group.name === "Size"}>
-                            {group.name === "Size"
-                              ? `Select ${group.name} *`
-                              : hasVal
-                                ? "Unselect"
-                                : `Select ${group.name}`}
-                          </option>
-                          {values.map((v: OptionValue) => (
-                            <option key={v.id} value={v.id}>
-                              {v.name} ETB {Number(v.price_adjustment).toFixed(2)}
+                <div className="p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 truncate">{product.name}</h3>
+                  {!sizeGroup && (
+                    <div className="mt-1.5">
+                      {product.discounted_price != null && Number(product.discounted_price) < Number(product.price) ? (
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-base font-bold text-orange-500">ETB {Number(product.discounted_price).toFixed(2)}</span>
+                          <span className="text-xs text-gray-400 line-through">ETB {Number(product.price).toFixed(2)}</span>
+                        </div>
+                      ) : (
+                        <p className="text-base font-bold text-gray-900">ETB {Number(product.price).toFixed(2)}</p>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-2 mt-3">
+                    {groups.map((group: OptionGroup) => {
+                      const values = (group.values ?? [])
+                        .filter((v: OptionValue) => v.available)
+                        .sort((a: OptionValue, b: OptionValue) => a.display_order - b.display_order);
+                      const hasVal = opts[group.id] != null;
+                      return (
+                        <div key={group.id} className="relative">
+                          <select
+                            value={opts[group.id] ?? ""}
+                            onChange={(e) => setProductOption(product.id, group.id, e.target.value)}
+                            className={`w-full appearance-none rounded-lg px-3 py-2 pr-8 cursor-pointer outline-none text-xs font-medium transition-all border ${
+                              hasVal
+                                ? "bg-orange-50 text-orange-600 border-orange-200"
+                                : "bg-gray-50 text-gray-500 border-gray-200 focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
+                            }`}
+                          >
+                            <option value="" disabled={group.name === "Size"}>
+                              {group.name === "Size"
+                                ? `Select ${group.name} *`
+                                : hasVal
+                                  ? "Unselect"
+                                  : `Select ${group.name}`}
                             </option>
-                          ))}
-                        </select>
-                        <span className={`absolute inset-y-0 right-2 flex items-center pointer-events-none transition-colors ${hasVal ? "text-orange-600" : "text-gray-400"}`}>
-                          <i className="fas fa-chevron-down text-[10px]"></i>
-                        </span>
-                      </div>
-                    );
-                  })}
-                  <button
-                    onClick={() => addToCart(product)}
-                    disabled={missingRequired}
-                    className="w-full bg-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-orange-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-orange-500 mt-1"
-                  >
-                    + Add
-                  </button>
+                            {values.map((v: OptionValue) => (
+                              <option key={v.id} value={v.id}>
+                                {v.name} ETB {Number(v.price_adjustment).toFixed(2)}
+                              </option>
+                            ))}
+                          </select>
+                          <span className={`absolute inset-y-0 right-2.5 flex items-center pointer-events-none ${hasVal ? "text-orange-500" : "text-gray-400"}`}>
+                            <i className="fas fa-chevron-down text-[10px]"></i>
+                          </span>
+                        </div>
+                      );
+                    })}
+                    <button
+                      onClick={() => addToCart(product)}
+                      disabled={missingRequired}
+                      className="w-full bg-gradient-to-r from-orange-500 to-orange-400 text-white px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide hover:from-orange-600 hover:to-orange-500 transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm hover:shadow mt-1"
+                    >
+                      + Add to Order
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -306,14 +321,24 @@ export default function NewOrderPage() {
         </div>
       </div>
 
-      <div className="w-96 bg-white border border-gray-200 rounded-xl flex flex-col">
-        <div className="p-4 border-b">
-          <h2 className="font-medium text-gray-900">Current Order</h2>
+      <div className="w-96 bg-white border border-gray-100 shadow-lg rounded-2xl flex flex-col">
+        <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-orange-500 to-orange-400 rounded-t-2xl">
+          <h2 className="font-bold text-white text-base flex items-center gap-2">
+            <i className="fas fa-shopping-cart text-sm"></i>
+            Current Order
+          </h2>
+          {cart.length > 0 && (
+            <p className="text-orange-100 text-xs mt-0.5">{cart.reduce((s, i) => s + i.quantity, 0)} item(s)</p>
+          )}
         </div>
 
-        <div className="flex-1 overflow-auto p-4 space-y-3">
+        <div className="flex-1 overflow-auto p-4 space-y-2.5">
           {cart.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">Click products to add them</p>
+            <div className="flex flex-col items-center justify-center py-12 text-gray-300">
+              <i className="fas fa-shopping-basket text-4xl mb-3"></i>
+              <p className="text-sm font-medium text-gray-400">No items yet</p>
+              <p className="text-xs text-gray-300 mt-1">Tap products to add them</p>
+            </div>
           ) : (
             cart.map((item) => {
               const optionNames = item.product.option_groups
@@ -326,29 +351,37 @@ export default function NewOrderPage() {
                 )
                 .join(", ");
               return (
-                <div key={`${item.product.id}-${optionKeyForItem(item)}`} className="bg-gray-50 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium">{item.product.name}</span>
-                    <span className="text-sm font-medium">
+                <div key={`${item.product.id}-${optionKeyForItem(item)}`} className="bg-gray-50 rounded-xl p-3.5 border border-gray-100 hover:border-orange-200 transition-colors">
+                  <div className="flex items-start justify-between mb-1.5">
+                    <span className="text-sm font-semibold text-gray-900 flex-1 pr-2">{item.product.name}</span>
+                    <span className="text-sm font-bold text-orange-500 whitespace-nowrap">
                       ETB {calculateItemTotal(item).toFixed(2)}
                     </span>
                   </div>
                   {optionNames && (
-                    <p className="text-xs text-gray-400 mb-2">{optionNames}</p>
+                    <p className="text-[11px] text-gray-400 mb-2.5 leading-relaxed">{optionNames}</p>
                   )}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-0.5">
+                      <button
+                        onClick={() => updateQuantity(item.product.id, optionKeyForItem(item), -1)}
+                        className="w-7 h-7 rounded-md bg-gray-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+                      >
+                        -
+                      </button>
+                      <span className="text-sm font-bold w-7 text-center text-gray-900">{item.quantity}</span>
+                      <button
+                        onClick={() => updateQuantity(item.product.id, optionKeyForItem(item), 1)}
+                        className="w-7 h-7 rounded-md bg-gray-100 hover:bg-green-100 hover:text-green-600 flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+                      >
+                        +
+                      </button>
+                    </div>
                     <button
-                      onClick={() => updateQuantity(item.product.id, optionKeyForItem(item), -1)}
-                      className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center text-xs cursor-pointer"
+                      onClick={() => updateQuantity(item.product.id, optionKeyForItem(item), -item.quantity)}
+                      className="text-[11px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer font-medium"
                     >
-                      -
-                    </button>
-                    <span className="text-sm w-6 text-center">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.product.id, optionKeyForItem(item), 1)}
-                      className="w-6 h-6 rounded bg-gray-200 flex items-center justify-center text-xs cursor-pointer"
-                    >
-                      +
+                      Remove
                     </button>
                   </div>
                 </div>
@@ -357,44 +390,47 @@ export default function NewOrderPage() {
           )}
         </div>
 
-        <div className="p-4 border-t">
-          <input
-            value={couponCode}
-            onChange={(e) => handleCouponChange(e.target.value)}
-            placeholder="Coupon code (optional)"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-          />
+        <div className="p-5 border-t border-gray-100">
+          <div className="relative mb-4">
+            <i className="fas fa-tag absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input
+              value={couponCode}
+              onChange={(e) => handleCouponChange(e.target.value)}
+              placeholder="Coupon code (optional)"
+              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-100 focus:border-orange-300 transition-all"
+            />
+          </div>
           {couponStatus.state === "checking" && (
-            <p className="text-sm text-gray-500 flex items-center gap-1.5 mb-3">
+            <p className="text-xs text-gray-500 flex items-center gap-1.5 mb-3">
               <i className="fas fa-spinner fa-spin"></i> Checking coupon...
             </p>
           )}
           {couponStatus.state === "valid" && (
-            <p className="text-sm text-green-600 flex items-center gap-1.5 mb-3">
+            <p className="text-xs text-green-600 flex items-center gap-1.5 mb-3 bg-green-50 px-3 py-2 rounded-lg">
               <i className="fas fa-circle-check"></i> {couponStatus.message}
             </p>
           )}
           {couponStatus.state === "invalid" && (
-            <p className="text-sm text-red-600 flex items-center gap-1.5 mb-3">
+            <p className="text-xs text-red-600 flex items-center gap-1.5 mb-3 bg-red-50 px-3 py-2 rounded-lg">
               <i className="fas fa-circle-exclamation"></i> {couponStatus.message}
             </p>
           )}
-          <div className="flex justify-between mb-1">
-            <span className="font-medium">Subtotal</span>
-            <span className="font-bold">ETB {subtotal.toFixed(2)}</span>
+          <div className="flex justify-between mb-1.5">
+            <span className="text-sm text-gray-500">Subtotal</span>
+            <span className="text-sm font-semibold text-gray-700">ETB {subtotal.toFixed(2)}</span>
           </div>
           {couponDiscount > 0 && (
-            <div className="flex justify-between mb-1 text-green-600">
-              <span className="font-medium">Coupon discount</span>
-              <span className="font-bold">-ETB {couponDiscount.toFixed(2)}</span>
+            <div className="flex justify-between mb-1.5 text-green-600">
+              <span className="text-sm">Coupon discount</span>
+              <span className="text-sm font-semibold">-ETB {couponDiscount.toFixed(2)}</span>
             </div>
           )}
-          <div className="flex justify-between mb-4">
-            <span className="font-bold">Total</span>
-            <span className="font-bold text-lg">ETB {grandTotal.toFixed(2)}</span>
+          <div className="flex justify-between items-baseline pt-3 border-t border-gray-100 mt-3">
+            <span className="text-sm font-semibold text-gray-700">Total</span>
+            <span className="text-xl font-bold text-orange-500">ETB {grandTotal.toFixed(2)}</span>
           </div>
           <Button
-            className="w-full"
+            className="w-full mt-4 py-3 rounded-xl font-bold text-sm shadow-lg hover:shadow-xl transition-all"
             onClick={handleOrder}
             disabled={cart.length === 0}
           >

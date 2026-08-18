@@ -1,6 +1,9 @@
+import logging
 import re
 from django.core.mail import send_mail
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 def _restaurant_name():
@@ -28,7 +31,10 @@ def send_set_password_email(email, first_name, role, token):
         f"If you did not expect this email, please ignore it.\n\n"
         f"Regards,\n{restaurant_name} Team"
     )
-    send_mail(subject, message, _noreply_sender(restaurant_name), [email])
+    try:
+        send_mail(subject, message, _noreply_sender(restaurant_name), [email])
+    except Exception:
+        logger.exception("Failed to send set-password email to %s", email)
 
 
 def send_password_reset_email(email, first_name, token):
@@ -44,4 +50,7 @@ def send_password_reset_email(email, first_name, token):
         f"If you did not request this, please ignore this email.\n\n"
         f"Regards,\n{restaurant_name} Team"
     )
-    send_mail(subject, message, _noreply_sender(restaurant_name), [email])
+    try:
+        send_mail(subject, message, _noreply_sender(restaurant_name), [email])
+    except Exception:
+        logger.exception("Failed to send password-reset email to %s", email)

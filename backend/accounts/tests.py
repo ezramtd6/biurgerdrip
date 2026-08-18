@@ -99,7 +99,9 @@ class ResetPasswordTokenTests(TestCase):
         expired_token = PasswordResetToken.objects.create(
             user=self.user,
             token="expired-token",
-            created_at=timezone.now() - timedelta(days=2),
+        )
+        PasswordResetToken.objects.filter(pk=expired_token.pk).update(
+            created_at=timezone.now() - timedelta(days=2)
         )
 
         response = self.client.post(
