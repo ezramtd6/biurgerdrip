@@ -77,6 +77,15 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    if (!error.response && !originalRequest._networkRetry) {
+      originalRequest._networkRetry = (originalRequest._networkRetry || 0) + 1;
+      if (originalRequest._networkRetry <= 3) {
+        const delay = originalRequest._networkRetry * 2000;
+        await new Promise((r) => setTimeout(r, delay));
+        return api(originalRequest);
+      }
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       const noRefresh = isNoRefreshPath(originalRequest.url);
       const method = (originalRequest.method || "get").toLowerCase();
