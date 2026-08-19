@@ -111,7 +111,7 @@ export default function CashierOrdersPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${order.cashier ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700"}`}>
-                      {order.cashier ? "Walk-in" : "Online"}
+                      {order.customer ? "Online" : "Walk-in"}
                     </span>
                     {order.payment_proof && order.status !== "COMPLETED" && (
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
