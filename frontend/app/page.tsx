@@ -289,10 +289,21 @@ export default function Home() {
               <button onClick={toggleDarkMode} className="dark-toggle w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm">
                 {isDark ? <i className="fas fa-sun text-lg"></i> : <i className="fas fa-moon text-lg"></i>}
               </button>
-              <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full p-1 shadow-inner">
-                <button onClick={() => setCurrentLang("en")} className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${currentLang === "en" ? "bg-red-600 text-white shadow" : "text-gray-600 dark:text-gray-300"}`}>EN</button>
-                <button onClick={() => setCurrentLang("am")} className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${currentLang === "am" ? "bg-red-600 text-white shadow" : "text-gray-600 dark:text-gray-300"}`}>AM</button>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm cursor-pointer outline-none">
+                  <i className="fas fa-globe text-base"></i>
+                  {currentLang === "am" ? "አማ" : "EN"}
+                  <ChevronDown className="w-3 h-3 text-gray-400" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-32">
+                  <DropdownMenuItem onClick={() => setCurrentLang("en")} className={currentLang === "en" ? "font-bold text-red-600" : ""}>
+                    English
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCurrentLang("am")} className={currentLang === "am" ? "font-bold text-red-600" : ""}>
+                    አማርኛ
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               {user && mounted ? (
                 <div className="hidden md:flex items-center gap-3">
                   <DropdownMenu>

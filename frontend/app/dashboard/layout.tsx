@@ -36,6 +36,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   useEffect(() => {
+    const html = document.documentElement;
+    const wasDark = html.classList.contains("dark");
+    html.classList.remove("dark");
+    return () => {
+      if (wasDark || localStorage.getItem("darkMode") === "true") {
+        html.classList.add("dark");
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (mounted && !isLoading && (!user || (user.role !== "MANAGER" && user.role !== "ADMIN"))) {
       if (sessionStorage.getItem("auth_logged_out") !== "1") openAuth("login");
       router.replace("/");

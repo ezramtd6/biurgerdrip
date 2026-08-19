@@ -132,6 +132,7 @@ export interface OrderNotification {
   id: number;
   order: number;
   message: string;
+  message_amharic: string;
   is_read: boolean;
   created_at: string;
 }

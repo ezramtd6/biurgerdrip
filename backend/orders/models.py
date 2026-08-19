@@ -95,6 +95,7 @@ class OrderNotification(models.Model):
         related_name="notifications"
     )
     message = models.TextField()
+    message_amharic = models.TextField(blank=True, default="")
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -102,15 +103,15 @@ class OrderNotification(models.Model):
         return f"Notification for {self.order.order_number}"
 
 
-def notify_cashiers(order, message):
+def notify_cashiers(order, message, message_amharic=""):
     from accounts.models import User
 
     for cashier in User.objects.filter(role=User.Role.CASHIER, is_active=True):
-        OrderNotification.objects.create(user=cashier, order=order, message=message)
+        OrderNotification.objects.create(user=cashier, order=order, message=message, message_amharic=message_amharic)
 
 
-def notify_user(user, order, message):
-    OrderNotification.objects.create(user=user, order=order, message=message)
+def notify_user(user, order, message, message_amharic=""):
+    OrderNotification.objects.create(user=user, order=order, message=message, message_amharic=message_amharic)
 
 
 class OrderItem(models.Model):

@@ -21,7 +21,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function OrderHistoryPage() {
-  const { t } = useLanguage();
+  const { lang: currentLang, t } = useLanguage();
   const { data: orders, isLoading } = useOrders();
   const { data: notifications } = useNotifications();
   const { data: products } = useProducts();
@@ -101,7 +101,7 @@ export default function OrderHistoryPage() {
                             {isRejection ? <i className="fas fa-circle-xmark"></i> : <i className="fas fa-circle-check"></i>}
                           </span>
                           <div className="flex-1">
-                            <p className="text-sm text-gray-700 dark:text-gray-200">{n.message}</p>
+                            <p className="text-sm text-gray-700 dark:text-gray-200">{currentLang === "am" && n.message_amharic ? n.message_amharic : n.message}</p>
                             <p className="text-xs text-gray-400 mt-1">
                               {new Date(n.created_at).toLocaleString()}
                             </p>
@@ -172,7 +172,7 @@ export default function OrderHistoryPage() {
                       return (
                         <div key={item.id} className="flex justify-between text-sm">
                           <span className="text-gray-600 dark:text-gray-400">
-                            {item.quantity}x {item.product_name || product?.name || `Product #${item.product}`}
+                            {item.quantity}x {item.product_name || (currentLang === "am" ? product?.name_amharic || product?.name : product?.name) || `Product #${item.product}`}
                             {item.options && item.options.length > 0 && (
                               <span className="text-gray-400 dark:text-gray-500">
                                 {" "}(+{item.options.length} option{item.options.length > 1 ? "s" : ""})

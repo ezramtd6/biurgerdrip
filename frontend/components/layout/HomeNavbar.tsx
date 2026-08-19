@@ -100,10 +100,21 @@ export default function HomeNavbar() {
               <NotificationBell triggerClassName="w-10 h-10 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm" />
             )}
 
-            <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full p-1 shadow-inner">
-              <button onClick={() => setLang("en")} className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${lang === "en" ? "bg-red-600 text-white shadow" : "text-gray-600 dark:text-gray-300"}`}>EN</button>
-              <button onClick={() => setLang("am")} className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${lang === "am" ? "bg-red-600 text-white shadow" : "text-gray-600 dark:text-gray-300"}`}>AM</button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition shadow-sm cursor-pointer outline-none">
+                <i className="fas fa-globe text-base"></i>
+                {lang === "am" ? "አማ" : "EN"}
+                <ChevronDown className="w-3 h-3 text-gray-400" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32">
+                <DropdownMenuItem onClick={() => setLang("en")} className={lang === "en" ? "font-bold text-red-600" : ""}>
+                  English
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLang("am")} className={lang === "am" ? "font-bold text-red-600" : ""}>
+                  አማርኛ
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {user && mounted ? (
               <div className="hidden md:flex items-center gap-3">

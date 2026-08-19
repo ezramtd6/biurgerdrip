@@ -8,6 +8,7 @@ import { Button } from "@/components/ui";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
 import Link from "next/link";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
@@ -20,6 +21,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function CashierOrdersPage() {
   const queryClient = useQueryClient();
+  const { lang: currentLang } = useLanguage();
   const [filter, setFilter] = useState<string>("");
 
   const { data: orders, isLoading } = useQuery<Order[]>({
@@ -228,7 +230,7 @@ export default function CashierOrdersPage() {
                     <span className="mt-1.5 w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-700 leading-snug">{n.message}</p>
+                    <p className="text-sm text-gray-700 leading-snug">{currentLang === "am" && n.message_amharic ? n.message_amharic : n.message}</p>
                     <p className="text-xs text-gray-400 mt-1">
                       {new Date(n.created_at).toLocaleString()}
                     </p>

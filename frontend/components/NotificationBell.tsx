@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useNotifications, useMarkNotificationRead } from "@/hooks/useOrders";
+import { useLanguage } from "@/hooks/useLanguage";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -20,6 +21,7 @@ export default function NotificationBell({
 }) {
   const { data: notifications, isLoading } = useNotifications();
   const markRead = useMarkNotificationRead();
+  const { lang: currentLang } = useLanguage();
   const [open, setOpen] = useState(false);
 
   const unread = notifications?.filter((n) => !n.is_read).length ?? 0;
@@ -67,7 +69,7 @@ export default function NotificationBell({
                     <span className="mt-1.5 w-2 h-2 rounded-full bg-red-600 shrink-0"></span>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-gray-700 dark:text-gray-200 leading-snug">{n.message}</p>
+                    <p className="text-gray-700 dark:text-gray-200 leading-snug">{currentLang === "am" && n.message_amharic ? n.message_amharic : n.message}</p>
                     <p className="text-xs text-gray-400 mt-1">
                       {new Date(n.created_at).toLocaleString()}
                     </p>

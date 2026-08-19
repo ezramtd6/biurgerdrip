@@ -41,7 +41,7 @@ const readCart = (): CartItem[] => {
 };
 
 export default function OrdersPage() {
-  const { t } = useLanguage();
+  const { lang: currentLang, t } = useLanguage();
   const { data: paymentSystems } = usePaymentSystems();
   const createOrder = useCreateOrder();
   const validateCoupon = useValidateCoupon();
@@ -214,14 +214,14 @@ export default function OrdersPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     {item.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover" />
+                      <img src={item.image} alt={currentLang === "am" ? item.nameAm : item.name} className="w-12 h-12 rounded-lg object-cover" />
                     ) : (
                       <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                         <i className="fas fa-utensils text-gray-300 dark:text-gray-500"></i>
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 dark:text-white truncate">{item.name}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white truncate">{currentLang === "am" ? item.nameAm : item.name}</p>
                       {item.optionNames && (
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.optionNames}</p>
                       )}

@@ -123,6 +123,14 @@ def _handle_payment(request, order):
                     else ""
                 )
             )
+            message_amharic = (
+                f"የእርስዎ ክፍያ ለትዕዛዝ {order.order_number} በ3 ጥረቶች ተቃይሞ በቀጥታ ሊከናወን አይችልም።"
+                + (
+                    f" እባክዎን ለተጨማሪ መረጃ በቂashing {phone} ያግኙ።"
+                    if phone
+                    else ""
+                )
+            )
         else:
             remaining = 3 - order.proof_attempts
             message = (
@@ -133,15 +141,26 @@ def _handle_payment(request, order):
                     else ""
                 )
             )
+            message_amharic = (
+                f"የእርስዎ ክፍያ ለትዕዛዝ {order.order_number} ተቃይሞ ነው።"
+                + (
+                    f" እባክዎን ለምንድነው ለማወቅ በቂashing {phone} ያግኙ።"
+                    if phone
+                    else ""
+                )
+            )
             if reason:
                 message += f" Reason: {reason}"
+                message_amharic += f" ምክንያት: {reason}"
             message += f" You have {remaining} more attempt(s) remaining."
+            message_amharic += f" {remaining} ተጨማሪ ጥረቶች ቀርተዋል።"
 
         if order.customer_id:
             OrderNotification.objects.create(
                 user=order.customer,
                 order=order,
                 message=message,
+                message_amharic=message_amharic,
             )
         return Response(
             {
@@ -178,6 +197,7 @@ def _handle_payment(request, order):
             user=order.customer,
             order=order,
             message=f"Your payment for order {order.order_number} was accepted. Thank you!",
+            message_amharic=f"የእርስዎ ክፍያ ለትዕዛዝ {order.order_number} ተቀብሏል። አመሰግናለሁ!",
         )
 
     return Response(OrderSerializer(order).data)
@@ -228,10 +248,19 @@ class CashierOrderDetailView(generics.RetrieveUpdateAPIView):
         instance.refresh_from_db()
         if instance.status != old_status and instance.customer_id:
             label = dict(Order.Status.choices).get(instance.status, instance.status)
+            label_amharic = {
+                "PENDING": "በመጠበቅ ላይ",
+                "PREPARING": "በማዘጋጀት ላይ",
+                "READY": "ዝግጁ ነው",
+                "COMPLETED": "ተጠናቅቋል",
+                "CANCELLED": "ተሰርቷል",
+                "REJECTED": "ተቃይሏል",
+            }.get(instance.status, label)
             OrderNotification.objects.create(
                 user=instance.customer,
                 order=instance,
                 message=f"Your order {instance.order_number} status is now {label}.",
+                message_amharic=f"የትዕዛዝዎ {instance.order_number} ሁኔታ አሁን {label_amharic} ነው።",
             )
         return response
 
@@ -422,6 +451,7 @@ class ResubmitProofView(APIView):
         notify_cashiers(
             order,
             f"Order {order.order_number} re-uploaded payment proof and needs re-verification.",
+            f"ትዕዛዝ {order.order_number} የክፍያ ማስረጃ በድጋሚ ተጭኛል እና እንደገና ማረጋገጥ ያስፈልጋል።",
         )
 
         return Response(
