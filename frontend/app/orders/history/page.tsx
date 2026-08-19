@@ -5,21 +5,23 @@ import Link from "next/link";
 import { useOrders, useNotifications, useResubmitProof } from "@/hooks/useOrders";
 import { useProducts } from "@/hooks/useProducts";
 import { usePaymentSystems } from "@/hooks/usePaymentSystems";
+import { useLanguage } from "@/hooks/useLanguage";
 import type { OrderNotification } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
 import HomeNavbar from "@/components/layout/HomeNavbar";
 
 const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-700",
-  PREPARING: "bg-blue-100 text-blue-700",
-  READY: "bg-green-100 text-green-700",
-  COMPLETED: "bg-gray-100 text-gray-700",
-  CANCELLED: "bg-red-100 text-red-700",
-  REJECTED: "bg-red-100 text-red-700",
+  PENDING: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400",
+  PREPARING: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",
+  READY: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400",
+  COMPLETED: "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
+  CANCELLED: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
+  REJECTED: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
 };
 
 export default function OrderHistoryPage() {
+  const { t } = useLanguage();
   const { data: orders, isLoading } = useOrders();
   const { data: notifications } = useNotifications();
   const { data: products } = useProducts();
@@ -60,23 +62,23 @@ export default function OrderHistoryPage() {
       <HomeNavbar />
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Order History</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("order_history_title")}</h1>
           <Link
             href="/orders"
             className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-red-600/30"
           >
-            Place New Order <i className="fas fa-shopping-bag"></i>
+            {t("place_new_order")} <i className="fas fa-shopping-bag"></i>
           </Link>
         </div>
 
         {!orders || orders.length === 0 ? (
-          <EmptyState message="You haven't placed any orders yet" />
+          <EmptyState message={t("no_orders_yet")} />
         ) : (
           <div className="space-y-4">
             {orders.map((order) => {
               const orderNotifications = notificationsByOrder.get(order.id) ?? [];
               return (
-              <div key={order.id} className="bg-white rounded-xl border border-gray-100 p-5">
+              <div key={order.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-5">
                 {orderNotifications.length > 0 && (
                   <div className="mb-4 space-y-2">
                     {orderNotifications.map((n) => {
@@ -105,7 +107,7 @@ export default function OrderHistoryPage() {
                             </p>
                             {order.status === "REJECTED" && isRejection && (
                               <p className="font-bold text-red-700 dark:text-red-400 text-sm mt-2">
-                                Payment Rejected After 3 Attempts
+                                {t("payment_rejected_3")}
                               </p>
                             )}
                             {isRejection && order.status !== "COMPLETED" && order.status !== "REJECTED" && (
@@ -118,12 +120,12 @@ export default function OrderHistoryPage() {
                                 className="mt-3 inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-700 transition-all cursor-pointer disabled:opacity-50"
                               >
                                 <i className="fas fa-camera"></i>
-                                {resubmit.isPending && pickingFor === order.id ? "Uploading..." : "Re-upload payment proof"}
+                                {resubmit.isPending && pickingFor === order.id ? t("uploading") : t("re_upload_proof")}
                               </button>
                             )}
                             {resubmit.isSuccess && pickingFor === null && (
                               <p className="mt-2 text-xs text-green-600 font-semibold">
-                                New proof uploaded — the cashier will verify it again.
+                                {t("new_proof_uploaded")}
                               </p>
                             )}
                           </div>
@@ -135,13 +137,13 @@ export default function OrderHistoryPage() {
 
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="font-medium text-gray-900">{order.order_number}</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="font-medium text-gray-900 dark:text-white">{order.order_number}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
                       {new Date(order.created_at).toLocaleString()}
                     </p>
                     {order.payment_method && (
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        Payment: {paymentMethodName(order.payment_method)}
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        {t("payment")} {paymentMethodName(order.payment_method)}
                       </p>
                     )}
                   </div>
@@ -164,29 +166,29 @@ export default function OrderHistoryPage() {
                 )}
 
                 {order.items && order.items.length > 0 && (
-                  <div className="border-t pt-3 space-y-2">
+                  <div className="border-t dark:border-gray-700 pt-3 space-y-2">
                     {order.items.map((item) => {
                       const product = productMap.get(item.product);
                       return (
                         <div key={item.id} className="flex justify-between text-sm">
-                          <span className="text-gray-600">
+                          <span className="text-gray-600 dark:text-gray-400">
                             {item.quantity}x {item.product_name || product?.name || `Product #${item.product}`}
                             {item.options && item.options.length > 0 && (
-                              <span className="text-gray-400">
+                              <span className="text-gray-400 dark:text-gray-500">
                                 {" "}(+{item.options.length} option{item.options.length > 1 ? "s" : ""})
                               </span>
                             )}
                           </span>
-                          <span className="text-gray-900">ETB {Number(item.total_price).toFixed(2)}</span>
+                          <span className="text-gray-900 dark:text-white">{t("currency")} {Number(item.total_price).toFixed(2)}</span>
                         </div>
                       );
                     })}
                   </div>
                 )}
 
-                <div className="border-t mt-3 pt-3 flex justify-between">
-                  <span className="text-sm font-medium text-gray-900">Total</span>
-                  <span className="font-bold text-gray-900">ETB {Number(order.total).toFixed(2)}</span>
+                <div className="border-t dark:border-gray-700 mt-3 pt-3 flex justify-between">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">{t("total")}</span>
+                  <span className="font-bold text-gray-900 dark:text-white">{t("currency")} {Number(order.total).toFixed(2)}</span>
                 </div>
               </div>
               );

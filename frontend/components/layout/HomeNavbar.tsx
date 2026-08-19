@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
+import { useLanguage } from "@/hooks/useLanguage";
 import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { useRestaurant } from "@/hooks/useRestaurant";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
@@ -21,43 +22,18 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-const translations: Record<string, Record<string, string>> = {
-  en: {
-    menu: "Menu",
-    store_locations: "Store Locations",
-    about_us: "About Us",
-    my_account: "My Account",
-    cart: "Cart",
-    orders: "Orders",
-    my_orders: "My Orders",
-    profile: "Profile",
-  },
-  am: {
-    menu: "ምናሌ",
-    store_locations: "ቅርንጫፎች",
-    about_us: "ስለ እኛ",
-    my_account: "መለያዬ",
-    cart: "ቅርጫት",
-    orders: "ትዕዛዞች",
-    my_orders: "የእኔ ትዕዛዞች",
-    profile: "መገለጫ",
-  },
-};
-
 export default function HomeNavbar() {
   const { user, logout } = useAuth();
   const { openAuth } = useAuthModal();
   const { isDark, toggleDarkMode } = useTheme();
+  const { lang, setLang, t } = useLanguage();
   const { data: restaurant } = useRestaurant();
   const router = useRouter();
-  const [currentLang, setCurrentLang] = useState("en");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [totalQty, setTotalQty] = useState(0);
-
-  const t = (key: string) => translations[currentLang]?.[key] ?? translations.en[key] ?? key;
 
   useEffect(() => {
     setMounted(true);
@@ -125,8 +101,8 @@ export default function HomeNavbar() {
             )}
 
             <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full p-1 shadow-inner">
-              <button onClick={() => setCurrentLang("en")} className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${currentLang === "en" ? "bg-red-600 text-white shadow" : "text-gray-600 dark:text-gray-300"}`}>EN</button>
-              <button onClick={() => setCurrentLang("am")} className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${currentLang === "am" ? "bg-red-600 text-white shadow" : "text-gray-600 dark:text-gray-300"}`}>AM</button>
+              <button onClick={() => setLang("en")} className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${lang === "en" ? "bg-red-600 text-white shadow" : "text-gray-600 dark:text-gray-300"}`}>EN</button>
+              <button onClick={() => setLang("am")} className={`px-4 py-1.5 rounded-full text-xs font-bold transition ${lang === "am" ? "bg-red-600 text-white shadow" : "text-gray-600 dark:text-gray-300"}`}>AM</button>
             </div>
 
             {user && mounted ? (

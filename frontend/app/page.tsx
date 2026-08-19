@@ -21,119 +21,9 @@ import { RestaurantInfo, Category, Product, Branch, SocialLink, Contact, OptionV
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import dynamic from "next/dynamic";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const BranchMap = dynamic(() => import("@/components/BranchMap"), { ssr: false });
-
-const translations: Record<string, Record<string, string>> = {
-  en: {
-    store_locations: "Store Locations",
-    contact_us: "Contact Us",
-    menu: "Menu",
-    about_us: "About Us",
-    orders: "Orders",
-    my_account: "Login",
-    cart: "Cart",
-    hero_title: "No One OutPizzas the Hut!",
-    hero_desc: "Order your favorite pizza online from Pizza Hut Ethiopia. Explore delicious flavors and enjoy fast, reliable delivery to your doorstep in Addis Ababa.",
-    order_now: "Order Now",
-    view_deals: "View Deals",
-    cat_pizza: "PIZZAS",
-    cat_sides: "SIDES",
-    cat_melts: "MELTS",
-    cat_pasta: "PASTA",
-    cat_drinks: "DRINKS",
-    cat_desserts: "DESSERTS",
-    hot_deal: "HOT DEAL",
-    deal_title: "3 Personal Pan Pizzas",
-    deal_desc: "Starting @ ETB 499 only! Save up to 35%",
-    grab_deal: "Grab the Deal",
-    our_menu: "Our Menu",
-    menu_subtitle: "Freshly made, delivered hot to your door",
-    all: "All",
-    feat_delivery: "Fast Delivery",
-    feat_delivery_desc: "Hot and fresh delivered to your doorstep in 30 minutes or less.",
-    feat_quality: "Quality Ingredients",
-    feat_quality_desc: "Only the freshest ingredients go into every pizza we make.",
-    feat_deals: "Best Deals",
-    feat_deals_desc: "Amazing combos and discounts every day of the week.",
-    footer_about: "The Pizza Hut story begins in May 1958. Dan and Frank Carney opened their 550-square-foot pizza restaurant in Wichita, Kansas.",
-    help_support: "Help & Support",
-    faqs: "FAQs",
-    terms: "Terms & Conditions",
-    privacy: "Privacy Policy",
-    contact: "Contact",
-    rights: "All rights reserved.",
-    delivered_by: "Delivered by:",
-    ph_ethiopia: "Pizza Hut Ethiopia",
-    your_cart: "Your Cart",
-    cart_empty: "Your cart is empty",
-    cart_empty_desc: "Add some delicious items!",
-    subtotal: "Subtotal",
-    delivery: "Delivery",
-    free: "Free",
-    total: "Total",
-    checkout: "Checkout",
-    add: "Add",
-    added_to_cart: "added to cart!",
-    size: "Size",
-    select: "Select",
-    currency: "ETB",
-  },
-  am: {
-    store_locations: "የሱቅ ቦታዎች",
-    contact_us: "አግኙን",
-    menu: "ምናሌ",
-    about_us: "ስለ እኛ",
-    orders: "ትዕዛዞች",
-    my_account: "የእኔ መለያ",
-    cart: "ተራማጅ",
-    hero_title: "ማንም ሆቱን አያሸንፍም!",
-    hero_desc: "የተወደደውን ፒዛ ከፒዛ ሆት ኢትዮጵያ በኦንላይን ይዘዙ። ጣፋጭ ጣዕሞችን ያስሱ እና በአዲስ አበባ ወደ ቤትዎ ፈጣን እና አስተማማኝ አቅርቦት ይደህኑ።",
-    order_now: "አሁን ይዘዙ",
-    view_deals: "ቅናሾችን ይመልከቱ",
-    cat_pizza: "ፒዛዎች",
-    cat_sides: "ጎን ምግቦች",
-    cat_melts: "ሜልትስ",
-    cat_pasta: "ፓስታ",
-    cat_drinks: "መጠጦች",
-    cat_desserts: "ጣፋጭ ምግቦች",
-    hot_deal: "ሞቃታማ ቅናሽ",
-    deal_title: "3 የግል ፓን ፒዛዎች",
-    deal_desc: "ከ ETB 499 ጀምሮ! እስከ 35% ይቆጥቡ",
-    grab_deal: "ቅናሹን ያግኙ",
-    our_menu: "ምናሌያችን",
-    menu_subtitle: "በቅርብ ጊዜ የተሰራ፣ ለበርዎ በሙቀት ይደርሳል",
-    all: "ሁሉም",
-    feat_delivery: "ፈጣን አቅርቦት",
-    feat_delivery_desc: "በሙቀት እና በአዲስነት ወደ ቤትዎ በ30 ደቂቃ ውስጥ ይደርሳል።",
-    feat_quality: "ጥራት ያላቸው ንጥረ ነገሮች",
-    feat_quality_desc: "በእያንዳንዱ ፒዛ ውስጥ የሚገቡት የተረጋገጠ ንጥረ ነገሮች ብቻ ናቸው።",
-    feat_deals: "ምርጥ ቅናሾች",
-    feat_deals_desc: "በሳምንቱ ሁሉ ቀን አስደናቂ ኮምቦዎች እና ቅናሾች።",
-    footer_about: "የፒዛ ሆት ታሪክ በሚያዚያ 1958 ጀመረ። ዳን እና ፍራንክ ካርኒ በዊቺታ፣ ካንሳስ 550 ካሬ ጫማ የሆነውን የፒዛ ሬስቶራንት ከፈቱ።",
-    help_support: "እገዛ እና ድጋፍ",
-    faqs: "ተደጋጋሚ ጥያቄዎች",
-    terms: "ደንቦች እና ሁኔታዎች",
-    privacy: "የግላዊነት ፖሊሲ",
-    contact: "አድራሻ",
-    rights: "ሁሉም መብቶች የተጠበቁ ናቸው።",
-    delivered_by: "የሚያቀርበው፦",
-    ph_ethiopia: "ፒዛ ሆት ኢትዮጵያ",
-    your_cart: "ተራማጅዎ",
-    cart_empty: "ተራማጅዎ ባዶ ነው",
-    cart_empty_desc: "ጣፋጭ ዕቃዎችን ይጨምሩ!",
-    subtotal: "ንዑስ ድምር",
-    delivery: "አቅርቦት",
-    free: "ነፃ",
-    total: "ጠቅላላ",
-    checkout: "ይክፈሉ",
-    add: "ጨምር",
-    added_to_cart: "ወደ ተራማጅ ተጨምሯል!",
-    size: "መጠን",
-    select: "ይምረጡ",
-    currency: "ብር",
-  },
-};
 
 const socialIconMap: Record<string, string> = {
   facebook: "fab fa-facebook-f",
@@ -168,8 +58,8 @@ export default function Home() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [currentLang, setCurrentLang] = useState("en");
   const [cart, setCart] = useState<CartItem[]>([]);
+  const { lang: currentLang, setLang: setCurrentLang, t } = useLanguage();
   const [cartOpen, setCartOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<string | number>("all");
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: "", visible: false });
@@ -306,8 +196,6 @@ export default function Home() {
       window.removeEventListener("popstate", scrollToHash);
     };
   }, [checkingRestaurant]);
-
-  const t = (key: string) => translations[currentLang]?.[key] || translations.en[key] || key;
 
   const addToCart = (item: Product) => {
     const groups = (item.option_groups ?? []).filter((g) => g.is_active && (g.values ?? []).some((v) => v.available));

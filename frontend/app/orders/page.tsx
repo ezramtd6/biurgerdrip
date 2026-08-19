@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCreateOrder } from "@/hooks/useOrders";
 import { usePaymentSystems } from "@/hooks/usePaymentSystems";
 import { useValidateCoupon } from "@/hooks/usePromotions";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
 import HomeNavbar from "@/components/layout/HomeNavbar";
@@ -40,6 +41,7 @@ const readCart = (): CartItem[] => {
 };
 
 export default function OrdersPage() {
+  const { t } = useLanguage();
   const { data: paymentSystems } = usePaymentSystems();
   const createOrder = useCreateOrder();
   const validateCoupon = useValidateCoupon();
@@ -171,12 +173,12 @@ export default function OrdersPage() {
       <>
         <HomeNavbar />
         <div className="max-w-4xl mx-auto px-4 py-16 flex flex-col items-center text-center">
-          <EmptyState message="Your cart is empty" />
+          <EmptyState message={t("your_cart_empty")} />
           <Link
             href="/orders/history"
             className="mt-4 inline-flex items-center gap-2 bg-red-600 text-white px-5 py-3 rounded-2xl text-sm font-bold hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-red-600/30"
           >
-            View Order History <i className="fas fa-clock-rotate-left"></i>
+            {t("view_order_history_btn")} <i className="fas fa-clock-rotate-left"></i>
           </Link>
         </div>
       </>
@@ -188,25 +190,25 @@ export default function OrdersPage() {
       <HomeNavbar />
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Your Cart & Checkout</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("your_cart_checkout")}</h1>
           <Link
             href="/orders/history"
             className="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300"
           >
-            Order History <i className="fas fa-clock-rotate-left"></i>
+            {t("order_history")} <i className="fas fa-clock-rotate-left"></i>
           </Link>
         </div>
         {placed && (
           <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl text-green-700 dark:text-green-400 text-sm font-semibold">
-            Your order has been placed successfully!
-            <Link href="/orders/history" className="underline ml-2">View order history</Link>
+            {t("order_placed")}
+            <Link href="/orders/history" className="underline ml-2">{t("view_order_history")}</Link>
           </div>
         )}
 
         {cart.length > 0 && (
           <div className="mb-10">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Your Cart</h2>
-            <div className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-100">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t("your_cart_label")}</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
               {cart.map((item, index) => (
                 <div key={`${item.id}-${item.optionKey || index}`} className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3 min-w-0">
@@ -214,49 +216,49 @@ export default function OrdersPage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover" />
                     ) : (
-                      <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                        <i className="fas fa-utensils text-gray-300"></i>
+                      <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                        <i className="fas fa-utensils text-gray-300 dark:text-gray-500"></i>
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 truncate">{item.name}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white truncate">{item.name}</p>
                       {item.optionNames && (
-                        <p className="text-xs text-gray-500 truncate">{item.optionNames}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.optionNames}</p>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-sm text-gray-500">{item.qty}x</span>
-                    <span className="font-bold text-gray-900 w-20 text-right">
-                      ETB {Number(item.price * item.qty).toFixed(2)}
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{item.qty}x</span>
+                    <span className="font-bold text-gray-900 dark:text-white w-20 text-right">
+                      {t("currency")} {Number(item.price * item.qty).toFixed(2)}
                     </span>
                   </div>
                 </div>
               ))}
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-b-xl">
-                <span className="text-sm font-semibold text-gray-700">Subtotal</span>
-                <span className="text-lg font-black text-gray-900">ETB {cartTotal.toFixed(2)}</span>
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-b-xl">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t("subtotal_label")}</span>
+                <span className="text-lg font-black text-gray-900 dark:text-white">{t("currency")} {cartTotal.toFixed(2)}</span>
               </div>
               {couponDiscount > 0 && (
                 <div className="flex items-center justify-between px-4 py-2 bg-green-50 dark:bg-green-900/20 border-t border-green-100 dark:border-green-800">
-                  <span className="text-sm font-semibold text-green-700 dark:text-green-400">Coupon discount</span>
-                  <span className="text-sm font-bold text-green-600 dark:text-green-400">-ETB {couponDiscount.toFixed(2)}</span>
+                  <span className="text-sm font-semibold text-green-700 dark:text-green-400">{t("coupon_discount")}</span>
+                  <span className="text-sm font-bold text-green-600 dark:text-green-400">-{t("currency")} {couponDiscount.toFixed(2)}</span>
                 </div>
               )}
               <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 border-t border-red-100 dark:border-red-800 rounded-b-xl">
-                <span className="text-sm font-bold text-gray-900">Total</span>
-                <span className="text-xl font-black text-gray-900">ETB {grandTotal.toFixed(2)}</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{t("total_label")}</span>
+                <span className="text-xl font-black text-gray-900 dark:text-white">{t("currency")} {grandTotal.toFixed(2)}</span>
               </div>
             </div>
             <input
               value={couponCode}
               onChange={(e) => handleCouponChange(e.target.value)}
-              placeholder="Coupon code (optional)"
-              className="mt-4 w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              placeholder={t("coupon_placeholder")}
+              className="mt-4 w-full px-3 py-2 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
             />
             {couponStatus.state === "checking" && (
               <p className="mt-2 text-sm text-gray-500 flex items-center gap-1.5">
-                <i className="fas fa-spinner fa-spin"></i> Checking coupon...
+                <i className="fas fa-spinner fa-spin"></i> {t("checking_coupon")}
               </p>
             )}
             {couponStatus.state === "valid" && (
@@ -271,7 +273,7 @@ export default function OrdersPage() {
             )}
             {paymentSystems && paymentSystems.length > 0 && (
               <div className="mt-4">
-                <p className="text-sm font-semibold text-gray-700 mb-2">Payment Method</p>
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t("payment_method")}</p>
                 <div className="grid grid-cols-3 gap-2">
                   {paymentSystems.map((method) => (
                     <button
@@ -280,8 +282,8 @@ export default function OrdersPage() {
                       onClick={() => setPaymentMethod(method.code)}
                       className={`p-3 rounded-xl border-2 text-center transition-colors cursor-pointer ${
                         selectedMethod === method.code
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          ? "border-red-500 bg-red-50 dark:bg-red-900/30"
+                          : "border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500"
                       }`}
                     >
                       {method.icon ? (
@@ -289,7 +291,7 @@ export default function OrdersPage() {
                       ) : (
                         <span className="text-xl block mb-1">💳</span>
                       )}
-                      <span className="text-xs font-medium">{method.name}</span>
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{method.name}</span>
                     </button>
                   ))}
                 </div>
@@ -310,11 +312,11 @@ export default function OrdersPage() {
             )}
 
             <div className="mt-5">
-              <p className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                <i className="fas fa-camera-retro text-red-500"></i> Payment Proof
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                <i className="fas fa-camera-retro text-red-500"></i> {t("payment_proof")}
               </p>
-              <p className="text-xs text-gray-500 mb-3">
-                Attach a screenshot or photo of your payment receipt so the cashier can verify it.
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                {t("payment_proof_desc")}
               </p>
               <input
                 ref={proofInputRef}
@@ -327,16 +329,16 @@ export default function OrdersPage() {
                 <button
                   type="button"
                   onClick={() => proofInputRef.current?.click()}
-                  className="w-full p-6 rounded-2xl border-2 border-dashed border-gray-300 hover:border-red-400 hover:bg-red-50/50 dark:hover:bg-red-900/10 transition-all cursor-pointer flex flex-col items-center gap-2"
+                  className="w-full p-6 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-red-400 hover:bg-red-50/50 dark:hover:bg-red-900/10 transition-all cursor-pointer flex flex-col items-center gap-2"
                 >
                   <span className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-500 text-xl">
                     <i className="fas fa-cloud-arrow-up"></i>
                   </span>
-                  <span className="text-sm font-semibold text-gray-700">Tap to upload proof of payment</span>
-                  <span className="text-xs text-gray-400">PNG or JPG photo of your receipt</span>
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t("tap_upload")}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">{t("png_jpg")}</span>
                 </button>
               ) : (
-                <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-50">
+                <div className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={proofPreview} alt="Payment proof preview" className="w-full max-h-64 object-contain" />
                   <button
@@ -348,7 +350,7 @@ export default function OrdersPage() {
                     }}
                     className="absolute top-2 right-2 bg-black/60 text-white text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-black/80 transition-all cursor-pointer"
                   >
-                    <i className="fas fa-xmark mr-1"></i> Remove
+                    <i className="fas fa-xmark mr-1"></i> {t("remove")}
                   </button>
                 </div>
               )}
@@ -365,10 +367,10 @@ export default function OrdersPage() {
               className="mt-4 w-full bg-red-600 text-white py-4 rounded-2xl font-black text-lg hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-red-600/30 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {createOrder.isPending ? (
-                "Placing Order..."
+                t("placing_order")
               ) : (
                 <>
-                  Place Order <i className="fas fa-arrow-right"></i>
+                  {t("place_order")} <i className="fas fa-arrow-right"></i>
                 </>
               )}
             </button>
@@ -380,31 +382,31 @@ export default function OrdersPage() {
         <>
           <div onClick={() => setConfirmOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i className="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-2xl"></i>
               </div>
-              <h2 className="text-xl font-black text-gray-900 mb-2">Final Confirmation</h2>
-              <p className="text-sm text-gray-500 mb-2">
-                Are you sure this is your final choice?
+              <h2 className="text-xl font-black text-gray-900 dark:text-white mb-2">{t("final_confirmation")}</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                {t("final_choice")}
               </p>
               <p className="text-sm font-semibold text-red-600 mb-6">
                 <i className="fas fa-ban mr-1"></i>
-                No refunds will be issued once the order is placed.
+                {t("no_refunds")}
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setConfirmOpen(false)}
-                  className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition cursor-pointer"
+                  className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
                 >
-                  Go Back
+                  {t("go_back")}
                 </button>
                 <button
                   onClick={() => { setConfirmOpen(false); placeOrder(); }}
                   disabled={createOrder.isPending}
                   className="flex-1 px-4 py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {createOrder.isPending ? "Placing..." : "Yes, Place Order"}
+                  {createOrder.isPending ? t("placing") : t("yes_place_order")}
                 </button>
               </div>
             </div>
