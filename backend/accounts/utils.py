@@ -1,5 +1,4 @@
 import logging
-import re
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -13,12 +12,13 @@ def _restaurant_name():
     return restaurant.name if restaurant else "Burger House"
 
 
-def _noreply_sender(restaurant_name):
-    domain = re.sub(r"[^a-z0-9]", "", restaurant_name.lower()) or "burgerhouse"
-    return f"No-Reply <noreply@{domain}.com>"
+def _noreply_sender(restaurant_name, context=""):
+    from_email = settings.EMAIL_HOST_USER or "admin@localhost"
+    label = f"No-Reply {context}" if context else "No-Reply"
+    return f"{label} <{from_email}>"
 
 
-def send_set_password_email(email, first_name, role, token):
+def send_set_password_email(email, first_name, role, token, context=""):
     restaurant_name = _restaurant_name()
     link = f"{settings.FRONTEND_URL}/set-password/{token}"
     subject = f"Welcome to {restaurant_name} - Set Your Password"
@@ -32,12 +32,12 @@ def send_set_password_email(email, first_name, role, token):
         f"Regards,\n{restaurant_name} Team"
     )
     try:
-        send_mail(subject, message, _noreply_sender(restaurant_name), [email])
+        send_mail(subject, message, _noreply_sender(restaurant_name, context), [email])
     except Exception:
         logger.exception("Failed to send set-password email to %s", email)
 
 
-def send_password_reset_email(email, first_name, token):
+def send_password_reset_email(email, first_name, token, context=""):
     restaurant_name = _restaurant_name()
     link = f"{settings.FRONTEND_URL}/reset-password/{token}"
     subject = f"{restaurant_name} - Password Reset"
@@ -51,6 +51,6 @@ def send_password_reset_email(email, first_name, token):
         f"Regards,\n{restaurant_name} Team"
     )
     try:
-        send_mail(subject, message, _noreply_sender(restaurant_name), [email])
+        send_mail(subject, message, _noreply_sender(restaurant_name, context), [email])
     except Exception:
         logger.exception("Failed to send password-reset email to %s", email)

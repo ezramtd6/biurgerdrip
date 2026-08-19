@@ -34,7 +34,7 @@ class RegisterView(generics.CreateAPIView):
         token = secrets.token_urlsafe(64)
         PasswordResetToken.objects.create(user=user, token=token)
 
-        send_set_password_email(user.email, user.first_name, user.role, token)
+        send_set_password_email(user.email, user.first_name, user.role, token, context="Account Registration")
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -231,7 +231,7 @@ class ForgotPasswordView(APIView):
         token = secrets.token_urlsafe(64)
         PasswordResetToken.objects.create(user=user, token=token)
 
-        send_password_reset_email(user.email, user.first_name, token)
+        send_password_reset_email(user.email, user.first_name, token, context="Password Reset")
 
         return Response(
             {
@@ -309,6 +309,15 @@ class ResetPasswordView(APIView):
             )
 
         user = reset_token.user
+        if not user.is_active:
+            from products.models import Contact
+            contact = Contact.objects.first()
+            manager_phone = contact.phone if contact else ""
+            return Response(
+                {"error": f"Your account is blocked. Please contact the manager at {manager_phone}."
+                 if manager_phone else "Your account is blocked. Please contact the manager."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         user.set_password(new_password)
         user.save()
 
@@ -367,7 +376,7 @@ class ResendActivationView(APIView):
             PasswordResetToken.objects.filter(user=user, is_used=False).update(is_used=True)
             token = secrets.token_urlsafe(64)
             PasswordResetToken.objects.create(user=user, token=token)
-            send_set_password_email(user.email, user.first_name, user.role, token)
+            send_set_password_email(user.email, user.first_name, user.role, token, context="Resend Activation")
 
         return Response(
             {"message": "If an account exists, a new activation link has been sent to your email."},
@@ -457,7 +466,7 @@ class CashierListCreateView(generics.ListCreateAPIView):
         token = secrets.token_urlsafe(64)
         PasswordResetToken.objects.create(user=user, token=token)
 
-        send_set_password_email(user.email, user.first_name, user.role, token)
+        send_set_password_email(user.email, user.first_name, user.role, token, context="Adding Cashier")
 
         return Response(
             {

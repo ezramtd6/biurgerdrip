@@ -1,7 +1,7 @@
 import json
 
 from rest_framework import serializers
-from .models import Order, OrderItem, OrderItemOption, PaymentSystem, OrderNotification
+from .models import Order, OrderItem, OrderItemOption, PaymentSystem, OrderNotification, PaymentProofAttempt
 
 class OrderItemOptionSerializer(serializers.ModelSerializer):
     option_name = serializers.SerializerMethodField()
@@ -32,17 +32,35 @@ class OrderNotificationSerializer(serializers.ModelSerializer):
         fields = ["id", "order", "message", "is_read", "created_at"]
 
 
+class PaymentProofAttemptSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PaymentProofAttempt
+        fields = ["id", "image", "attempt", "rejection_reason", "created_at"]
+
+    def get_image(self, obj):
+        if obj.image:
+            url = obj.image.url
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        return None
+
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     notifications = OrderNotificationSerializer(many=True, read_only=True)
     payment_proof = serializers.SerializerMethodField()
+    proof_history = PaymentProofAttemptSerializer(many=True, read_only=True)
 
     class Meta:
         model = Order
         fields = [
             "id", "order_number", "customer", "cashier", "subtotal",
             "discount", "tax", "total", "coupon", "payment_method", "status",
-            "payment_proof", "proof_attempts", "rejection_reason", "notifications",
+            "payment_proof", "proof_attempts", "rejection_reason", "notifications", "proof_history",
             "created_at", "updated_at", "items",
         ]
         read_only_fields = ["id", "order_number", "customer", "cashier", "created_at", "updated_at"]
@@ -192,6 +210,14 @@ class OrderCreateSerializer(serializers.Serializer):
         order.subtotal = subtotal
         order.total = subtotal - order.discount + order.tax
         order.save()
+
+        if order.payment_proof:
+            from .models import PaymentProofAttempt
+            PaymentProofAttempt.objects.create(
+                order=order,
+                image=order.payment_proof,
+                attempt=0,
+            )
 
         if user.role == "CUSTOMER":
             from .models import notify_cashiers

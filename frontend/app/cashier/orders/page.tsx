@@ -110,6 +110,9 @@ export default function CashierOrdersPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${order.cashier ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700"}`}>
+                      {order.cashier ? "Walk-in" : "Online"}
+                    </span>
                     {order.payment_proof && order.status !== "COMPLETED" && (
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
                         <i className="fas fa-paperclip mr-1"></i>Proof
@@ -134,17 +137,15 @@ export default function CashierOrdersPage() {
                 )}
 
                 <div className="flex gap-2">
-                  {order.status === "PENDING" && (
-                    <>
-                      <Button size="sm" onClick={() => updateStatus.mutate({ id: order.id, status: "PREPARING" })}>
-                        Start Preparing
-                      </Button>
-                      {order.cashier && (
-                        <Button size="sm" variant="danger" onClick={() => updateStatus.mutate({ id: order.id, status: "CANCELLED" })}>
-                          Cancel
-                        </Button>
-                      )}
-                    </>
+                  {order.status === "PENDING" && !order.customer && (
+                    <Button size="sm" onClick={() => updateStatus.mutate({ id: order.id, status: "PREPARING" })}>
+                      Start Preparing
+                    </Button>
+                  )}
+                  {order.status === "PENDING" && order.customer && order.payment_proof && (
+                    <Link href={`/cashier/payment/${order.id}`}>
+                      <Button size="sm">Verify Payment</Button>
+                    </Link>
                   )}
                   {order.status === "PREPARING" && (
                     <Button size="sm" onClick={() => updateStatus.mutate({ id: order.id, status: "READY" })}>
@@ -154,11 +155,6 @@ export default function CashierOrdersPage() {
                   {order.status === "READY" && (
                     <Link href={`/cashier/payment/${order.id}`}>
                       <Button size="sm">Process Payment</Button>
-                    </Link>
-                  )}
-                  {order.payment_proof && order.status === "PENDING" && (
-                    <Link href={`/cashier/payment/${order.id}`}>
-                      <Button size="sm" variant="secondary">Verify Payment</Button>
                     </Link>
                   )}
                   {order.status === "COMPLETED" && (
@@ -174,15 +170,29 @@ export default function CashierOrdersPage() {
                           Reason: {order.rejection_reason}
                         </p>
                       )}
-                      {order.payment_proof && (
+                      {order.proof_history && order.proof_history.length > 0 && (
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Payment Proof:</p>
-                          <img
-                            src={order.payment_proof}
-                            alt="Payment proof"
-                            className="h-24 w-24 object-cover rounded-lg border border-gray-200 cursor-pointer hover:scale-105 transition-transform"
-                            onClick={() => window.open(order.payment_proof!, "_blank")}
-                          />
+                          <p className="text-xs text-gray-500 mb-1">All Payment Proofs:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {order.proof_history.map((p) => (
+                              <div key={p.id} className="relative">
+                                <img
+                                  src={p.image}
+                                  alt={`Proof attempt ${p.attempt}`}
+                                  className="h-24 w-24 object-cover rounded-lg border border-gray-200 cursor-pointer hover:scale-105 transition-transform"
+                                  onClick={() => window.open(p.image, "_blank")}
+                                />
+                                <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
+                                  #{p.attempt + 1}
+                                </span>
+                                {p.rejection_reason && (
+                                  <p className="text-[10px] text-red-500 mt-0.5 max-w-[96px] truncate" title={p.rejection_reason}>
+                                    {p.rejection_reason}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>

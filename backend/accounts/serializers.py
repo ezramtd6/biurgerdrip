@@ -107,7 +107,9 @@ class CashierCreateSerializer(serializers.ModelSerializer):
 
     def validate_phone(self, value):
         value = (value or "").strip()
-        if value and User.objects.filter(phone=value).exists():
+        if not value:
+            raise serializers.ValidationError("Phone number is required.")
+        if User.objects.filter(phone=value).exists():
             raise serializers.ValidationError("Phone number is already in use.")
         return value
 

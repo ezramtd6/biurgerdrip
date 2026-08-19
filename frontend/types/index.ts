@@ -126,6 +126,15 @@ export interface Order {
   updated_at: string;
   items: OrderItem[];
   notifications?: OrderNotification[];
+  proof_history?: ProofAttempt[];
+}
+
+export interface ProofAttempt {
+  id: number;
+  image: string;
+  attempt: number;
+  rejection_reason: string;
+  created_at: string;
 }
 
 export interface OrderNotification {

@@ -1,5 +1,6 @@
 from django.utils import timezone
 from django.db.models import Sum, Count
+from django.db import models
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -101,6 +102,12 @@ def _handle_payment(request, order):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    if order.status == Order.Status.REJECTED:
+        return Response(
+            {"error": "Order is rejected. Wait for the customer to re-upload payment proof."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     action = request.data.get("action", "accept")
 
     if action == "reject":
@@ -109,9 +116,16 @@ def _handle_payment(request, order):
         order.proof_attempts += 1
         order.rejection_reason = reason
         final_rejection = order.proof_attempts >= 3
-        if final_rejection:
-            order.status = Order.Status.REJECTED
-        order.save(update_fields=["proof_attempts", "rejection_reason", "status", "updated_at"])
+        order.status = Order.Status.REJECTED
+        if not order.cashier:
+            order.cashier = request.user
+        order.save(update_fields=["proof_attempts", "rejection_reason", "status", "cashier", "updated_at"])
+
+        from .models import PaymentProofAttempt
+        latest_proof = order.proof_history.order_by("-attempt").first()
+        if latest_proof and not latest_proof.rejection_reason:
+            latest_proof.rejection_reason = reason
+            latest_proof.save(update_fields=["rejection_reason"])
 
         if final_rejection:
             message = (
@@ -190,6 +204,8 @@ def _handle_payment(request, order):
 
     order.payment_method = payment_method
     order.status = Order.Status.COMPLETED
+    if not order.cashier:
+        order.cashier = request.user
     order.save()
 
     if order.customer_id:
@@ -225,6 +241,7 @@ class CashierOrderListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         return Order.objects.filter(
+            models.Q(cashier=self.request.user) | models.Q(customer__isnull=False, cashier__isnull=True),
             created_at__date=timezone.now().date()
         ).order_by("-created_at")
 
@@ -238,6 +255,7 @@ class CashierOrderDetailView(generics.RetrieveUpdateAPIView):
 
     def get_queryset(self):
         return Order.objects.filter(
+            models.Q(cashier=self.request.user) | models.Q(customer__isnull=False, cashier__isnull=True),
             created_at__date=timezone.now().date()
         )
 
@@ -269,7 +287,10 @@ class CashierPaymentView(APIView):
     permission_classes = [IsCashier]
     def post(self, request, pk):
         try:
-            order = Order.objects.get(id=pk)
+            order = Order.objects.get(
+                pk,
+                models.Q(cashier=request.user) | models.Q(customer__isnull=False),
+            )
         except Order.DoesNotExist:
             return Response(
                 {"error": "Order not found."},
@@ -426,7 +447,7 @@ class ResubmitProofView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if order.status == Order.Status.REJECTED or order.proof_attempts >= 3:
+        if order.proof_attempts >= 3:
             return Response(
                 {
                     "error": "This payment was rejected after 3 attempts and can no longer be re-submitted."
@@ -446,13 +467,21 @@ class ResubmitProofView(APIView):
         order.save(update_fields=["payment_proof", "status", "updated_at"])
         order.notifications.filter(is_read=False).update(is_read=True)
 
-        from .models import notify_cashiers
-
-        notify_cashiers(
-            order,
-            f"Order {order.order_number} re-uploaded payment proof and needs re-verification.",
-            f"ትዕዛዝ {order.order_number} የክፍያ ማስረጃ በድጋሚ ተጭኛል እና እንደገና ማረጋገጥ ያስፈልጋል።",
+        from .models import PaymentProofAttempt
+        PaymentProofAttempt.objects.create(
+            order=order,
+            image=proof,
+            attempt=order.proof_attempts,
         )
+
+        if order.cashier:
+            from .models import OrderNotification
+            OrderNotification.objects.create(
+                user=order.cashier,
+                order=order,
+                message=f"Order {order.order_number} re-uploaded payment proof and needs re-verification.",
+                message_amharic=f"ትዕዛዝ {order.order_number} የክፍያ ማስረጃ በድጋሚ ተጭኛል እና እንደገና ማረጋገጥ ያስፈልጋል።",
+            )
 
         return Response(
             OrderSerializer(order, context={"request": request}).data

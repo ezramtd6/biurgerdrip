@@ -6,6 +6,7 @@ import api from "@/services/api";
 import { Product, Category, OptionGroup, OptionValue } from "@/types";
 import { useValidateCoupon } from "@/hooks/usePromotions";
 import { Button } from "@/components/ui";
+import AppModal from "@/components/ui/AppModal";
 import { useRouter } from "next/navigation";
 
 interface CartItem {
@@ -29,6 +30,7 @@ export default function NewOrderPage() {
   const couponDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const validateCoupon = useValidateCoupon();
   const [productOptions, setProductOptions] = useState<Record<string, Record<number, number>>>({});
+  const [errorModal, setErrorModal] = useState<{ open: boolean; message: string }>({ open: false, message: "" });
 
   useEffect(() => {
     return () => {
@@ -193,8 +195,9 @@ export default function NewOrderPage() {
         items,
       });
       router.push(`/cashier/payment/${res.data.id}`);
-    } catch {
-      alert("Failed to create order. Check that the coupon code is valid.");
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.response?.data?.detail || "Failed to create order. Please try again.";
+      setErrorModal({ open: true, message: msg });
     }
   };
 
@@ -438,6 +441,10 @@ export default function NewOrderPage() {
           </Button>
         </div>
       </div>
+      <AppModal isOpen={errorModal.open} onClose={() => setErrorModal({ open: false, message: "" })} title="Error" maxWidth="sm">
+        <p className="text-gray-700 text-sm">{errorModal.message}</p>
+        <Button className="mt-4 w-full" onClick={() => setErrorModal({ open: false, message: "" })}>OK</Button>
+      </AppModal>
     </div>
   );
 }

@@ -108,6 +108,7 @@ export default function ResetPasswordPage() {
           type="password"
           placeholder="Min 8 characters"
           error={errors.new_password?.message}
+          className="bg-gray-50 border-gray-200 text-gray-900"
           {...register("new_password")}
         />
 
@@ -116,6 +117,7 @@ export default function ResetPasswordPage() {
           type="password"
           placeholder="Re-enter your password"
           error={errors.confirm_password?.message}
+          className="bg-gray-50 border-gray-200 text-gray-900"
           {...register("confirm_password")}
         />
 

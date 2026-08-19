@@ -57,7 +57,7 @@ class UserAdmin(BaseUserAdmin):
             obj.save()
             token = secrets.token_urlsafe(64)
             PasswordResetToken.objects.create(user=obj, token=token)
-            send_set_password_email(obj.email, obj.first_name, obj.role, token)
+            send_set_password_email(obj.email, obj.first_name, obj.role, token, context="Adding Cashier")
             self.message_user(
                 request,
                 f"Account created for {obj.email}. A set-password email has been sent.",

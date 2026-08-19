@@ -82,6 +82,24 @@ class Order(models.Model):
         return self.order_number
 
 
+class PaymentProofAttempt(models.Model):
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="proof_history",
+    )
+    image = models.ImageField(upload_to="payment_proofs/")
+    attempt = models.PositiveIntegerField()
+    rejection_reason = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["attempt"]
+
+    def __str__(self):
+        return f"{self.order.order_number} attempt {self.attempt}"
+
+
 class OrderNotification(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

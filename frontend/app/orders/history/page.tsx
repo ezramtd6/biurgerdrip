@@ -110,7 +110,7 @@ export default function OrderHistoryPage() {
                                 {t("payment_rejected_3")}
                               </p>
                             )}
-                            {isRejection && order.status !== "COMPLETED" && order.status !== "REJECTED" && (
+                            {order.status === "REJECTED" && isRejection && order.proof_attempts < 3 && (
                               <button
                                 onClick={() => {
                                   setPickingFor(order.id);
@@ -154,14 +154,30 @@ export default function OrderHistoryPage() {
                   </span>
                 </div>
 
-                {order.payment_proof && (
+                {order.proof_history && order.proof_history.length > 0 && (
                   <div className="mb-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={order.payment_proof}
-                      alt="Payment proof"
-                      className="h-24 w-24 object-cover rounded-xl border border-gray-200"
-                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t("payment")} Proof:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {order.proof_history.map((p) => (
+                        <div key={p.id} className="relative">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={p.image}
+                            alt={`Proof attempt ${p.attempt + 1}`}
+                            className="h-24 w-24 object-cover rounded-xl border border-gray-200 dark:border-gray-600 cursor-pointer hover:scale-105 transition-transform"
+                            onClick={() => window.open(p.image, "_blank")}
+                          />
+                          <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
+                            #{p.attempt + 1}
+                          </span>
+                          {p.rejection_reason && (
+                            <p className="text-[10px] text-red-500 mt-0.5 max-w-[96px] truncate" title={p.rejection_reason}>
+                              {p.rejection_reason}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
