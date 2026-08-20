@@ -11,6 +11,7 @@ export function useOrders() {
       const res = await api.get("/orders/");
       return res.data.results || res.data;
     },
+    refetchInterval: 15000,
   });
 }
 
