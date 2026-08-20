@@ -92,7 +92,7 @@ export default function PaymentPage() {
   if (isLoading) return <Loading />;
   if (!order) return <div className="text-center py-12 text-gray-500">Order not found</div>;
 
-  const isPaid = order.status === "COMPLETED";
+  const isPaid = order.status === "COMPLETED" || order.status === "PREPARING" || order.status === "READY";
   const paymentMethodName = (code: string | null | undefined) =>
     activeSystems.find((s) => s.code === code)?.name || code || "";
 
@@ -207,7 +207,7 @@ export default function PaymentPage() {
                   onClick={() => processPayment.mutate({ action: "accept" })}
                   loading={processPayment.isPending}
                 >
-                  <i className="fas fa-check mr-1"></i> Accept & Mark Paid
+                  <i className="fas fa-check mr-1"></i> Accept Payment
                 </Button>
                 <Button
                   className="flex-1 bg-red-600 hover:bg-red-700"
@@ -223,7 +223,7 @@ export default function PaymentPage() {
                 <p className="text-center text-green-600 text-sm mt-3">
                   {processPayment.data?.status === "rejected"
                     ? "Payment rejected — the customer has been notified."
-                    : "Payment accepted — order marked as paid!"}
+                    : "Payment accepted — order is now being prepared!"}
                 </p>
               )}
               {processPayment.isError && (
@@ -292,7 +292,9 @@ export default function PaymentPage() {
 
       {isPaid && (
         <div className="text-center space-y-4">
-          <p className="text-green-600 font-medium">Payment already completed</p>
+          <p className="text-green-600 font-medium">
+            {order.status === "COMPLETED" ? "Payment already completed" : "Payment accepted"}
+          </p>
           <Button variant="secondary" onClick={() => printReceipt(order, restaurant?.name)}>
             Print Receipt
           </Button>

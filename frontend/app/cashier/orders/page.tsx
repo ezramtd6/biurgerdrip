@@ -114,7 +114,7 @@ export default function CashierOrdersPage() {
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${order.cashier ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700"}`}>
                       {order.customer ? "Online" : "Walk-in"}
                     </span>
-                    {order.payment_proof && order.status !== "COMPLETED" && (
+                    {order.payment_proof && order.status === "PENDING" && (
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
                         <i className="fas fa-paperclip mr-1"></i>Proof
                         {order.proof_attempts > 0 && ` ${order.proof_attempts}/3`}
@@ -123,6 +123,9 @@ export default function CashierOrdersPage() {
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[order.status]}`}>
                       {order.status}
                     </span>
+                    {(order.status === "PREPARING" || order.status === "READY" || order.status === "COMPLETED") && (
+                      <span className="text-xs text-green-600 font-medium">Paid</span>
+                    )}
                     <span className="font-bold">ETB {Number(order.total).toFixed(2)}</span>
                   </div>
                 </div>
@@ -149,12 +152,9 @@ export default function CashierOrdersPage() {
                     </Button>
                   )}
                   {order.status === "READY" && (
-                    <Link href={`/cashier/payment/${order.id}`}>
-                      <Button size="sm">Process Payment</Button>
-                    </Link>
-                  )}
-                  {order.status === "COMPLETED" && (
-                    <span className="text-xs text-green-600">Paid</span>
+                    <Button size="sm" onClick={() => updateStatus.mutate({ id: order.id, status: "COMPLETED" })}>
+                      Mark Picked Up
+                    </Button>
                   )}
                   {order.status === "REJECTED" && (
                     <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">

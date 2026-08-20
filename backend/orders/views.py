@@ -203,7 +203,7 @@ def _handle_payment(request, order):
         )
 
     order.payment_method = payment_method
-    order.status = Order.Status.COMPLETED
+    order.status = Order.Status.PREPARING
     if not order.cashier:
         order.cashier = request.user
     order.save()
@@ -212,8 +212,8 @@ def _handle_payment(request, order):
         OrderNotification.objects.create(
             user=order.customer,
             order=order,
-            message=f"Your payment for order {order.order_number} was accepted. Thank you!",
-            message_amharic=f"የእርስዎ ክፍያ ለትዕዛዝ {order.order_number} ተቀብሏል። አመሰግናለሁ!",
+            message=f"Your payment for order {order.order_number} was accepted. Your order is now being prepared!",
+            message_amharic=f"የእርስዎ ክፍያ ለትዕዛዝ {order.order_number} ተቀብሏል። ትዕዛዝዎ አሁን በማዘጋጀት ላይ ነው!",
         )
 
     order.notifications.filter(is_read=False).exclude(user=request.user).update(is_read=True)
