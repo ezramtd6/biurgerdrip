@@ -137,11 +137,6 @@ export default function CashierOrdersPage() {
                 )}
 
                 <div className="flex gap-2">
-                  {order.status === "PENDING" && !order.customer && (
-                    <Button size="sm" onClick={() => updateStatus.mutate({ id: order.id, status: "PREPARING" })}>
-                      Start Preparing
-                    </Button>
-                  )}
                   {order.status === "PENDING" && order.customer && order.payment_proof && (
                     <Link href={`/cashier/payment/${order.id}`}>
                       <Button size="sm">Verify Payment</Button>

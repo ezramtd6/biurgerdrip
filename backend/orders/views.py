@@ -216,6 +216,8 @@ def _handle_payment(request, order):
             message_amharic=f"የእርስዎ ክፍያ ለትዕዛዝ {order.order_number} ተቀብሏል። አመሰግናለሁ!",
         )
 
+    order.notifications.filter(is_read=False).exclude(user=request.user).update(is_read=True)
+
     return Response(OrderSerializer(order).data)
 
 
