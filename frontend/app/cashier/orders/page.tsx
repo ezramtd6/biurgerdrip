@@ -30,7 +30,7 @@ export default function CashierOrdersPage() {
       const res = await api.get("/orders/cashier/");
       return res.data.results || res.data;
     },
-    refetchInterval: 5000,
+    refetchInterval: 3000,
   });
 
   const { data: notifications } = useQuery<OrderNotification[]>({
@@ -39,7 +39,7 @@ export default function CashierOrdersPage() {
       const res = await api.get("/orders/notifications/");
       return res.data.results || res.data;
     },
-    refetchInterval: 5000,
+    refetchInterval: 3000,
   });
 
   const markRead = useMutation({
