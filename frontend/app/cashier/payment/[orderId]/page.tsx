@@ -65,6 +65,7 @@ export default function PaymentPage() {
       return res.data;
     },
     refetchInterval: 5000,
+    staleTime: 0,
   });
 
   const activeSystems = paymentSystems ?? [];
@@ -189,7 +190,8 @@ export default function PaymentPage() {
 
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`${order.payment_proof}?t=${order.updated_at}`}
+                key={`${order.payment_proof}-${order.proof_attempts}`}
+                src={order.payment_proof}
                 alt="Payment proof"
                 className="w-full rounded-xl border border-gray-200 bg-gray-50 mb-4 max-h-80 object-contain"
               />
