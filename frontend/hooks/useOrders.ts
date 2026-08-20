@@ -11,7 +11,7 @@ export function useOrders() {
       const res = await api.get("/orders/");
       return res.data.results || res.data;
     },
-    refetchInterval: 10000,
+    refetchInterval: 5000,
   });
 }
 
@@ -138,7 +138,7 @@ export function useNotifications() {
       const res = await api.get("/orders/notifications/");
       return res.data.results || res.data;
     },
-    refetchInterval: 15000,
+    refetchInterval: 5000,
   });
 }
 
