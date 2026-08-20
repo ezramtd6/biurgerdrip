@@ -30,7 +30,7 @@ export default function CashierOrdersPage() {
       const res = await api.get("/orders/cashier/");
       return res.data.results || res.data;
     },
-    refetchInterval: 15000,
+    refetchInterval: 10000,
   });
 
   const { data: notifications } = useQuery<OrderNotification[]>({
