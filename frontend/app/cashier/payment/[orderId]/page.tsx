@@ -189,7 +189,7 @@ export default function PaymentPage() {
 
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={order.payment_proof}
+                src={`${order.payment_proof}?t=${order.updated_at}`}
                 alt="Payment proof"
                 className="w-full rounded-xl border border-gray-200 bg-gray-50 mb-4 max-h-80 object-contain"
               />
