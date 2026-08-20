@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
-import { useOrders, useNotifications, useResubmitProof } from "@/hooks/useOrders";
+import { useOrders, useNotifications, useResubmitProof, useConfirmPickup } from "@/hooks/useOrders";
 import { useProducts } from "@/hooks/useProducts";
 import { usePaymentSystems } from "@/hooks/usePaymentSystems";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -27,6 +27,7 @@ export default function OrderHistoryPage() {
   const { data: products } = useProducts();
   const { data: paymentSystems } = usePaymentSystems();
   const resubmit = useResubmitProof();
+  const confirmPickup = useConfirmPickup();
   const [pickingFor, setPickingFor] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -153,6 +154,19 @@ export default function OrderHistoryPage() {
                     {order.status}
                   </span>
                 </div>
+
+                {order.status === "READY" && (
+                  <div className="mb-3">
+                    <button
+                      onClick={() => confirmPickup.mutate(order.id)}
+                      disabled={confirmPickup.isPending}
+                      className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-700 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <i className="fas fa-check-circle"></i>
+                      {confirmPickup.isPending ? t("uploading") : t("confirm_pickup")}
+                    </button>
+                  </div>
+                )}
 
                 {order.proof_history && order.proof_history.length > 0 && (
                   <div className="mb-3">

@@ -173,6 +173,20 @@ export function useResubmitProof() {
   });
 }
 
+export function useConfirmPickup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await api.post(`/orders/${id}/confirm-pickup/`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
 export interface ReportsData {
   total_orders: number;
   total_revenue: number;

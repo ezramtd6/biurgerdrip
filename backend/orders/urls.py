@@ -14,6 +14,8 @@ from .views import (
     NotificationReadView,
     NotificationReadAllView,
     ResubmitProofView,
+    ConfirmPickupView,
+    NotifyPickupReadyView,
 )
 
 router = DefaultRouter()
@@ -24,6 +26,8 @@ urlpatterns = [
     path("<int:pk>/", OrderDetailView.as_view(), name="order-detail"),
     path("<int:pk>/payment/", PaymentView.as_view(), name="order-payment"),
     path("<int:pk>/resubmit-proof/", ResubmitProofView.as_view(), name="order-resubmit-proof"),
+    path("<int:pk>/confirm-pickup/", ConfirmPickupView.as_view(), name="order-confirm-pickup"),
+    path("cashier/<int:pk>/notify-pickup/", NotifyPickupReadyView.as_view(), name="cashier-notify-pickup"),
     path("cashier/", CashierOrderListCreateView.as_view(), name="cashier-order-list-create"),
     path("cashier/<int:pk>/", CashierOrderDetailView.as_view(), name="cashier-order-detail"),
     path("cashier/<int:pk>/payment/", CashierPaymentView.as_view(), name="cashier-payment"),

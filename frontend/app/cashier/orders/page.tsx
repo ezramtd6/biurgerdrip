@@ -65,6 +65,11 @@ export default function CashierOrdersPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cashier-orders"] }),
   });
 
+  const notifyPickup = useMutation({
+    mutationFn: (id: number) => api.post(`/orders/cashier/${id}/notify-pickup/`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cashier-orders"] }),
+  });
+
   if (isLoading) return <Loading />;
 
   const filtered = filter
@@ -152,8 +157,8 @@ export default function CashierOrdersPage() {
                     </Button>
                   )}
                   {order.status === "READY" && (
-                    <Button size="sm" onClick={() => updateStatus.mutate({ id: order.id, status: "COMPLETED" })}>
-                      Mark Picked Up
+                    <Button size="sm" onClick={() => notifyPickup.mutate(order.id)} disabled={notifyPickup.isPending}>
+                      {notifyPickup.isPending ? "Notifying..." : "Notify Pickup Ready"}
                     </Button>
                   )}
                   {order.status === "REJECTED" && (

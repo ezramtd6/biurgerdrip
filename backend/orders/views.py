@@ -425,6 +425,61 @@ class NotificationReadAllView(APIView):
         return Response({"marked": count})
 
 
+class ConfirmPickupView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            order = Order.objects.get(id=pk, customer=request.user)
+        except Order.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if order.status != Order.Status.READY:
+            return Response(
+                {"error": "Order is not ready for pickup."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        order.status = Order.Status.COMPLETED
+        order.save()
+
+        if order.cashier_id:
+            OrderNotification.objects.create(
+                user=order.cashier,
+                order=order,
+                message=f"Customer confirmed pickup for order {order.order_number}.",
+                message_amharic=f"ደንበኛው ለትዕዛዝ {order.order_number} ማጠናቀቂያ ተረድቧል።",
+            )
+
+        return Response(OrderSerializer(order).data)
+
+
+class NotifyPickupReadyView(APIView):
+    permission_classes = [IsCashier]
+
+    def post(self, request, pk):
+        try:
+            order = Order.objects.get(id=pk, cashier=request.user)
+        except Order.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if order.status != Order.Status.READY:
+            return Response(
+                {"error": "Order must be READY before notifying pickup."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if order.customer_id:
+            OrderNotification.objects.create(
+                user=order.customer,
+                order=order,
+                message=f"Your order {order.order_number} is ready for pickup! Please confirm when you've picked it up.",
+                message_amharic=f"ትዕዛዝዎ {order.order_number} ለማጠናቀቅ ዝግጁ ነው! እባክዎን ሲጠናቅቁ ያረጋግጡ።",
+            )
+
+        return Response({"detail": "Customer notified."})
+
+
 class ResubmitProofView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def post(self, request, pk):
