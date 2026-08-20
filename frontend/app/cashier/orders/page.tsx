@@ -151,6 +151,11 @@ export default function CashierOrdersPage() {
                       <Button size="sm">Verify Payment</Button>
                     </Link>
                   )}
+                  {order.status === "PENDING" && !order.customer && (
+                    <Link href={`/cashier/payment/${order.id}`}>
+                      <Button size="sm">Process Payment</Button>
+                    </Link>
+                  )}
                   {order.status === "PREPARING" && (
                     <Button size="sm" onClick={() => updateStatus.mutate({ id: order.id, status: "READY" })}>
                       Mark Ready

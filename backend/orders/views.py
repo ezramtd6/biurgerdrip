@@ -203,7 +203,10 @@ def _handle_payment(request, order):
         )
 
     order.payment_method = payment_method
-    order.status = Order.Status.PREPARING
+    if order.customer_id:
+        order.status = Order.Status.PREPARING
+    else:
+        order.status = Order.Status.COMPLETED
     if not order.cashier:
         order.cashier = request.user
     order.save()
