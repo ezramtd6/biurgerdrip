@@ -64,6 +64,7 @@ export default function PaymentPage() {
       const res = await api.get(`/orders/${orderId}/`);
       return res.data;
     },
+    refetchInterval: 5000,
   });
 
   const activeSystems = paymentSystems ?? [];
