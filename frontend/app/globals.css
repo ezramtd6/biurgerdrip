@@ -61,6 +61,12 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Prevent horizontal scroll on mobile; `clip` keeps position: sticky working */
+html,
+body {
+  overflow-x: clip;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
 }
