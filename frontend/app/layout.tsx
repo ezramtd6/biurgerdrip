@@ -7,6 +7,32 @@ import DocumentTitle from "@/components/layout/DocumentTitle";
 import BackButtonGuard from "@/components/layout/BackButtonGuard";
 import AuthModalProvider from "@/components/auth/AuthModal";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api";
+
+async function getRestaurantInfo(): Promise<{ name?: string; logo?: string } | null> {
+  try {
+    const res = await fetch(`${API_URL}/restaurant/`, {
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const first = Array.isArray(data) ? data[0] : data?.results?.[0] ?? data;
+    if (!first) return null;
+    return { name: first.name ?? undefined, logo: first.logo ?? undefined };
+  } catch {
+    return null;
+  }
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const restaurant = await getRestaurantInfo();
+  return {
+    title: restaurant?.name || "Burger House",
+    description: "Burger House Restaurant Management System",
+    icons: { icon: "/favicon" },
+  };
+}
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -16,11 +42,6 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
-export const metadata: Metadata = {
-  title: "Burger House",
-  description: "Burger House Restaurant Management System",
-};
 
 export default function RootLayout({
   children,

@@ -23,6 +23,7 @@ export default function CashierOrdersPage() {
   const queryClient = useQueryClient();
   const { lang: currentLang } = useLanguage();
   const [filter, setFilter] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ["cashier-orders"],
@@ -72,9 +73,17 @@ export default function CashierOrdersPage() {
 
   if (isLoading) return <Loading />;
 
-  const filtered = filter
-    ? (orders || []).filter((o) => o.status === filter)
-    : orders || [];
+  const searchQuery = search.trim().toLowerCase();
+  const filtered = (orders || []).filter((o) => {
+    if (filter && o.status !== filter) return false;
+    if (!searchQuery) return true;
+    return (
+      o.order_number.toLowerCase().includes(searchQuery) ||
+      o.status.toLowerCase().includes(searchQuery) ||
+      String(o.total).includes(searchQuery) ||
+      (o.items || []).some((i) => i.product_name.toLowerCase().includes(searchQuery))
+    );
+  });
 
   return (
     <div className="flex gap-6 h-[calc(100vh-4rem)]">
@@ -84,6 +93,26 @@ export default function CashierOrdersPage() {
           <Link href="/cashier/new-order">
             <Button>+ New Order</Button>
           </Link>
+        </div>
+
+        <div className="relative mb-4">
+          <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by order number, product, status or amount..."
+            className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-400 transition"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+              aria-label="Clear search"
+            >
+              <i className="fas fa-times-circle text-sm"></i>
+            </button>
+          )}
         </div>
 
         <div className="flex gap-2 mb-6 overflow-x-auto">
