@@ -5,7 +5,7 @@ from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from products.views import IsManager
-from .models import Order, PaymentSystem, OrderNotification
+from .models import Order, PaymentSystem, OrderNotification, notify_user
 from .serializers import (
     OrderSerializer,
     OrderCreateSerializer,
@@ -170,9 +170,9 @@ def _handle_payment(request, order):
             message_amharic += f" {remaining} ተጨማሪ ጥረቶች ቀርተዋል።"
 
         if order.customer_id:
-            OrderNotification.objects.create(
-                user=order.customer,
-                order=order,
+            notify_user(
+                order.customer,
+                order,
                 message=message,
                 message_amharic=message_amharic,
             )
@@ -212,9 +212,9 @@ def _handle_payment(request, order):
     order.save()
 
     if order.customer_id:
-        OrderNotification.objects.create(
-            user=order.customer,
-            order=order,
+        notify_user(
+            order.customer,
+            order,
             message=f"Your payment for order {order.order_number} was accepted. Your order is now being prepared!",
             message_amharic=f"የእርስዎ ክፍያ ለትዕዛዝ {order.order_number} ተቀብሏል። ትዕዛዝዎ አሁን በማዘጋጀት ላይ ነው!",
         )
@@ -279,9 +279,9 @@ class CashierOrderDetailView(generics.RetrieveUpdateAPIView):
                 "CANCELLED": "ተሰርቷል",
                 "REJECTED": "ተቃይሏል",
             }.get(instance.status, label)
-            OrderNotification.objects.create(
-                user=instance.customer,
-                order=instance,
+            notify_user(
+                instance.customer,
+                instance,
                 message=f"Your order {instance.order_number} status is now {label}.",
                 message_amharic=f"የትዕዛዝዎ {instance.order_number} ሁኔታ አሁን {label_amharic} ነው።",
             )
@@ -447,9 +447,9 @@ class ConfirmPickupView(APIView):
         order.save()
 
         if order.cashier_id:
-            OrderNotification.objects.create(
-                user=order.cashier,
-                order=order,
+            notify_user(
+                order.cashier,
+                order,
                 message=f"Customer confirmed pickup for order {order.order_number}.",
                 message_amharic=f"ደንበኛው ለትዕዛዝ {order.order_number} ማጠናቀቂያ ተረድቧል።",
             )
@@ -473,9 +473,9 @@ class NotifyPickupReadyView(APIView):
             )
 
         if order.customer_id:
-            OrderNotification.objects.create(
-                user=order.customer,
-                order=order,
+            notify_user(
+                order.customer,
+                order,
                 message=f"Your order {order.order_number} is ready for pickup! Please confirm when you've picked it up.",
                 message_amharic=f"ትዕዛዝዎ {order.order_number} ለማጠናቀቅ ዝግጁ ነው! እባክዎን ሲጠናቅቁ ያረጋግጡ።",
             )
@@ -535,10 +535,9 @@ class ResubmitProofView(APIView):
         )
 
         if order.cashier:
-            from .models import OrderNotification
-            OrderNotification.objects.create(
-                user=order.cashier,
-                order=order,
+            notify_user(
+                order.cashier,
+                order,
                 message=f"Order {order.order_number} re-uploaded payment proof and needs re-verification.",
                 message_amharic=f"ትዕዛዝ {order.order_number} የክፍያ ማስረጃ በድጋሚ ተጭኛል እና እንደገና ማረጋገጥ ያስፈልጋል።",
             )

@@ -129,7 +129,10 @@ def notify_cashiers(order, message, message_amharic=""):
 
 
 def notify_user(user, order, message, message_amharic=""):
-    OrderNotification.objects.create(user=user, order=order, message=message, message_amharic=message_amharic)
+    OrderNotification.objects.filter(user=user, order=order).delete()
+    return OrderNotification.objects.create(
+        user=user, order=order, message=message, message_amharic=message_amharic
+    )
 
 
 class OrderItem(models.Model):
