@@ -41,7 +41,7 @@ function RefundDetailsForm({ order, currency }: { order: Order; currency: string
 
   return (
     <form
-      className="mb-3 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl"
+      className="mb-3 p-3 sm:p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl"
       onSubmit={(e) => {
         e.preventDefault();
         submit.mutate({ id: order.id, method, account: account.trim() });
@@ -84,7 +84,7 @@ function RefundDetailsForm({ order, currency }: { order: Order; currency: string
       <button
         type="submit"
         disabled={!method || account.trim().length < 6 || submit.isPending}
-        className="inline-flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-orange-600 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-orange-500 text-white px-4 py-3 sm:py-2 rounded-xl text-sm font-bold hover:bg-orange-600 active:bg-orange-700 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <i className="fas fa-paper-plane"></i>
         {submit.isPending ? "Sending..." : "Send Details"}
@@ -109,9 +109,9 @@ function RejectionReasonSlider({ order }: { order: Order }) {
     setIndex((i) => Math.max(0, Math.min(slides.length - 1, i + dir)));
 
   return (
-    <div className="mt-2 -mx-1">
+    <div className="mt-2 -mx-1 min-w-0">
       <div
-        className="overflow-hidden rounded-lg"
+        className="overflow-hidden rounded-lg w-full min-w-0"
         onTouchStart={(e) => {
           touchX.current = e.touches[0].clientX;
         }}
@@ -123,16 +123,16 @@ function RejectionReasonSlider({ order }: { order: Order }) {
         }}
       >
         <div
-          className="flex transition-transform duration-300 ease-out"
+          className="flex w-full min-w-0 transition-transform duration-300 ease-out"
           style={{ transform: `translateX(-${safeIndex * 100}%)` }}
         >
           {slides.map((s) => (
-            <div key={s.n} className="w-full shrink-0 px-1">
+            <div key={s.n} className="w-full min-w-full max-w-full shrink-0 grow-0 basis-full px-1">
               <div className="bg-white/80 dark:bg-red-900/20 border border-red-100 dark:border-red-900/40 rounded-lg px-3 py-2">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-red-400 mb-0.5">
                   {t("proof_attempt")} {s.n}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-300 leading-snug break-words">{s.reason}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 leading-snug break-words [overflow-wrap:anywhere]">{s.reason}</p>
               </div>
             </div>
           ))}
@@ -145,7 +145,7 @@ function RejectionReasonSlider({ order }: { order: Order }) {
             onClick={() => go(-1)}
             disabled={safeIndex === 0}
             aria-label="Previous rejection"
-            className="w-6 h-6 rounded-full bg-white dark:bg-gray-700 border border-red-200 dark:border-red-900/50 text-red-500 text-[10px] flex items-center justify-center cursor-pointer disabled:opacity-30 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+            className="w-8 h-8 rounded-full bg-white dark:bg-gray-700 border border-red-200 dark:border-red-900/50 text-red-500 text-xs flex items-center justify-center cursor-pointer disabled:opacity-30 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
           >
             <i className="fas fa-chevron-left"></i>
           </button>
@@ -165,7 +165,7 @@ function RejectionReasonSlider({ order }: { order: Order }) {
             onClick={() => go(1)}
             disabled={safeIndex === slides.length - 1}
             aria-label="Next rejection"
-            className="w-6 h-6 rounded-full bg-white dark:bg-gray-700 border border-red-200 dark:border-red-900/50 text-red-500 text-[10px] flex items-center justify-center cursor-pointer disabled:opacity-30 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+            className="w-8 h-8 rounded-full bg-white dark:bg-gray-700 border border-red-200 dark:border-red-900/50 text-red-500 text-xs flex items-center justify-center cursor-pointer disabled:opacity-30 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
           >
             <i className="fas fa-chevron-right"></i>
           </button>
@@ -217,12 +217,12 @@ export default function OrderHistoryPage() {
   return (
     <>
       <HomeNavbar />
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t("order_history_title")}</h1>
+      <div className="max-w-4xl w-full min-w-0 mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{t("order_history_title")}</h1>
           <Link
             href="/orders"
-            className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-red-600/30"
+            className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-red-600 text-white px-4 py-3 sm:py-2.5 rounded-xl text-sm font-bold hover:bg-red-700 active:bg-red-800 transition-all duration-300 shadow-lg hover:shadow-red-600/30"
           >
             {t("place_new_order")} <i className="fas fa-shopping-bag"></i>
           </Link>
@@ -235,13 +235,13 @@ export default function OrderHistoryPage() {
             {orders.map((order) => {
               const orderNotifications = notificationsByOrder.get(order.id) ?? [];
               return (
-              <div key={order.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-5">
+              <div key={order.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 sm:p-5 min-w-0 overflow-hidden">
                 {orderNotifications.length > 0 && (
                   <div className="mb-4 space-y-2">
                     {orderNotifications.map((n) => {
                       const isRejection = n.message.toLowerCase().includes("reject");
                       return (
-                        <div key={n.id} className={`p-4 rounded-xl flex items-start gap-3 border ${
+                        <div key={n.id} className={`p-3 sm:p-4 rounded-xl flex items-start gap-2.5 sm:gap-3 border ${
                           isRejection
                             ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
                             : order.status === "COMPLETED"
@@ -257,10 +257,10 @@ export default function OrderHistoryPage() {
                           }`}>
                             {isRejection ? <i className="fas fa-circle-xmark"></i> : <i className="fas fa-circle-check"></i>}
                           </span>
-                          <div className="flex-1">
-                            <p className="text-sm text-gray-700 dark:text-gray-200">{currentLang === "am" && n.message_amharic ? n.message_amharic : n.message}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-700 dark:text-gray-200 break-words [overflow-wrap:anywhere]">{currentLang === "am" && n.message_amharic ? n.message_amharic : n.message}</p>
                             <p className="text-xs text-gray-400 mt-1">
-                              {new Date(n.created_at).toLocaleString()}
+                              {new Date(n.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                             </p>
                           </div>
                         </div>
@@ -270,7 +270,7 @@ export default function OrderHistoryPage() {
                 )}
 
                 {order.status === "REJECTED" && (
-                  <div className="mb-4 flex gap-3 p-4 bg-red-50/80 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl">
+                  <div className="mb-4 flex gap-2.5 sm:gap-3 p-3 sm:p-4 bg-red-50/80 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl">
                     <span className="w-9 h-9 rounded-full bg-white dark:bg-red-900/40 border border-red-100 dark:border-red-900/60 shadow-sm flex items-center justify-center shrink-0">
                       <i className="fas fa-triangle-exclamation text-red-500"></i>
                     </span>
@@ -296,7 +296,7 @@ export default function OrderHistoryPage() {
                               setTimeout(() => fileInputRef.current?.click(), 0);
                             }}
                             disabled={resubmit.isPending}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-300 dark:border-red-800 bg-white dark:bg-transparent text-xs font-bold text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors cursor-pointer disabled:opacity-50"
+                            className="inline-flex items-center justify-center gap-1.5 w-full sm:w-auto px-3 py-2.5 sm:py-1.5 rounded-lg border border-red-300 dark:border-red-800 bg-white dark:bg-transparent text-xs font-bold text-red-600 dark:text-red-300 hover:bg-red-50 active:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer disabled:opacity-50"
                           >
                             <i className="fas fa-camera"></i>
                             {resubmit.isPending && pickingFor === order.id ? t("uploading") : t("re_upload_proof")}
@@ -313,11 +313,11 @@ export default function OrderHistoryPage() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{order.order_number}</p>
+                <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white break-words">{order.order_number}</p>
                     <p className="text-xs text-gray-400 dark:text-gray-500">
-                      {new Date(order.created_at).toLocaleString()}
+                      {new Date(order.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                     </p>
                     {order.payment_method && (
                       <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
@@ -326,7 +326,7 @@ export default function OrderHistoryPage() {
                     )}
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[order.status]}`}
+                    className={`shrink-0 px-2.5 sm:px-3 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[order.status]}`}
                   >
                     {order.status}
                   </span>
@@ -337,7 +337,7 @@ export default function OrderHistoryPage() {
                     <button
                       onClick={() => confirmPickup.mutate(order.id)}
                       disabled={confirmPickup.isPending}
-                      className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-700 transition-all cursor-pointer disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-green-600 text-white px-4 py-3 sm:py-2 rounded-xl text-sm font-bold hover:bg-green-700 active:bg-green-800 transition-all cursor-pointer disabled:opacity-50"
                     >
                       <i className="fas fa-check-circle"></i>
                       {confirmPickup.isPending ? t("uploading") : t("confirm_pickup")}
@@ -355,7 +355,7 @@ export default function OrderHistoryPage() {
                 )}
 
                 {order.status === "REFUNDED" && order.refund_method && (
-                  <div className="mb-3 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl text-sm text-purple-700 dark:text-purple-300">
+                  <div className="mb-3 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl text-sm text-purple-700 dark:text-purple-300 break-words [overflow-wrap:anywhere]">
                     <i className="fas fa-rotate-left mr-1"></i>
                     {t("currency")} {Number(order.total).toFixed(2)} refunded via{" "}
                     {paymentMethodName(order.refund_method) || order.refund_method}
@@ -373,14 +373,14 @@ export default function OrderHistoryPage() {
                           <img
                             src={p.image}
                             alt={`Proof attempt ${p.attempt + 1}`}
-                            className="h-24 w-24 object-cover rounded-xl border border-gray-200 dark:border-gray-600 cursor-pointer hover:scale-105 transition-transform"
+                            className="h-20 w-20 sm:h-24 sm:w-24 object-cover rounded-xl border border-gray-200 dark:border-gray-600 cursor-pointer active:scale-95 sm:hover:scale-105 transition-transform"
                             onClick={() => window.open(p.image, "_blank")}
                           />
                           <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
                             #{p.attempt + 1}
                           </span>
                           {p.rejection_reason && (
-                            <p className="text-[10px] text-red-500 mt-0.5 max-w-[96px] truncate" title={p.rejection_reason}>
+                            <p className="text-[10px] text-red-500 mt-0.5 max-w-20 sm:max-w-24 truncate" title={p.rejection_reason}>
                               {p.rejection_reason}
                             </p>
                           )}
@@ -395,8 +395,8 @@ export default function OrderHistoryPage() {
                     {order.items.map((item) => {
                       const product = productMap.get(item.product);
                       return (
-                        <div key={item.id} className="flex justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">
+                        <div key={item.id} className="flex justify-between items-start gap-3 text-sm">
+                          <span className="min-w-0 text-gray-600 dark:text-gray-400 break-words">
                             {item.quantity}x {item.product_name || (currentLang === "am" ? product?.name_amharic || product?.name : product?.name) || `Product #${item.product}`}
                             {item.options && item.options.length > 0 && (
                               <span className="text-gray-400 dark:text-gray-500">
@@ -404,16 +404,16 @@ export default function OrderHistoryPage() {
                               </span>
                             )}
                           </span>
-                          <span className="text-gray-900 dark:text-white">{t("currency")} {Number(item.total_price).toFixed(2)}</span>
+                          <span className="shrink-0 text-right text-gray-900 dark:text-white">{t("currency")} {Number(item.total_price).toFixed(2)}</span>
                         </div>
                       );
                     })}
                   </div>
                 )}
 
-                <div className="border-t dark:border-gray-700 mt-3 pt-3 flex justify-between">
+                <div className="border-t dark:border-gray-700 mt-3 pt-3 flex justify-between items-center gap-3">
                   <span className="text-sm font-medium text-gray-900 dark:text-white">{t("total")}</span>
-                  <span className="font-bold text-gray-900 dark:text-white">{t("currency")} {Number(order.total).toFixed(2)}</span>
+                  <span className="font-bold text-base sm:text-sm text-gray-900 dark:text-white text-right">{t("currency")} {Number(order.total).toFixed(2)}</span>
                 </div>
               </div>
               );

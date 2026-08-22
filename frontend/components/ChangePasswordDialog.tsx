@@ -81,7 +81,7 @@ export default function ChangePasswordDialog({ open: openProp, onOpenChange }: C
     <Dialog open={open} onOpenChange={setOpen}>
       {!isControlled && (
         <DialogTrigger
-          className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer"
+          className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white cursor-pointer"
         >
           Change Password
         </DialogTrigger>
@@ -91,7 +91,7 @@ export default function ChangePasswordDialog({ open: openProp, onOpenChange }: C
 
         {success ? (
           <div className="space-y-4">
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+            <div className="p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg text-sm text-green-700 dark:text-green-300">
               {success}
             </div>
             <DialogClose

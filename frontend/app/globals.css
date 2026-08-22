@@ -153,6 +153,13 @@ body {
   opacity: 1;
 }
 
+@media (hover: none) {
+  .menu-card .add-btn {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 .menu-card img {
   transition: transform 0.5s ease;
 }

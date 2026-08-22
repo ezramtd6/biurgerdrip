@@ -169,5 +169,6 @@ EMAIL_BACKEND = (
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+EMAIL_TIMEOUT = 15
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER or "admin@localhost"
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")

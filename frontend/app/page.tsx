@@ -572,8 +572,8 @@ export default function Home() {
                                         return { ...prev, [groupKey]: Number(val) };
                                       });
                                     }}
-                                    className={`w-full appearance-none bg-transparent pr-7 py-1 cursor-pointer outline-none transition-colors ${
-                                      hasVal ? "text-red-600 font-extrabold text-lg tracking-tight" : "text-gray-400 dark:text-gray-500 font-medium text-sm"
+                                    className={`w-full appearance-none bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-full pl-4 pr-9 py-2.5 min-h-[44px] cursor-pointer outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-400 transition-colors truncate ${
+                                      hasVal ? "text-red-600 font-extrabold text-base tracking-tight border-red-200 dark:border-red-800 bg-red-50/60 dark:bg-red-900/20" : "text-gray-700 dark:text-gray-200 font-medium text-base"
                                     }`}
                                   >
                                     <option value="" disabled={group.name === "Size"}>
@@ -589,7 +589,7 @@ export default function Home() {
                                       </option>
                                     ))}
                                   </select>
-                                  <span className={`absolute inset-y-0 right-3 flex items-center pointer-events-none transition-colors ${hasVal ? "text-red-600" : "text-gray-400"}`}>
+                                  <span className={`absolute inset-y-0 right-3.5 flex items-center pointer-events-none transition-colors ${hasVal ? "text-red-600" : "text-gray-500 dark:text-gray-400"}`}>
                                     <i className="fas fa-chevron-down text-xs"></i>
                                   </span>
                                 </div>
