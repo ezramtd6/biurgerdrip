@@ -93,6 +93,88 @@ function RefundDetailsForm({ order, currency }: { order: Order; currency: string
   );
 }
 
+function RejectionReasonSlider({ order }: { order: Order }) {
+  const [index, setIndex] = useState(0);
+  const touchX = useRef<number | null>(null);
+  const { t } = useLanguage();
+
+  const slides = (order.proof_history || [])
+    .filter((p) => p.rejection_reason)
+    .map((p) => ({ n: p.attempt + 1, reason: p.rejection_reason as string }));
+
+  if (slides.length === 0) return null;
+  const safeIndex = Math.min(index, slides.length - 1);
+
+  const go = (dir: number) =>
+    setIndex((i) => Math.max(0, Math.min(slides.length - 1, i + dir)));
+
+  return (
+    <div className="mt-2 -mx-1">
+      <div
+        className="overflow-hidden rounded-lg"
+        onTouchStart={(e) => {
+          touchX.current = e.touches[0].clientX;
+        }}
+        onTouchEnd={(e) => {
+          if (touchX.current === null) return;
+          const dx = e.changedTouches[0].clientX - touchX.current;
+          if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+          touchX.current = null;
+        }}
+      >
+        <div
+          className="flex transition-transform duration-300 ease-out"
+          style={{ transform: `translateX(-${safeIndex * 100}%)` }}
+        >
+          {slides.map((s) => (
+            <div key={s.n} className="w-full shrink-0 px-1">
+              <div className="bg-white/80 dark:bg-red-900/20 border border-red-100 dark:border-red-900/40 rounded-lg px-3 py-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-red-400 mb-0.5">
+                  {t("proof_attempt")} {s.n}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 leading-snug break-words">{s.reason}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {slides.length > 1 && (
+        <div className="flex items-center justify-center gap-3 mt-2">
+          <button
+            onClick={() => go(-1)}
+            disabled={safeIndex === 0}
+            aria-label="Previous rejection"
+            className="w-6 h-6 rounded-full bg-white dark:bg-gray-700 border border-red-200 dark:border-red-900/50 text-red-500 text-[10px] flex items-center justify-center cursor-pointer disabled:opacity-30 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+          >
+            <i className="fas fa-chevron-left"></i>
+          </button>
+          <div className="flex items-center gap-1.5">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIndex(i)}
+                aria-label={`Rejection ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                  i === safeIndex ? "w-4 bg-red-500" : "w-1.5 bg-red-200 dark:bg-red-900/60 hover:bg-red-300"
+                }`}
+              ></button>
+            ))}
+          </div>
+          <button
+            onClick={() => go(1)}
+            disabled={safeIndex === slides.length - 1}
+            aria-label="Next rejection"
+            className="w-6 h-6 rounded-full bg-white dark:bg-gray-700 border border-red-200 dark:border-red-900/50 text-red-500 text-[10px] flex items-center justify-center cursor-pointer disabled:opacity-30 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+          >
+            <i className="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function OrderHistoryPage() {
   const { lang: currentLang, t } = useLanguage();
   const { data: orders, isLoading } = useOrders();
@@ -102,6 +184,7 @@ export default function OrderHistoryPage() {
   const resubmit = useResubmitProof();
   const confirmPickup = useConfirmPickup();
   const [pickingFor, setPickingFor] = useState<number | null>(null);
+  const [uploadedId, setUploadedId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const productMap = new Map((products ?? []).map((p) => [p.id, p]));
@@ -119,7 +202,7 @@ export default function OrderHistoryPage() {
     setPickingFor(null);
     if (!file) return;
     if (!file.type.startsWith("image/")) return;
-    resubmit.mutate({ id: orderId, file });
+    resubmit.mutate({ id: orderId, file }, { onSuccess: () => setUploadedId(orderId) });
   };
 
   if (isLoading) {
@@ -179,33 +262,54 @@ export default function OrderHistoryPage() {
                             <p className="text-xs text-gray-400 mt-1">
                               {new Date(n.created_at).toLocaleString()}
                             </p>
-                            {order.status === "REJECTED" && isRejection && (
-                              <p className="font-bold text-red-700 dark:text-red-400 text-sm mt-2">
-                                {t("payment_rejected_3")}
-                              </p>
-                            )}
-                            {order.status === "REJECTED" && isRejection && order.proof_attempts < 3 && (
-                              <button
-                                onClick={() => {
-                                  setPickingFor(order.id);
-                                  setTimeout(() => fileInputRef.current?.click(), 0);
-                                }}
-                                disabled={resubmit.isPending}
-                                className="mt-3 inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-700 transition-all cursor-pointer disabled:opacity-50"
-                              >
-                                <i className="fas fa-camera"></i>
-                                {resubmit.isPending && pickingFor === order.id ? t("uploading") : t("re_upload_proof")}
-                              </button>
-                            )}
-                            {resubmit.isSuccess && pickingFor === null && (
-                              <p className="mt-2 text-xs text-green-600 font-semibold">
-                                {t("new_proof_uploaded")}
-                              </p>
-                            )}
                           </div>
                         </div>
                       );
                     })}
+                  </div>
+                )}
+
+                {order.status === "REJECTED" && (
+                  <div className="mb-4 flex gap-3 p-4 bg-red-50/80 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 rounded-xl">
+                    <span className="w-9 h-9 rounded-full bg-white dark:bg-red-900/40 border border-red-100 dark:border-red-900/60 shadow-sm flex items-center justify-center shrink-0">
+                      <i className="fas fa-triangle-exclamation text-red-500"></i>
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-sm text-red-700 dark:text-red-300">{t("payment_rejected")}</p>
+                        <span className="text-[11px] font-medium text-red-400 dark:text-red-400/80">
+                          · {t("proof_attempt")} {order.proof_attempts}/3
+                        </span>
+                      </div>
+
+                      <RejectionReasonSlider order={order} />
+
+                      {order.proof_attempts >= 3 ? (
+                        <p className="mt-2 text-xs font-semibold text-red-500">
+                          {t("payment_rejected_3")}
+                        </p>
+                      ) : (
+                        <div className="mt-3 flex items-center gap-3 flex-wrap">
+                          <button
+                            onClick={() => {
+                              setPickingFor(order.id);
+                              setTimeout(() => fileInputRef.current?.click(), 0);
+                            }}
+                            disabled={resubmit.isPending}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-300 dark:border-red-800 bg-white dark:bg-transparent text-xs font-bold text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors cursor-pointer disabled:opacity-50"
+                          >
+                            <i className="fas fa-camera"></i>
+                            {resubmit.isPending && pickingFor === order.id ? t("uploading") : t("re_upload_proof")}
+                          </button>
+                          {uploadedId === order.id && (
+                            <span className="text-xs text-green-600 font-medium">
+                              <i className="fas fa-check mr-1"></i>
+                              {t("new_proof_uploaded")}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 

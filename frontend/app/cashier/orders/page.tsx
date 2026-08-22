@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
 import { Order, OrderNotification } from "@/types";
@@ -11,8 +11,88 @@ import { usePaymentSystems } from "@/hooks/usePaymentSystems";
 import Link from "next/link";
 import { useLanguage } from "@/hooks/useLanguage";
 
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-700",
+function RejectionReasonSlider({ order }: { order: Order }) {
+  const [index, setIndex] = useState(0);
+  const touchX = useRef<number | null>(null);
+
+  const slides = (order.proof_history || [])
+    .filter((p) => p.rejection_reason)
+    .map((p) => ({ n: p.attempt + 1, reason: p.rejection_reason as string }));
+
+  if (slides.length === 0) return null;
+  const safeIndex = Math.min(index, slides.length - 1);
+
+  const go = (dir: number) =>
+    setIndex((i) => Math.max(0, Math.min(slides.length - 1, i + dir)));
+
+  return (
+    <div className="mt-2 -mx-1">
+      <div
+        className="overflow-hidden rounded-lg"
+        onTouchStart={(e) => {
+          touchX.current = e.touches[0].clientX;
+        }}
+        onTouchEnd={(e) => {
+          if (touchX.current === null) return;
+          const dx = e.changedTouches[0].clientX - touchX.current;
+          if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+          touchX.current = null;
+        }}
+      >
+        <div
+          className="flex transition-transform duration-300 ease-out"
+          style={{ transform: `translateX(-${safeIndex * 100}%)` }}
+        >
+          {slides.map((s) => (
+            <div key={s.n} className="w-full shrink-0 px-1">
+              <div className="bg-white/80 border border-red-100 rounded-lg px-3 py-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-red-400 mb-0.5">
+                  Proof attempt {s.n}
+                </p>
+                <p className="text-sm text-gray-600 leading-snug break-words">{s.reason}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {slides.length > 1 && (
+        <div className="flex items-center justify-center gap-3 mt-2">
+          <button
+            onClick={() => go(-1)}
+            disabled={safeIndex === 0}
+            aria-label="Previous rejection"
+            className="w-6 h-6 rounded-full bg-white border border-red-200 text-red-500 text-[10px] flex items-center justify-center cursor-pointer disabled:opacity-30 hover:bg-red-50 transition-colors"
+          >
+            <i className="fas fa-chevron-left"></i>
+          </button>
+          <div className="flex items-center gap-1.5">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIndex(i)}
+                aria-label={`Rejection ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                  i === safeIndex ? "w-4 bg-red-500" : "w-1.5 bg-red-200 hover:bg-red-300"
+                }`}
+              ></button>
+            ))}
+          </div>
+          <button
+            onClick={() => go(1)}
+            disabled={safeIndex === slides.length - 1}
+            aria-label="Next rejection"
+            className="w-6 h-6 rounded-full bg-white border border-red-200 text-red-500 text-[10px] flex items-center justify-center cursor-pointer disabled:opacity-30 hover:bg-red-50 transition-colors"
+          >
+            <i className="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const STATUS_COLORS: Record<string, string> = {  PENDING: "bg-yellow-100 text-yellow-700",
   PREPARING: "bg-blue-100 text-blue-700",
   READY: "bg-green-100 text-green-700",
   COMPLETED: "bg-gray-100 text-gray-700",
@@ -260,40 +340,44 @@ export default function CashierOrdersPage() {
                     </>
                   )}
                   {order.status === "REJECTED" && (
-                    <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                      <p className="text-xs font-semibold text-red-700 mb-1">
-                        <i className="fas fa-ban mr-1"></i>Payment Rejected
-                      </p>
-                      {order.rejection_reason && (
-                        <p className="text-sm text-red-600 mb-2">
-                          Reason: {order.rejection_reason}
-                        </p>
-                      )}
-                      {order.proof_history && order.proof_history.length > 0 && (
-                        <div>
-                          <p className="text-xs text-gray-500 mb-1">All Payment Proofs:</p>
-                          <div className="flex flex-wrap gap-2">
-                            {order.proof_history.map((p) => (
-                              <div key={p.id} className="relative">
-                                <img
-                                  src={p.image}
-                                  alt={`Proof attempt ${p.attempt}`}
-                                  className="h-24 w-24 object-cover rounded-lg border border-gray-200 cursor-pointer hover:scale-105 transition-transform"
-                                  onClick={() => window.open(p.image, "_blank")}
-                                />
-                                <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
-                                  #{p.attempt + 1}
-                                </span>
-                                {p.rejection_reason && (
-                                  <p className="text-[10px] text-red-500 mt-0.5 max-w-[96px] truncate" title={p.rejection_reason}>
-                                    {p.rejection_reason}
-                                  </p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
+                    <div className="mt-1 flex gap-3 p-4 bg-red-50/80 border border-red-200 rounded-xl">
+                      <span className="w-9 h-9 rounded-full bg-white border border-red-100 shadow-sm flex items-center justify-center shrink-0">
+                        <i className="fas fa-triangle-exclamation text-red-500"></i>
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-sm text-red-700">Payment Rejected</p>
+                          <span className="text-[11px] font-medium text-red-400">
+                            · Proof attempt {Math.max(order.proof_attempts, 1)}/3
+                          </span>
                         </div>
-                      )}
+
+                        <RejectionReasonSlider order={order} />
+
+                        {order.proof_history && order.proof_history.length > 0 && (
+                          <div className="mt-3">
+                            <p className="text-[11px] font-medium text-gray-400 mb-1.5">
+                              Payment proofs ({order.proof_history.length})
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {order.proof_history.map((p) => (
+                                <div key={p.id} className="group relative">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={p.image}
+                                    alt={`Proof attempt ${p.attempt + 1}`}
+                                    className="h-20 w-20 object-cover rounded-lg border border-gray-200 cursor-pointer transition-all hover:scale-[1.04] hover:border-orange-300 group-hover:shadow-sm"
+                                    onClick={() => window.open(p.image, "_blank")}
+                                  />
+                                  <span className="absolute -top-1.5 -left-1.5 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow">
+                                    {p.attempt + 1}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                   {order.status === "REFUND_REQUESTED" && (
