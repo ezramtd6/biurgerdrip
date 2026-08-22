@@ -187,6 +187,23 @@ export function useConfirmPickup() {
   });
 }
 
+export function useSubmitRefundDetails() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, method, account }: { id: number; method: string; account: string }) => {
+      const res = await api.post(`/orders/${id}/refund-details/`, {
+        refund_method: method,
+        refund_account: account,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
 export interface ReportsData {
   total_orders: number;
   total_revenue: number;

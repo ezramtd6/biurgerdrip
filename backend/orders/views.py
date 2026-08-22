@@ -289,6 +289,7 @@ class CashierOrderDetailView(generics.RetrieveUpdateAPIView):
                 "COMPLETED": "ተጠናቅቋል",
                 "CANCELLED": "ተሰርቷል",
                 "REJECTED": "ተቃይሏል",
+                "REFUNDED": "ተመልሷል",
             }.get(instance.status, label)
             notify_user(
                 instance.customer,
@@ -303,16 +304,193 @@ class CashierPaymentView(APIView):
     permission_classes = [IsCashier]
     def post(self, request, pk):
         try:
-            order = Order.objects.get(
-                pk,
+            order = Order.objects.filter(
                 models.Q(cashier=request.user) | models.Q(customer__isnull=False),
-            )
+            ).get(pk=pk)
         except Order.DoesNotExist:
             return Response(
                 {"error": "Order not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
         return _handle_payment(request, order)
+
+
+class CashierOrderRefundView(APIView):
+    """Step 1 — cashier asks the customer for their refund details."""
+    permission_classes = [IsCashier]
+
+    def post(self, request, pk):
+        try:
+            order = Order.objects.filter(
+                models.Q(cashier=request.user) | models.Q(customer__isnull=False),
+            ).get(pk=pk)
+        except Order.DoesNotExist:
+            return Response(
+                {"error": "Order not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        paid_statuses = (
+            Order.Status.PREPARING,
+            Order.Status.READY,
+            Order.Status.COMPLETED,
+        )
+        if order.status not in paid_statuses:
+            return Response(
+                {"error": "Only paid orders can be refunded."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not order.customer_id:
+            return Response(
+                {"error": "Walk-in orders are refunded directly, no customer details needed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        order.status = Order.Status.REFUND_REQUESTED
+        order.refund_method = ""
+        order.refund_account = ""
+        order.save(update_fields=["status", "refund_method", "refund_account", "updated_at"])
+
+        phone = getattr(request.user, "phone", "") or ""
+        message = (
+            f"Your order {order.order_number} is being refunded. "
+            f"Please open your order history and tell us how you would like to receive ETB {order.total:.2f} "
+            f"(payment type and account number)."
+            + (f" Questions? Call the cashier at {phone}." if phone else "")
+        )
+        message_amharic = (
+            f"ትዕዛዝዎ {order.order_number} እየተመለሰ ነው። "
+            f"እባክዎ የትዕዛዝ ታሪክዎን በመክፈት ETB {order.total:.2f} "
+            f"እንዴት (በየትኛው የመክፈያ ዓይነት እና የሂሳብ ቁጥር) እንደሚመለስ ያሳውቁ።"
+            + (f" ጥያቄ ካለ ካሽየሩን በ {phone} ይደውሉ።" if phone else "")
+        )
+        notify_user(order.customer, order, message=message, message_amharic=message_amharic)
+
+        return Response(
+            {
+                "detail": f"Refund requested for order {order.order_number}. The customer has been asked for their payment details.",
+                "status": Order.Status.REFUND_REQUESTED,
+            }
+        )
+
+
+class CustomerRefundDetailsView(APIView):
+    """Step 2 — customer provides how they want to receive the refund."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            order = Order.objects.get(id=pk, customer=request.user)
+        except Order.DoesNotExist:
+            return Response(
+                {"error": "Order not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if order.status != Order.Status.REFUND_REQUESTED or order.refund_method:
+            return Response(
+                {"error": "This order is not waiting for refund details."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        refund_method = (request.data.get("refund_method") or "").strip()
+        refund_account = (request.data.get("refund_account") or "").strip()
+
+        errors = {}
+        if not refund_method:
+            errors["refund_method"] = "Select how you want to receive your refund."
+        elif not PaymentSystem.objects.filter(
+            code=refund_method, is_active=True, for_refund=True
+        ).exists():
+            errors["refund_method"] = "Unknown payment type."
+        elif len(refund_account) < 6:
+            errors["refund_account"] = "Enter your account or phone number."
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+        order.refund_method = refund_method
+        order.refund_account = refund_account
+        order.save(update_fields=["refund_method", "refund_account", "updated_at"])
+
+        from .models import notify_cashiers
+
+        method_name = (
+            PaymentSystem.objects.filter(code=refund_method).values_list("name", flat=True).first()
+            or refund_method
+        )
+        notify_cashiers(
+            order,
+            f"Refund details received for {order.order_number}: {method_name}"
+            + (f" — {refund_account}" if refund_account else " (in person)")
+            + f". Send ETB {order.total:.2f}, then complete the refund.",
+        )
+
+        return Response(
+            {
+                "detail": "Thank you! Your refund will be sent shortly.",
+                "refund_method": order.refund_method,
+                "refund_account": order.refund_account,
+            }
+        )
+
+
+class CashierOrderRefundCompleteView(APIView):
+    """Step 3 — cashier confirms the money was sent; refund completed."""
+    permission_classes = [IsCashier]
+
+    def post(self, request, pk):
+        try:
+            order = Order.objects.filter(
+                models.Q(cashier=request.user) | models.Q(customer__isnull=False),
+            ).get(pk=pk)
+        except Order.DoesNotExist:
+            return Response(
+                {"error": "Order not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if order.status != Order.Status.REFUND_REQUESTED:
+            return Response(
+                {"error": "Only orders with a requested refund can be completed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not order.refund_method:
+            return Response(
+                {"error": "The customer has not provided their refund details yet."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        order.status = Order.Status.REFUNDED
+        order.save(update_fields=["status", "updated_at"])
+
+        method_name = (
+            PaymentSystem.objects.filter(code=order.refund_method)
+            .values_list("name", flat=True).first()
+            or order.refund_method
+        )
+        destination = f" via {method_name}" + (
+            f" to {order.refund_account}" if order.refund_account else " in person"
+        )
+        phone = getattr(request.user, "phone", "") or ""
+        message = (
+            f"Your refund for order {order.order_number} is complete — "
+            f"ETB {order.total:.2f} has been returned to you{destination}."
+            + (f" For more information call the cashier at {phone}." if phone else "")
+        )
+        message_amharic = (
+            f"የትዕዛዝዎ {order.order_number} ትርፍ መመለስ ተጠናቋል — "
+            f"ETB {order.total:.2f} በ{method_name} ወደ {order.refund_account or 'እርስዎ'} ተልኳል።"
+            + (f" ለበለጠ መረጃ ካሽየሩን በ {phone} ይደውሉ።" if phone else "")
+        )
+        notify_user(order.customer, order, message=message, message_amharic=message_amharic)
+
+        return Response(
+            {
+                "detail": f"Order {order.order_number} refunded.",
+                "status": Order.Status.REFUNDED,
+                "refund_method": order.refund_method,
+                "refund_account": order.refund_account,
+            }
+        )
 
 
 class CashierReportsView(APIView):

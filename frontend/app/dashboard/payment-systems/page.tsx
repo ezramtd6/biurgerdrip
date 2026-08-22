@@ -20,6 +20,7 @@ interface PaymentSystemForm {
   is_active: boolean;
   cashier_enabled: boolean;
   customer_enabled: boolean;
+  for_refund: boolean;
 }
 
 const emptyForm: PaymentSystemForm = {
@@ -30,6 +31,7 @@ const emptyForm: PaymentSystemForm = {
   is_active: true,
   cashier_enabled: true,
   customer_enabled: true,
+  for_refund: true,
 };
 
 export default function PaymentSystemsPage() {
@@ -101,6 +103,7 @@ export default function PaymentSystemsPage() {
       is_active: s.is_active,
       cashier_enabled: s.cashier_enabled,
       customer_enabled: s.customer_enabled,
+      for_refund: s.for_refund,
     });
     setImageFile(null);
     setImagePreview(s.icon || null);
@@ -117,6 +120,7 @@ export default function PaymentSystemsPage() {
       is_active: form.is_active,
       cashier_enabled: form.cashier_enabled,
       customer_enabled: form.customer_enabled,
+      for_refund: form.for_refund,
     };
     if (imageFile) {
       const fd = new FormData();
@@ -196,6 +200,15 @@ export default function PaymentSystemsPage() {
               render: (s) => (
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${s.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
                   {s.is_active ? "Active" : "Frozen"}
+                </span>
+              ),
+            },
+            {
+              key: "for_refund",
+              header: "Refund",
+              render: (s) => (
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${s.for_refund ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-400"}`}>
+                  {s.for_refund ? "Refund" : "—"}
                 </span>
               ),
             },
@@ -307,6 +320,15 @@ export default function PaymentSystemsPage() {
                 onChange={(e) => setForm({ ...form, customer_enabled: e.target.checked })}
               />
               For Customer
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="rounded"
+                checked={form.for_refund}
+                onChange={(e) => setForm({ ...form, for_refund: e.target.checked })}
+              />
+              For Refund
             </label>
           </div>
 

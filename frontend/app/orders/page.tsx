@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useCreateOrder } from "@/hooks/useOrders";
+import type { Order } from "@/types";
 import { usePaymentSystems } from "@/hooks/usePaymentSystems";
 import { useValidateCoupon } from "@/hooks/usePromotions";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -56,6 +57,7 @@ export default function OrdersPage() {
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [proofError, setProofError] = useState("");
   const [orderError, setOrderError] = useState("");
+  const [unavailableNotice, setUnavailableNotice] = useState<string | null>(null);
   const proofInputRef = useRef<HTMLInputElement>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -124,6 +126,7 @@ export default function OrdersPage() {
       return;
     }
     setOrderError("");
+    setUnavailableNotice(null);
     const items = cart.map((i) => ({
       product: i.id,
       quantity: i.qty,
@@ -137,7 +140,7 @@ export default function OrdersPage() {
     formData.append("items", JSON.stringify(items));
     formData.append("payment_proof", proofFile);
     createOrder.mutate(formData, {
-      onSuccess: () => {
+      onSuccess: (data: Order) => {
         localStorage.setItem("cart", JSON.stringify([]));
         setCart([]);
         setPlaced(true);
@@ -145,12 +148,27 @@ export default function OrdersPage() {
         setCouponStatus({ state: "idle" });
         setProofFile(null);
         setProofPreview(null);
+        if (data?.has_unavailable_items) {
+          const contact = data.support_phone
+            ? ` You can reach our cashier at ${data.support_phone}.`
+            : " Our team will contact you shortly.";
+          setUnavailableNotice(
+            `Some items in your order are currently unavailable.${contact} Your order may be refunded.`
+          );
+        }
         window.dispatchEvent(new Event("cart-updated"));
       },
       onError: (err) => {
         const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data || {};
         const first = (v: unknown): string | null => {
-          if (Array.isArray(v)) return v[0] ? String(v[0]) : null;
+          if (Array.isArray(v)) return v.length ? first(v[0]) : null;
+          if (v && typeof v === "object") {
+            for (const val of Object.values(v as Record<string, unknown>)) {
+              const found = first(val);
+              if (found) return found;
+            }
+            return null;
+          }
           return typeof v === "string" && v ? v : null;
         };
 
@@ -208,9 +226,17 @@ export default function OrdersPage() {
           </Link>
         </div>
         {placed && (
-          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl text-green-700 dark:text-green-400 text-sm font-semibold">
-            {t("order_placed")}
-            <Link href="/orders/history" className="underline ml-2">{t("view_order_history")}</Link>
+          <div className="mb-6 space-y-3">
+            <div className="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-xl text-green-700 dark:text-green-400 text-sm font-semibold">
+              {t("order_placed")}
+              <Link href="/orders/history" className="underline ml-2">{t("view_order_history")}</Link>
+            </div>
+            {unavailableNotice && (
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-700 dark:text-amber-300 text-sm flex items-start gap-2">
+                <i className="fas fa-triangle-exclamation mt-0.5"></i>
+                <span>{unavailableNotice}</span>
+              </div>
+            )}
           </div>
         )}
 

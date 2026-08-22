@@ -49,11 +49,31 @@ class PaymentProofAttemptSerializer(serializers.ModelSerializer):
         return None
 
 
+def unavailable_item_names(order):
+    """Names of ordered items whose product or category is currently frozen
+    or outside the category's working hours."""
+    names = []
+    for item in order.items.select_related("product__category"):
+        product = item.product
+        if not product:
+            continue
+        category = product.category
+        if (
+            not product.is_active
+            or not category.is_active
+            or not category.is_within_working_hours()
+        ):
+            names.append(product.name)
+    return names
+
+
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     notifications = OrderNotificationSerializer(many=True, read_only=True)
     payment_proof = serializers.SerializerMethodField()
     proof_history = PaymentProofAttemptSerializer(many=True, read_only=True)
+    has_unavailable_items = serializers.SerializerMethodField(read_only=True)
+    support_phone = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Order
@@ -61,6 +81,8 @@ class OrderSerializer(serializers.ModelSerializer):
             "id", "order_number", "customer", "cashier", "subtotal",
             "discount", "tax", "total", "coupon", "payment_method", "status",
             "payment_proof", "proof_attempts", "rejection_reason", "notifications", "proof_history",
+            "has_unavailable_items", "support_phone",
+            "refund_method", "refund_account",
             "created_at", "updated_at", "items",
         ]
         read_only_fields = ["id", "order_number", "customer", "cashier", "created_at", "updated_at"]
@@ -74,6 +96,21 @@ class OrderSerializer(serializers.ModelSerializer):
             return url
         return None
 
+    def get_has_unavailable_items(self, obj):
+        return bool(unavailable_item_names(obj))
+
+    def get_support_phone(self, obj):
+        if not self.get_has_unavailable_items(obj):
+            return None
+        from accounts.models import User
+
+        cashier = (
+            User.objects.filter(role=User.Role.CASHIER, is_active=True)
+            .exclude(phone="")
+            .first()
+        )
+        return cashier.phone if cashier else None
+
 
 class OrderCreateSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
@@ -83,6 +120,9 @@ class OrderCreateSerializer(serializers.Serializer):
     coupon_code = serializers.CharField(required=False, allow_blank=True, max_length=50)
     payment_proof = serializers.ImageField(required=False, allow_null=True)
     items = serializers.JSONField(write_only=True)
+
+    def to_representation(self, instance):
+        return OrderSerializer(instance, context=self.context).data
 
     def validate_payment_method(self, value):
         if not value:
@@ -132,32 +172,34 @@ class OrderCreateSerializer(serializers.Serializer):
                               f"We are open daily between {window}. Please try again later."}
                 )
 
-        # Frozen or out-of-hours categories block checkout for everyone —
-        # online customers and walk-in cashier sales alike.
-        products = Product.objects.select_related("category").filter(
-            id__in={int(item["product"]) for item in value}
-        )
-        by_id = {p.id: p for p in products}
-        for item in value:
-            product = by_id.get(int(item["product"]))
-            if not product:
-                continue
-            category = product.category
-            if not product.is_active or not category.is_active:
-                raise serializers.ValidationError(
-                    {"items": f"'{product.name}' is currently unavailable."}
-                )
-            if not category.is_within_working_hours():
-                window = (
-                    f"{category.available_from.strftime('%H:%M')}"
-                    f"-{category.available_to.strftime('%H:%M')}"
-                )
-                raise serializers.ValidationError(
-                    {
-                        "items": f"'{product.name}' is only available daily between {window}. "
-                                 "Please remove it from your cart and try again."
-                    }
-                )
+        # Frozen or out-of-hours categories block walk-in checkout. Online
+        # customers may still place such orders — the order is flagged and
+        # cashiers are notified so they can refund it.
+        if getattr(user, "role", None) != "CUSTOMER":
+            products = Product.objects.select_related("category").filter(
+                id__in={int(item["product"]) for item in value}
+            )
+            by_id = {p.id: p for p in products}
+            for item in value:
+                product = by_id.get(int(item["product"]))
+                if not product:
+                    continue
+                category = product.category
+                if not product.is_active or not category.is_active:
+                    raise serializers.ValidationError(
+                        {"items": f"'{product.name}' is currently unavailable."}
+                    )
+                if not category.is_within_working_hours():
+                    window = (
+                        f"{category.available_from.strftime('%H:%M')}"
+                        f"-{category.available_to.strftime('%H:%M')}"
+                    )
+                    raise serializers.ValidationError(
+                        {
+                            "items": f"'{product.name}' is only available daily between {window}. "
+                                     "Please remove it from your cart and try again."
+                        }
+                    )
         return value
 
     def validate(self, attrs):
@@ -267,7 +309,16 @@ class OrderCreateSerializer(serializers.Serializer):
         if user.role == "CUSTOMER":
             from .models import notify_cashiers
 
-            notify_cashiers(order, f"New order {order.order_number} placed — total ETB {order.total:.2f}.")
+            unavailable = unavailable_item_names(order)
+            if unavailable:
+                names = ", ".join(unavailable)
+                notify_cashiers(
+                    order,
+                    f"Order {order.order_number} was placed with currently unavailable items "
+                    f"({names}). Contact the customer or refund ETB {order.total:.2f}.",
+                )
+            else:
+                notify_cashiers(order, f"New order {order.order_number} placed — total ETB {order.total:.2f}.")
 
         return order
 

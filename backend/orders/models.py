@@ -12,6 +12,8 @@ class Order(models.Model):
         COMPLETED = "COMPLETED", "Completed"
         CANCELLED = "CANCELLED", "Cancelled"
         REJECTED = "REJECTED", "Payment Rejected"
+        REFUND_REQUESTED = "REFUND_REQUESTED", "Refund Requested"
+        REFUNDED = "REFUNDED", "Refunded"
 
     class PaymentMethod(models.TextChoices):
         CASH = "CASH", "Cash"
@@ -69,6 +71,18 @@ class Order(models.Model):
         max_length=20,
         choices=Status.choices,
         default=Status.PENDING
+    )
+    refund_method = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        help_text="Payment channel used to return the money (PaymentSystem code)",
+    )
+    refund_account = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="Account / phone number the customer received the refund on",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -183,6 +197,10 @@ class PaymentSystem(models.Model):
     is_active = models.BooleanField(default=True)
     cashier_enabled = models.BooleanField(default=True, help_text="Available to cashiers")
     customer_enabled = models.BooleanField(default=True, help_text="Available to customers")
+    for_refund = models.BooleanField(
+        default=True,
+        help_text="Can be selected by customers to receive refunds",
+    )
     display_order = models.PositiveIntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)

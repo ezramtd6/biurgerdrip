@@ -127,12 +127,16 @@ export interface Order {
   payment_proof: string | null;
   proof_attempts: number;
   rejection_reason: string;
-  status: "PENDING" | "PREPARING" | "READY" | "COMPLETED" | "CANCELLED" | "REJECTED";
+  status: "PENDING" | "PREPARING" | "READY" | "COMPLETED" | "CANCELLED" | "REJECTED" | "REFUND_REQUESTED" | "REFUNDED";
   created_at: string;
   updated_at: string;
   items: OrderItem[];
   notifications?: OrderNotification[];
   proof_history?: ProofAttempt[];
+  has_unavailable_items?: boolean;
+  support_phone?: string | null;
+  refund_method?: string | null;
+  refund_account?: string | null;
 }
 
 export interface ProofAttempt {
@@ -246,6 +250,7 @@ export interface PaymentSystem {
   is_active: boolean;
   cashier_enabled: boolean;
   customer_enabled: boolean;
+  for_refund: boolean;
   display_order: number;
   created_at: string;
   updated_at: string;

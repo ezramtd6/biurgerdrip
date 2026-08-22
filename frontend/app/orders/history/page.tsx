@@ -2,11 +2,11 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
-import { useOrders, useNotifications, useResubmitProof, useConfirmPickup } from "@/hooks/useOrders";
+import { useOrders, useNotifications, useResubmitProof, useConfirmPickup, useSubmitRefundDetails } from "@/hooks/useOrders";
 import { useProducts } from "@/hooks/useProducts";
 import { usePaymentSystems } from "@/hooks/usePaymentSystems";
 import { useLanguage } from "@/hooks/useLanguage";
-import type { OrderNotification } from "@/types";
+import type { Order, OrderNotification } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
 import HomeNavbar from "@/components/layout/HomeNavbar";
@@ -18,7 +18,80 @@ const STATUS_COLORS: Record<string, string> = {
   COMPLETED: "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
   CANCELLED: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
   REJECTED: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
+  REFUND_REQUESTED: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400",
+  REFUNDED: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400",
 };
+
+function RefundDetailsForm({ order, currency }: { order: Order; currency: string }) {
+  const { data: paymentSystems } = usePaymentSystems();
+  const submit = useSubmitRefundDetails();
+  const [method, setMethod] = useState("");
+  const [account, setAccount] = useState("");
+
+  if (order.refund_method) {
+    return (
+      <div className="mb-3 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl text-sm text-orange-700 dark:text-orange-300">
+        <i className="fas fa-circle-check mr-1"></i>
+        Refund details received — you will receive {currency} {Number(order.total).toFixed(2)} shortly.
+      </div>
+    );
+  }
+
+  const options = (paymentSystems || []).filter((ps) => ps.for_refund);
+
+  return (
+    <form
+      className="mb-3 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl"
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit.mutate({ id: order.id, method, account: account.trim() });
+      }}
+    >
+      <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+        How would you like to receive your {currency} {Number(order.total).toFixed(2)} refund?
+      </p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+        Our team is returning your payment. Tell us where to send it.
+      </p>
+
+      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Refund payment type</label>
+      <select
+        value={method}
+        onChange={(e) => setMethod(e.target.value)}
+        className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-400 transition mb-3"
+      >
+        <option value="">Select payment type...</option>
+        {options.map((opt) => (
+          <option key={opt.code} value={opt.code}>{opt.name}</option>
+        ))}
+      </select>
+
+      <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Your account number</label>
+      <input
+        type="text"
+        value={account}
+        onChange={(e) => setAccount(e.target.value)}
+        placeholder="Phone / account number"
+        className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-400 transition mb-3"
+      />
+
+      {submit.isError && (
+        <p className="text-sm text-red-600 mb-3">
+          {(Object.values((submit.error as { response?: { data?: Record<string, string> } })?.response?.data || {})[0] as string) || "Failed to submit."}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={!method || account.trim().length < 6 || submit.isPending}
+        className="inline-flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-orange-600 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <i className="fas fa-paper-plane"></i>
+        {submit.isPending ? "Sending..." : "Send Details"}
+      </button>
+    </form>
+  );
+}
 
 export default function OrderHistoryPage() {
   const { lang: currentLang, t } = useLanguage();
@@ -165,6 +238,24 @@ export default function OrderHistoryPage() {
                       <i className="fas fa-check-circle"></i>
                       {confirmPickup.isPending ? t("uploading") : t("confirm_pickup")}
                     </button>
+                  </div>
+                )}
+
+                {order.status === "REFUND_REQUESTED" && (
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold text-orange-700 dark:text-orange-400 mb-2">
+                      <i className="fas fa-rotate-left mr-1"></i>Refund requested — action needed
+                    </p>
+                    <RefundDetailsForm order={order} currency={t("currency")} />
+                  </div>
+                )}
+
+                {order.status === "REFUNDED" && order.refund_method && (
+                  <div className="mb-3 p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl text-sm text-purple-700 dark:text-purple-300">
+                    <i className="fas fa-rotate-left mr-1"></i>
+                    {t("currency")} {Number(order.total).toFixed(2)} refunded via{" "}
+                    {paymentMethodName(order.refund_method) || order.refund_method}
+                    {order.refund_account ? ` to ${order.refund_account}` : " (in person)"}
                   </div>
                 )}
 

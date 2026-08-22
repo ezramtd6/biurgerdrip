@@ -7,6 +7,7 @@ import { Order, OrderNotification } from "@/types";
 import { Button } from "@/components/ui";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
+import { usePaymentSystems } from "@/hooks/usePaymentSystems";
 import Link from "next/link";
 import { useLanguage } from "@/hooks/useLanguage";
 
@@ -17,6 +18,8 @@ const STATUS_COLORS: Record<string, string> = {
   COMPLETED: "bg-gray-100 text-gray-700",
   CANCELLED: "bg-red-100 text-red-700",
   REJECTED: "bg-red-100 text-red-700",
+  REFUND_REQUESTED: "bg-orange-100 text-orange-700",
+  REFUNDED: "bg-purple-100 text-purple-700",
 };
 
 export default function CashierOrdersPage() {
@@ -71,6 +74,42 @@ export default function CashierOrdersPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["cashier-orders"] }),
   });
 
+  const [refundTarget, setRefundTarget] = useState<Order | null>(null);
+  const refundOrder = useMutation({
+    mutationFn: (id: number) => api.post(`/orders/cashier/${id}/refund/`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cashier-orders"] });
+      setRefundTarget(null);
+    },
+  });
+
+  const completeRefund = useMutation({
+    mutationFn: (id: number) => api.post(`/orders/cashier/${id}/refund-complete/`),
+    onMutate: async (id: number) => {
+      await queryClient.cancelQueries({ queryKey: ["cashier-orders"] });
+      const previous = queryClient.getQueryData<Order[]>(["cashier-orders"]);
+      queryClient.setQueryData<Order[]>(["cashier-orders"], (old) =>
+        old
+          ? old.map((o) =>
+              o.id === id
+                ? { ...o, status: "REFUNDED" as const }
+                : o
+            )
+          : old
+      );
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["cashier-orders"], context.previous);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["cashier-orders"] }),
+  });
+
+  const { data: paymentSystems } = usePaymentSystems();
+  const refundOptions = (paymentSystems || []).map((ps) => ({ code: ps.code, name: ps.name }));
+
   if (isLoading) return <Loading />;
 
   const searchQuery = search.trim().toLowerCase();
@@ -116,7 +155,7 @@ export default function CashierOrdersPage() {
         </div>
 
         <div className="flex gap-2 mb-6 overflow-x-auto">
-          {["", "PENDING", "PREPARING", "READY", "COMPLETED", "REJECTED"].map((status) => (
+          {["", "PENDING", "PREPARING", "READY", "COMPLETED", "REFUND_REQUESTED", "REFUNDED", "REJECTED"].map((status) => (
             <button
               key={status}
               onClick={() => setFilter(status)}
@@ -157,6 +196,14 @@ export default function CashierOrdersPage() {
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[order.status]}`}>
                       {order.status}
                     </span>
+                    {order.has_unavailable_items && !["REFUNDED", "CANCELLED", "REJECTED"].includes(order.status) && (
+                      <span
+                        className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700"
+                        title="This order contains items that are now frozen or outside their availability window"
+                      >
+                        <i className="fas fa-triangle-exclamation mr-1"></i>Unavailable item
+                      </span>
+                    )}
                     {(order.status === "PREPARING" || order.status === "READY" || order.status === "COMPLETED") && (
                       <span className="text-xs text-green-600 font-medium">Paid</span>
                     )}
@@ -195,6 +242,23 @@ export default function CashierOrdersPage() {
                       {notifyPickup.isPending ? "Notifying..." : "Notify Pickup Ready"}
                     </Button>
                   )}
+                  {["PREPARING", "READY", "COMPLETED"].includes(order.status) && order.customer && (
+                    <Button size="sm" variant="secondary" onClick={() => setRefundTarget(order)} disabled={refundOrder.isPending}>
+                      Refund
+                    </Button>
+                  )}
+                  {order.status === "REFUND_REQUESTED" && order.refund_method && (
+                    <>
+                      <Button size="sm" onClick={() => completeRefund.mutate(order.id)} disabled={completeRefund.isPending}>
+                        {completeRefund.isPending ? "Completing..." : "Complete Refund"}
+                      </Button>
+                      {completeRefund.isError && completeRefund.variables === order.id && (
+                        <span className="text-xs text-red-600 self-center">
+                          {(completeRefund.error as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to complete refund. Try again."}
+                        </span>
+                      )}
+                    </>
+                  )}
                   {order.status === "REJECTED" && (
                     <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
                       <p className="text-xs font-semibold text-red-700 mb-1">
@@ -229,6 +293,40 @@ export default function CashierOrdersPage() {
                             ))}
                           </div>
                         </div>
+                      )}
+                    </div>
+                  )}
+                  {order.status === "REFUND_REQUESTED" && (
+                    <div className="mt-1 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                      {order.refund_method ? (
+                        <>
+                          <p className="text-xs font-semibold text-orange-700 mb-0.5">
+                            <i className="fas fa-circle-info mr-1"></i>Refund details received
+                          </p>
+                          <p className="text-sm text-orange-600">
+                            Customer wants ETB {Number(order.total).toFixed(2)} via{" "}
+                            {refundOptions.find((o) => o.code === order.refund_method)?.name || order.refund_method}
+                            {order.refund_account ? ` — ${order.refund_account}` : ""}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-orange-600">
+                          <i className="fas fa-hourglass-half mr-1"></i>
+                          Waiting for the customer to provide their refund payment type and account number.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {order.status === "REFUNDED" && (
+                    <div className="mt-1 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                      <p className="text-xs font-semibold text-purple-700 mb-0.5">
+                        <i className="fas fa-rotate-left mr-1"></i>Refunded — ETB {Number(order.total).toFixed(2)}
+                      </p>
+                      {order.refund_method && (
+                        <p className="text-sm text-purple-600">
+                          Sent via {refundOptions.find((o) => o.code === order.refund_method)?.name || order.refund_method}
+                          {order.refund_account ? ` to ${order.refund_account}` : ""}
+                        </p>
                       )}
                     </div>
                   )}
@@ -294,6 +392,31 @@ export default function CashierOrdersPage() {
           )}
         </div>
       </div>
+
+      {refundTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+            <h3 className="font-bold text-lg text-gray-900 mb-2">Request refund details?</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              The customer will be asked to provide their preferred payment type and account number
+              to receive ETB {Number(refundTarget.total).toFixed(2)}. Once they respond, you can complete the refund here.
+            </p>
+            {refundOrder.isError && (
+              <p className="text-sm text-red-600 mb-3">
+                {(refundOrder.error as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to request refund."}
+              </p>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button variant="secondary" size="sm" onClick={() => setRefundTarget(null)} disabled={refundOrder.isPending}>
+                Cancel
+              </Button>
+              <Button variant="danger" size="sm" loading={refundOrder.isPending} onClick={() => refundOrder.mutate(refundTarget.id)}>
+                Ask Customer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
