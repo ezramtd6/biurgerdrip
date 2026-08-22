@@ -58,6 +58,7 @@ export default function Home() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoaded, setProductsLoaded] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const { lang: currentLang, setLang: setCurrentLang, t } = useLanguage();
   const [cartOpen, setCartOpen] = useState(false);
@@ -122,21 +123,36 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    api.get("/categories/")
-      .then((res) => {
-        const data = res.data.results || res.data;
-        setCategories(Array.isArray(data) ? data : []);
-      })
-      .catch(() => setCategories([]));
+    let cancelled = false;
+    const load = () => {
+      api.get("/categories/")
+        .then((res) => {
+          if (cancelled) return;
+          const data = res.data.results || res.data;
+          setCategories(Array.isArray(data) ? data : []);
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 10000);
+    return () => { cancelled = true; clearInterval(id); };
   }, []);
 
   useEffect(() => {
-    api.get("/products/")
-      .then((res) => {
-        const data = res.data.results || res.data;
-        setProducts(Array.isArray(data) ? data : []);
-      })
-      .catch(() => setProducts([]));
+    let cancelled = false;
+    const load = () => {
+      api.get("/products/")
+        .then((res) => {
+          if (cancelled) return;
+          const data = res.data.results || res.data;
+          setProducts(Array.isArray(data) ? data : []);
+          setProductsLoaded(true);
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = setInterval(load, 10000);
+    return () => { cancelled = true; clearInterval(id); };
   }, []);
 
   useEffect(() => {
@@ -247,7 +263,23 @@ export default function Home() {
     document.getElementById("menu")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const menuAvailable = !checkingRestaurant && restaurantReady;
+  const restaurantClosed =
+    !!restaurant &&
+    restaurant.is_active !== false &&
+    !!restaurant.available_from &&
+    !!restaurant.available_to &&
+    restaurant.is_available_now === false;
+
+  const menuAvailable = !checkingRestaurant && restaurantReady && !restaurantClosed;
+
+  const unavailableItems = productsLoaded
+    ? cart.filter((ci) => !products.some((p) => p.id === ci.id))
+    : [];
+
+  const removeUnavailable = () => {
+    setCart(cart.filter((ci) => products.some((p) => p.id === ci.id)));
+    window.dispatchEvent(new Event("cart-updated"));
+  };
 
   if (mounted && user && (user.role === "CASHIER" || user.role === "MANAGER" || user.role === "ADMIN")) {
     return (
@@ -454,6 +486,37 @@ export default function Home() {
                   ? "The restaurant is currently frozen. Please check back later."
                   : "The restaurant has not been configured yet. Please check back later."}
               </p>
+            </div>
+          )}
+          {!checkingRestaurant && restaurantReady && restaurantClosed && (
+            <div className="text-center py-20">
+              <div className="w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-10 h-10 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-black text-gray-800 dark:text-white mb-2">We Are Currently Closed</h3>
+              <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                We are open daily between{" "}
+                <span className="font-semibold text-gray-700 dark:text-gray-200">
+                  {restaurant?.available_from?.slice(0, 5)} – {restaurant?.available_to?.slice(0, 5)}
+                </span>
+                . Please check back during our availability hours.
+              </p>
+            </div>
+          )}
+          {menuAvailable && unavailableItems.length > 0 && (
+            <div className="mb-8 max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3 justify-between bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-2xl px-5 py-4">
+              <p className="text-sm text-amber-700 dark:text-amber-300 text-left">
+                <i className="fas fa-triangle-exclamation mr-2"></i>
+                No longer available: {unavailableItems.map((i) => i.name).join(", ")}. Please remove {unavailableItems.length > 1 ? "them" : "it"} from your cart.
+              </p>
+              <button
+                onClick={removeUnavailable}
+                className="text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-full transition cursor-pointer whitespace-nowrap"
+              >
+                Remove
+              </button>
             </div>
           )}
           {menuAvailable && (

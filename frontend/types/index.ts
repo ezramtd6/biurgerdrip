@@ -17,6 +17,9 @@ export interface Category {
   description: string;
   display_order: number;
   is_active: boolean;
+  available_from: string | null;
+  available_to: string | null;
+  is_available_now: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -70,6 +73,9 @@ export interface RestaurantInfo {
   about: string;
   about_amharic: string;
   is_active: boolean;
+  available_from: string | null;
+  available_to: string | null;
+  is_available_now: boolean;
   latitude: number | null;
   longitude: number | null;
 }

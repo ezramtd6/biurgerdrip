@@ -1,5 +1,9 @@
+from datetime import time as time_of_day
+
 from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 from .models import Category, Product, OptionGroup, OptionValue, RestaurantInfo, Branch, SocialLink, Contact
 from .serializers import (
     CategorySerializer,
@@ -16,6 +20,23 @@ from .serializers import (
 class IsManager(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role in ("MANAGER", "ADMIN")
+
+
+def is_staff_user(request):
+    u = request.user
+    return u.is_authenticated and u.role in ("MANAGER", "ADMIN", "CASHIER")
+
+
+def is_manager_user(user):
+    u = user
+    return u.is_authenticated and u.role in ("MANAGER", "ADMIN")
+
+
+def public_menu_open():
+    """False when the restaurant's manager-assigned availability window says
+    it is currently closed."""
+    restaurant = RestaurantInfo.objects.first()
+    return restaurant is None or restaurant.is_within_working_hours()
 
 
 class ActiveStateMixin:
@@ -52,8 +73,14 @@ class CategoryViewSet(ActiveStateMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Category.objects.all()
-        if not self.request.user.is_authenticated:
+        if not is_manager_user(self.request.user):
+            # Cashiers and customers only see unfrozen categories; working
+            # hours and restaurant availability apply to customers only.
             qs = qs.filter(is_active=True)
+            if not is_staff_user(self.request):
+                if not public_menu_open():
+                    return []
+                qs = [c for c in qs if c.is_within_working_hours()]
         return qs
 
     def get_permissions(self):
@@ -75,6 +102,57 @@ class CategoryViewSet(ActiveStateMixin, viewsets.ModelViewSet):
                 {"detail": "Cannot unfreeze this category because the restaurant is frozen. Unfreeze the restaurant first."}
             )
 
+    @action(detail=False, methods=["post"], url_path="freeze-all")
+    def freeze_all(self, request):
+        for category in Category.objects.filter(is_active=True):
+            self.cascade_freeze(category)
+            category.is_active = False
+            category.save(update_fields=["is_active"])
+        return Response({"detail": "All categories frozen."})
+
+    @action(detail=False, methods=["post"], url_path="unfreeze-all")
+    def unfreeze_all(self, request):
+        restaurant = RestaurantInfo.objects.first()
+        if restaurant and not restaurant.is_active:
+            raise ValidationError(
+                {"detail": "Cannot unfreeze categories because the restaurant is frozen. Unfreeze the restaurant first."}
+            )
+        for category in Category.objects.filter(is_active=False):
+            category.is_active = True
+            category.save(update_fields=["is_active"])
+            self.cascade_unfreeze(category)
+        return Response({"detail": "All categories unfrozen."})
+
+    @action(detail=False, methods=["post"], url_path="set-hours")
+    def set_hours(self, request):
+        """Assign one shared working-hours window to every category at once."""
+        raw_start = request.data.get("available_from") or None
+        raw_end = request.data.get("available_to") or None
+
+        if (raw_start is None) != (raw_end is None):
+            raise ValidationError(
+                {"detail": "Set both 'Available From' and 'Available To', or leave both empty for always available."}
+            )
+
+        def parse(value):
+            try:
+                return time_of_day.fromisoformat(value)
+            except (TypeError, ValueError):
+                raise ValidationError({"detail": f"Invalid time value: '{value}'."})
+
+        start = parse(raw_start) if raw_start else None
+        end = parse(raw_end) if raw_end else None
+        if start is not None and start == end:
+            raise ValidationError(
+                {"detail": "'Available From' and 'Available To' cannot be the same time."}
+            )
+
+        count = Category.objects.count()
+        Category.objects.update(available_from=start, available_to=end)
+        if start is None:
+            return Response({"detail": f"All {count} categories are now always available."})
+        return Response({"detail": f"Working hours {start.strftime('%H:%M')}–{end.strftime('%H:%M')} applied to all {count} categories."})
+
 
 class ProductViewSet(ActiveStateMixin, viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -82,8 +160,19 @@ class ProductViewSet(ActiveStateMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Product.objects.all()
-        if not self.request.user.is_authenticated:
+        if not is_manager_user(self.request.user):
+            # Cashiers and customers only see unfrozen products/categories;
+            # working hours and restaurant availability apply to customers only.
             qs = qs.filter(is_active=True, category__is_active=True)
+            if not is_staff_user(self.request):
+                if not public_menu_open():
+                    return []
+                hidden = {
+                    c.id for c in Category.objects.filter(is_active=True)
+                    if not c.is_within_working_hours()
+                }
+                if hidden:
+                    qs = [p for p in qs if p.category_id not in hidden]
         return qs
 
     def get_permissions(self):

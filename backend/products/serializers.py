@@ -5,9 +5,28 @@ from .models import Category, Product, OptionGroup, OptionValue, RestaurantInfo,
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    is_available_now = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
         fields = "__all__"
+
+    def get_is_available_now(self, obj):
+        return obj.is_active and obj.is_within_working_hours()
+
+    def validate(self, attrs):
+        instance = self.instance
+        start = attrs.get("available_from", instance.available_from if instance else None)
+        end = attrs.get("available_to", instance.available_to if instance else None)
+        if (start is None) != (end is None):
+            raise serializers.ValidationError(
+                {"detail": "Set both 'Available From' and 'Available To', or leave both empty for always available."}
+            )
+        if start is not None and start == end:
+            raise serializers.ValidationError(
+                {"detail": "'Available From' and 'Available To' cannot be the same time."}
+            )
+        return attrs
 
     def create(self, validated_data):
         if "restaurant" not in validated_data or validated_data["restaurant"] is None:
@@ -76,9 +95,28 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class RestaurantInfoSerializer(serializers.ModelSerializer):
+    is_available_now = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = RestaurantInfo
         fields = "__all__"
+
+    def get_is_available_now(self, obj):
+        return obj.is_active and obj.is_within_working_hours()
+
+    def validate(self, attrs):
+        instance = self.instance
+        start = attrs.get("available_from", instance.available_from if instance else None)
+        end = attrs.get("available_to", instance.available_to if instance else None)
+        if (start is None) != (end is None):
+            raise serializers.ValidationError(
+                {"detail": "Set both 'Available From' and 'Available To', or leave both empty for always available."}
+            )
+        if start is not None and start == end:
+            raise serializers.ValidationError(
+                {"detail": "'Available From' and 'Available To' cannot be the same time."}
+            )
+        return attrs
 
 
 class BranchSerializer(serializers.ModelSerializer):

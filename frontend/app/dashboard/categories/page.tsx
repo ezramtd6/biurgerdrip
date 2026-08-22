@@ -22,6 +22,13 @@ const schema = z.object({
 
 type CategoryForm = z.infer<typeof schema>;
 
+const hoursSchema = z.object({
+  available_from: z.string().optional(),
+  available_to: z.string().optional(),
+});
+
+type HoursForm = z.infer<typeof hoursSchema>;
+
 export default function CategoriesPage() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
@@ -30,6 +37,8 @@ export default function CategoriesPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [bulkTarget, setBulkTarget] = useState<"freeze-all" | "unfreeze-all" | null>(null);
+  const [hoursOpen, setHoursOpen] = useState(false);
 
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["admin-categories"],
@@ -40,15 +49,43 @@ export default function CategoriesPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: CategoryForm) => api.post("/categories/", { ...data, is_active: true, display_order: (categories?.length ?? 0) + 1 }),
+    mutationFn: (data: CategoryForm) =>
+      api.post("/categories/", {
+        ...data,
+        is_active: true,
+        display_order: (categories?.length ?? 0) + 1,
+      }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-categories"] }); setIsOpen(false); resetForm(); },
     onError: (e: unknown) => setFormError(apiErrorMessage(e, "Failed to create category")),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: CategoryForm }) => api.put(`/categories/${id}/`, { ...data, is_active: true }),
+    mutationFn: ({ id, data }: { id: number; data: CategoryForm }) =>
+      api.put(`/categories/${id}/`, {
+        ...data,
+        is_active: editing?.is_active ?? true,
+      }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-categories"] }); setIsOpen(false); setEditing(null); resetForm(); },
     onError: (e: unknown) => setFormError(apiErrorMessage(e, "Failed to update category")),
+  });
+
+  const hoursMutation = useMutation({
+    mutationFn: (data: HoursForm) =>
+      api.post("/categories/set-hours/", {
+        available_from: data.available_from || null,
+        available_to: data.available_to || null,
+      }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-categories"] }); setHoursOpen(false); },
+    onError: (e: unknown) => {
+      setErrorMessage(apiErrorMessage(e, "Failed to update working hours"));
+      setHoursOpen(false);
+    },
+  });
+
+  const bulkMutation = useMutation({
+    mutationFn: (action: "freeze-all" | "unfreeze-all") => api.post(`/categories/${action}/`),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-categories"] }); setBulkTarget(null); },
+    onError: (e: unknown) => { setBulkTarget(null); setErrorMessage(apiErrorMessage(e, "Failed to update categories")); },
   });
 
   const deleteMutation = useMutation({
@@ -86,14 +123,35 @@ export default function CategoriesPage() {
     resolver: zodResolver(schema),
   });
 
+  const {
+    register: registerHours,
+    handleSubmit: submitHours,
+    reset: resetHours,
+    formState: { errors: hoursErrors },
+  } = useForm<HoursForm>({
+    resolver: zodResolver(hoursSchema),
+  });
+
   const resetForm = () => { reset({ name: "", name_amharic: "" }); };
 
   const openCreate = () => { setEditing(null); resetForm(); setFormError(null); setIsOpen(true); };
   const openEdit = (cat: Category) => {
     setEditing(cat);
-    reset({ name: cat.name, name_amharic: cat.name_amharic });
+    reset({
+      name: cat.name,
+      name_amharic: cat.name_amharic,
+    });
     setFormError(null);
     setIsOpen(true);
+  };
+
+  const openHours = () => {
+    const withHours = categories?.find((c) => c.available_from && c.available_to);
+    resetHours({
+      available_from: withHours?.available_from?.slice(0, 5) ?? "",
+      available_to: withHours?.available_to?.slice(0, 5) ?? "",
+    });
+    setHoursOpen(true);
   };
 
   const onSubmit = (data: CategoryForm) => {
@@ -116,7 +174,33 @@ export default function CategoriesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
-        <Button onClick={openCreate}>Add Category</Button>
+        <div className="flex gap-2">
+          {categories && categories.length > 0 && (
+            <>
+              <Button variant="secondary" onClick={openHours}>
+                Working Hours
+              </Button>
+              {categories.every((c) => !c.is_active) ? (
+                <Button
+                  variant="brand"
+                  loading={bulkMutation.isPending && bulkTarget === "unfreeze-all"}
+                  onClick={() => setBulkTarget("unfreeze-all")}
+                >
+                  Unfreeze All
+                </Button>
+              ) : (
+                <Button
+                  variant="secondary"
+                  loading={bulkMutation.isPending && bulkTarget === "freeze-all"}
+                  onClick={() => setBulkTarget("freeze-all")}
+                >
+                  Freeze All
+                </Button>
+              )}
+            </>
+          )}
+          <Button onClick={openCreate}>Add Category</Button>
+        </div>
       </div>
 
       {categories && categories.length > 0 && (
@@ -140,13 +224,37 @@ export default function CategoriesPage() {
             { key: "name", header: "Name (English)" },
             { key: "name_amharic", header: "Name (Amharic)", render: (item: Record<string, unknown>) => <span className="text-gray-500">{item.name_amharic as string}</span> },
             {
+              key: "hours",
+              header: "Working Hours",
+              render: (item: Record<string, unknown>) => {
+                const cat = item as unknown as Category;
+                if (!cat.available_from || !cat.available_to) {
+                  return <span className="text-gray-400 text-sm">Always</span>;
+                }
+                return (
+                  <span className="text-sm text-gray-700">
+                    {cat.available_from.slice(0, 5)} – {cat.available_to.slice(0, 5)}
+                  </span>
+                );
+              },
+            },
+            {
               key: "is_active",
               header: "Status",
-              render: (item: Record<string, unknown>) => (
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${item.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                  {item.is_active ? "Active" : "Frozen"}
-                </span>
-              ),
+              render: (item: Record<string, unknown>) => {
+                const cat = item as unknown as Category;
+                const label = !cat.is_active ? "Frozen" : !cat.is_available_now ? "Outside hours" : "Active";
+                const cls = !cat.is_active
+                  ? "bg-gray-100 text-gray-500"
+                  : !cat.is_available_now
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-green-100 text-green-700";
+                return (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}>
+                    {label}
+                  </span>
+                );
+              },
             },
             {
               key: "actions",
@@ -194,6 +302,10 @@ export default function CategoriesPage() {
           <Input label="Name in English" error={errors.name?.message || formError || undefined} {...register("name")} />
           <Input label="Name in Amharic" error={errors.name_amharic?.message} {...register("name_amharic")} />
 
+          <p className="text-xs text-gray-500 -mt-1">
+            Working hours are shared by all categories. Use the &quot;Working Hours&quot; button to set them.
+          </p>
+
           <div className="flex gap-3 justify-end">
             <Button variant="secondary" type="button" onClick={() => setIsOpen(false)}>Cancel</Button>
             <Button type="submit" loading={createMutation.isPending || updateMutation.isPending}>
@@ -202,6 +314,48 @@ export default function CategoriesPage() {
           </div>
         </form>
       </Modal>
+
+      <Modal isOpen={hoursOpen} onClose={() => setHoursOpen(false)} title="Working Hours – All Categories">
+        <form onSubmit={submitHours((data) => hoursMutation.mutate(data))} className="space-y-4">
+          <div>
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="Available From" type="time" error={hoursErrors.available_from?.message} {...registerHours("available_from")} />
+              <Input label="Available To" type="time" error={hoursErrors.available_to?.message} {...registerHours("available_to")} />
+            </div>
+            <p className="mt-1.5 text-xs text-gray-500">
+              One schedule for every category. Leave both empty for always available. Overnight ranges like 22:00 – 02:00 are supported.
+            </p>
+          </div>
+
+          <div className="flex gap-3 justify-end">
+            <Button variant="secondary" type="button" onClick={() => setHoursOpen(false)}>Cancel</Button>
+            <Button variant="ghost" type="button" loading={hoursMutation.isPending} onClick={() => hoursMutation.mutate({ available_from: "", available_to: "" })}>
+              Clear
+            </Button>
+            <Button type="submit" loading={hoursMutation.isPending}>
+              Apply to All
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <ConfirmDialog
+        open={bulkTarget === "freeze-all"}
+        onClose={() => setBulkTarget(null)}
+        onConfirm={() => bulkMutation.mutate("freeze-all")}
+        title="Freeze all categories"
+        description="All categories and their products will be hidden from customers until you unfreeze them."
+        confirmLabel="Freeze All"
+        destructive
+      />
+      <ConfirmDialog
+        open={bulkTarget === "unfreeze-all"}
+        onClose={() => setBulkTarget(null)}
+        onConfirm={() => bulkMutation.mutate("unfreeze-all")}
+        title="Unfreeze all categories"
+        description="All frozen categories and their products will become visible to customers again."
+        confirmLabel="Unfreeze All"
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}

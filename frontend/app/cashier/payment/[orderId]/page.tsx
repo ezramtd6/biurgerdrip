@@ -56,6 +56,7 @@ export default function PaymentPage() {
   const orderId = Number(params.orderId);
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [rejectReason, setRejectReason] = useState("");
+  const [discarding, setDiscarding] = useState(false);
   const { data: paymentSystems } = usePaymentSystems();
 
   const { data: order, isLoading } = useQuery<Order>({
@@ -97,6 +98,25 @@ export default function PaymentPage() {
   const isPaid = order.status === "COMPLETED" || order.status === "PREPARING" || order.status === "READY";
   const paymentMethodName = (code: string | null | undefined) =>
     activeSystems.find((s) => s.code === code)?.name || code || "";
+
+  // An unpaid walk-in order was only a draft — going back discards it so it
+  // never shows up in the orders list. Online orders and paid orders are kept.
+  const draft = !order.customer && order.status === "PENDING" && !order.payment_proof;
+
+  const goBack = async () => {
+    if (draft) {
+      setDiscarding(true);
+      try {
+        await api.delete(`/orders/cashier/${orderId}/`);
+        queryClient.invalidateQueries({ queryKey: ["cashier-orders"] });
+        queryClient.removeQueries({ queryKey: ["cashier-order", orderId] });
+      } catch {
+        // If it can no longer be discarded (e.g. just paid), keep it.
+      }
+      setDiscarding(false);
+    }
+    router.push("/cashier/orders");
+  };
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -319,10 +339,11 @@ export default function PaymentPage() {
       )}
 
       <button
-        onClick={() => router.push("/cashier/orders")}
-        className="mt-4 text-sm text-gray-500 hover:text-gray-700 cursor-pointer"
+        onClick={goBack}
+        disabled={discarding}
+        className="mt-4 text-sm text-gray-500 hover:text-gray-700 cursor-pointer disabled:opacity-50"
       >
-        &larr; Back to orders
+        &larr; {draft ? "Back (order will be discarded)" : "Back to orders"}
       </button>
     </div>
   );

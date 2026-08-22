@@ -113,6 +113,51 @@ class OrderCreateSerializer(serializers.Serializer):
                 raise serializers.ValidationError("Each item must have a 'product' field.")
             if "quantity" not in item or int(item["quantity"]) < 1:
                 raise serializers.ValidationError("Each item must have a 'quantity' >= 1.")
+
+        user = self.context["request"].user
+
+        from products.models import Product, RestaurantInfo
+
+        # Online customers additionally cannot order while the restaurant
+        # itself is outside its availability window.
+        if getattr(user, "role", None) == "CUSTOMER":
+            restaurant = RestaurantInfo.objects.first()
+            if restaurant and not restaurant.is_within_working_hours():
+                window = (
+                    f"{restaurant.available_from.strftime('%H:%M')}"
+                    f"-{restaurant.available_to.strftime('%H:%M')}"
+                )
+                raise serializers.ValidationError(
+                    {"items": f"The restaurant is currently closed. "
+                              f"We are open daily between {window}. Please try again later."}
+                )
+
+        # Frozen or out-of-hours categories block checkout for everyone —
+        # online customers and walk-in cashier sales alike.
+        products = Product.objects.select_related("category").filter(
+            id__in={int(item["product"]) for item in value}
+        )
+        by_id = {p.id: p for p in products}
+        for item in value:
+            product = by_id.get(int(item["product"]))
+            if not product:
+                continue
+            category = product.category
+            if not product.is_active or not category.is_active:
+                raise serializers.ValidationError(
+                    {"items": f"'{product.name}' is currently unavailable."}
+                )
+            if not category.is_within_working_hours():
+                window = (
+                    f"{category.available_from.strftime('%H:%M')}"
+                    f"-{category.available_to.strftime('%H:%M')}"
+                )
+                raise serializers.ValidationError(
+                    {
+                        "items": f"'{product.name}' is only available daily between {window}. "
+                                 "Please remove it from your cart and try again."
+                    }
+                )
         return value
 
     def validate(self, attrs):

@@ -55,6 +55,7 @@ export default function OrdersPage() {
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [proofError, setProofError] = useState("");
+  const [orderError, setOrderError] = useState("");
   const proofInputRef = useRef<HTMLInputElement>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -122,6 +123,7 @@ export default function OrdersPage() {
       setProofError("Please attach your payment proof before placing the order.");
       return;
     }
+    setOrderError("");
     const items = cart.map((i) => ({
       product: i.id,
       quantity: i.qty,
@@ -146,15 +148,22 @@ export default function OrdersPage() {
         window.dispatchEvent(new Event("cart-updated"));
       },
       onError: (err) => {
-        const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
-        const msg = data?.coupon_code;
-        if (typeof msg === "string" || Array.isArray(msg)) {
-          setCouponStatus({ state: "invalid", message: typeof msg === "string" ? msg : String(msg[0]) });
+        const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data || {};
+        const first = (v: unknown): string | null => {
+          if (Array.isArray(v)) return v[0] ? String(v[0]) : null;
+          return typeof v === "string" && v ? v : null;
+        };
+
+        const couponMsg = first(data.coupon_code);
+        if (couponMsg) {
+          setCouponStatus({ state: "invalid", message: couponMsg });
         }
-        const proof = (data as { payment_proof?: string[] })?.payment_proof;
-        if (Array.isArray(proof) && proof[0]) {
-          setProofError(proof[0]);
+        const proofMsg = first(data.payment_proof);
+        if (proofMsg) {
+          setProofError(proofMsg);
         }
+        const itemsMsg = first(data.items);
+        setOrderError(itemsMsg || first(data.detail) || (!couponMsg && !proofMsg ? "Failed to place your order. Please try again." : ""));
       },
     });
   };
@@ -360,6 +369,13 @@ export default function OrdersPage() {
                 </p>
               )}
             </div>
+
+            {orderError && (
+              <div className="mt-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-sm text-red-600 flex items-start gap-2">
+                <i className="fas fa-circle-exclamation mt-0.5"></i>
+                <span>{orderError}</span>
+              </div>
+            )}
 
             <button
               onClick={() => setConfirmOpen(true)}

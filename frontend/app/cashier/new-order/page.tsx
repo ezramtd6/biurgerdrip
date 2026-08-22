@@ -44,6 +44,7 @@ export default function NewOrderPage() {
       const res = await api.get("/categories/");
       return res.data.results || res.data;
     },
+    refetchInterval: 10000,
   });
 
   const { data: allProducts } = useQuery<Product[]>({
@@ -52,10 +53,14 @@ export default function NewOrderPage() {
       const res = await api.get("/products/");
       return res.data.results || res.data;
     },
+    refetchInterval: 10000,
   });
 
-  const products = selectedCategory
-    ? allProducts?.filter((p) => p.category === selectedCategory)
+  const visibleSelected = categories?.some((c) => c.id === selectedCategory)
+    ? selectedCategory
+    : null;
+  const products = visibleSelected
+    ? allProducts?.filter((p) => p.category === visibleSelected)
     : allProducts;
 
   const setProductOption = (productId: number, groupId: number, value: string) => {
@@ -196,7 +201,9 @@ export default function NewOrderPage() {
       });
       router.push(`/cashier/payment/${res.data.id}`);
     } catch (err: any) {
-      const msg = err?.response?.data?.error || err?.response?.data?.detail || "Failed to create order. Please try again.";
+      const data = err?.response?.data || {};
+      const itemsMsg = Array.isArray(data.items) ? data.items.join(", ") : data.items;
+      const msg = data.error || data.detail || itemsMsg || "Failed to create order. Please try again.";
       setErrorModal({ open: true, message: msg });
     }
   };
@@ -210,7 +217,7 @@ export default function NewOrderPage() {
           <button
             onClick={() => setSelectedCategory(null)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer ${
-              selectedCategory === null ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-600"
+              visibleSelected === null ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-600"
             }`}
           >
             All
@@ -220,7 +227,7 @@ export default function NewOrderPage() {
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer ${
-                selectedCategory === cat.id ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-600"
+                visibleSelected === cat.id ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-600"
               }`}
             >
               {cat.name}

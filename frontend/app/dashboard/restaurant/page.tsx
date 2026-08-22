@@ -29,6 +29,13 @@ const infoSchema = z.object({
 
 type RestaurantForm = z.infer<typeof infoSchema>;
 
+const availabilitySchema = z.object({
+  available_from: z.string().optional(),
+  available_to: z.string().optional(),
+});
+
+type AvailabilityForm = z.infer<typeof availabilitySchema>;
+
 const aboutSchema = z.object({
   about: z.string(),
   about_amharic: z.string(),
@@ -73,6 +80,7 @@ export default function RestaurantPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [availEditing, setAvailEditing] = useState(false);
   const [aboutEditing, setAboutEditing] = useState(false);
   const [deleteRestaurant, setDeleteRestaurant] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -184,6 +192,25 @@ export default function RestaurantPage() {
     },
   });
 
+  const availabilityMutation = useMutation({
+    mutationFn: (data: AvailabilityForm) =>
+      api.patch(`/restaurant/${info!.id}/`, {
+        available_from: data.available_from || null,
+        available_to: data.available_to || null,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["restaurant-info"] });
+      setError(null);
+      setAvailEditing(false);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    },
+    onError: (e: unknown) => {
+      setSuccess(false);
+      setError(extractError(e));
+    },
+  });
+
   const socialSaveMutation = useMutation({
     mutationFn: (data: SocialLinkForm & { id?: number }) =>
       data.id
@@ -233,6 +260,16 @@ export default function RestaurantPage() {
       ? {
           about: info.about,
           about_amharic: info.about_amharic,
+        }
+      : undefined,
+  });
+
+  const availForm = useForm<AvailabilityForm>({
+    resolver: zodResolver(availabilitySchema),
+    values: info
+      ? {
+          available_from: info.available_from ? info.available_from.slice(0, 5) : "",
+          available_to: info.available_to ? info.available_to.slice(0, 5) : "",
         }
       : undefined,
   });
@@ -421,6 +458,71 @@ export default function RestaurantPage() {
               )}
             </div>
           </form>
+        )}
+      </div>
+
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900">Availability Time</h2>
+          {info && !availEditing && (
+            <Button variant="secondary" onClick={() => setAvailEditing(true)}>
+              Edit
+            </Button>
+          )}
+        </div>
+
+        {!info ? (
+          <p className="text-sm text-gray-500">Save the restaurant information first to set availability time.</p>
+        ) : availEditing ? (
+          <div className="bg-white rounded-xl border border-gray-100 p-6">
+            <form onSubmit={availForm.handleSubmit((data) => availabilityMutation.mutate(data))} className="space-y-4">
+              <div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input label="Available From" type="time" error={availForm.formState.errors.available_from?.message} {...availForm.register("available_from")} />
+                  <Input label="Available To" type="time" error={availForm.formState.errors.available_to?.message} {...availForm.register("available_to")} />
+                </div>
+                <p className="mt-1.5 text-xs text-gray-500">
+                  Leave both empty for always available. When set, customers can only browse the menu and place orders during these hours (overnight ranges like 22:00 – 02:00 are supported).
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button type="submit" loading={availabilityMutation.isPending}>
+                  Save Availability
+                </Button>
+                {(!!info.available_from || !!info.available_to) && (
+                  <Button type="button" variant="secondary" loading={availabilityMutation.isPending} onClick={() => availabilityMutation.mutate({ available_from: "", available_to: "" })}>
+                    Clear
+                  </Button>
+                )}
+                <Button type="button" variant="secondary" onClick={() => setAvailEditing(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-100 p-6 flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <dt className="text-sm font-medium text-gray-500">Availability Time</dt>
+              <dd className="mt-1 text-lg font-semibold text-gray-900">
+                {info.available_from && info.available_to
+                  ? `${info.available_from.slice(0, 5)} – ${info.available_to.slice(0, 5)}`
+                  : "Always available"}
+              </dd>
+              <p className="mt-1 text-xs text-gray-500">Daily window, East Africa Time (Addis Ababa)</p>
+            </div>
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+              !info.is_active
+                ? "bg-gray-100 text-gray-500"
+                : info.is_available_now
+                  ? "bg-green-100 text-green-700"
+                  : info.available_from && info.available_to
+                    ? "bg-red-100 text-red-600"
+                    : "bg-green-100 text-green-700"
+            }`}>
+              {!info.is_active ? "Frozen" : info.is_available_now ? "Open now" : "Closed"}
+            </span>
+          </div>
         )}
       </div>
 

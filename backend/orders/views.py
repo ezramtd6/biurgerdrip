@@ -264,6 +264,17 @@ class CashierOrderDetailView(generics.RetrieveUpdateAPIView):
             created_at__date=timezone.now().date()
         )
 
+    def delete(self, request, *args, **kwargs):
+        """Discard an abandoned unpaid walk-in order (Back without paying)."""
+        order = self.get_object()
+        if order.customer_id or order.payment_proof or order.status != Order.Status.PENDING:
+            return Response(
+                {"error": "Only unpaid walk-in orders can be discarded."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        order.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         old_status = instance.status

@@ -1,6 +1,18 @@
 from django.db import models
 from django.core.validators import RegexValidator
 
+
+def is_within_time_window(start, end, now=None):
+    """True when no window is set, or when the current local time falls
+    inside [start, end]. Supports overnight windows (e.g. 22:00 -> 02:00)."""
+    if start is None or end is None:
+        return True
+    from django.utils import timezone
+    current = timezone.localtime(now).time()
+    if start <= end:
+        return start <= current <= end
+    return current >= start or current <= end
+
 # Create your models here.
 class Category(models.Model):
     restaurant = models.ForeignKey(
@@ -19,6 +31,9 @@ class Category(models.Model):
 
     is_active = models.BooleanField(default=True)
 
+    available_from = models.TimeField(null=True, blank=True)
+    available_to = models.TimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -27,6 +42,12 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    def is_within_working_hours(self, now=None):
+        """True when no schedule is set, or when the current local time falls
+        inside [available_from, available_to]. Supports overnight windows
+        (e.g. 22:00 -> 02:00 wrap past midnight)."""
+        return is_within_time_window(self.available_from, self.available_to, now)
     
 class Product(models.Model):
     category = models.ForeignKey(
@@ -159,6 +180,9 @@ class RestaurantInfo(models.Model):
 
     is_active = models.BooleanField(default=True)
 
+    available_from = models.TimeField(null=True, blank=True)
+    available_to = models.TimeField(null=True, blank=True)
+
     latitude = models.DecimalField(
         max_digits=9,
         decimal_places=6,
@@ -175,6 +199,12 @@ class RestaurantInfo(models.Model):
 
     def __str__(self):
         return self.name
+
+    def is_within_working_hours(self, now=None):
+        """True when no availability window is set (always open), or when the
+        current local time falls inside [available_from, available_to].
+        Supports overnight windows (e.g. 22:00 -> 02:00 wrap past midnight)."""
+        return is_within_time_window(self.available_from, self.available_to, now)
 
 
 class Branch(models.Model):
