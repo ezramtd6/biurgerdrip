@@ -333,9 +333,13 @@ class CashierOrderRefundView(APIView):
         paid_statuses = (
             Order.Status.PREPARING,
             Order.Status.READY,
-            Order.Status.COMPLETED,
         )
         if order.status not in paid_statuses:
+            if order.status == Order.Status.COMPLETED:
+                return Response(
+                    {"error": "Order was picked up by the customer and can no longer be refunded."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             return Response(
                 {"error": "Only paid orders can be refunded."},
                 status=status.HTTP_400_BAD_REQUEST,

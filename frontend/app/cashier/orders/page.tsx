@@ -322,7 +322,7 @@ export default function CashierOrdersPage() {
                       {notifyPickup.isPending ? "Notifying..." : "Notify Pickup Ready"}
                     </Button>
                   )}
-                  {["PREPARING", "READY", "COMPLETED"].includes(order.status) && order.customer && (
+                  {["PREPARING", "READY"].includes(order.status) && order.customer && (
                     <Button size="sm" variant="secondary" onClick={() => setRefundTarget(order)} disabled={refundOrder.isPending}>
                       Refund
                     </Button>

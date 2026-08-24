@@ -46,8 +46,8 @@ const roleRedirects: Record<string, string> = {
   CUSTOMER: "/",
 };
 
-const modalFieldClass = "dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500";
-const modalLabelClass = "dark:text-white";
+const modalFieldClass = "bg-white text-black border-gray-300 placeholder:text-gray-400";
+const modalLabelClass = "text-black";
 
 const readRegistrationError = (err: unknown): string => {
   const data = (err as { response?: { data?: unknown } })?.response?.data;
@@ -89,7 +89,7 @@ export default function AuthModalProvider({ children }: { children: React.ReactN
     <AuthModalContext.Provider value={{ openAuth, closeAuth }}>
       {children}
       <Dialog open={open} onOpenChange={(next) => setOpen(next)}>
-        <DialogPopup className="max-w-md w-full p-6">
+        <DialogPopup className="max-w-md w-full p-6 bg-white! border-gray-200! text-black">
           <div className="absolute top-3 right-3">
             <DialogClose className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition cursor-pointer">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +153,7 @@ function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; o
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Signed in successfully</h2>
+        <h2 className="text-xl font-bold text-black">Signed in successfully</h2>
         <p className="text-sm text-gray-400 mt-4">Redirecting...</p>
       </div>
     );
@@ -162,7 +162,7 @@ function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; o
   return (
     <div>
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sign in to your account</h1>
+        <h1 className="text-2xl font-bold text-black">Sign in to your account</h1>
       </div>
 
       {login.isError && (
@@ -227,7 +227,7 @@ function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; o
         </Button>
       </div>
 
-      <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-300">
+      <p className="mt-6 text-center text-sm text-gray-600">
         Don&apos;t have an account?{" "}
         <button onClick={() => onSwitch("register")} className="text-brand hover:text-brand-dark font-medium cursor-pointer">
           Register
@@ -259,8 +259,8 @@ function RegisterView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Account created!</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-300 mt-2 mb-6">Check your email to set your password and activate your account.</p>
+        <h2 className="text-xl font-bold text-black">Account created!</h2>
+        <p className="text-sm text-gray-600 mt-2 mb-6">Check your email to set your password and activate your account.</p>
         <Button variant="brand" className="w-full" onClick={() => onSwitch("login")}>
           Go to Sign In
         </Button>
@@ -271,7 +271,7 @@ function RegisterView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
   return (
     <div>
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create your account</h1>
+        <h1 className="text-2xl font-bold text-black">Create your account</h1>
       </div>
 
       {registerUser.isError && (
@@ -293,7 +293,7 @@ function RegisterView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-300">
+      <p className="mt-6 text-center text-sm text-gray-600">
         Already have an account?{" "}
         <button onClick={() => onSwitch("login")} className="text-brand hover:text-brand-dark font-medium cursor-pointer">
           Sign In
@@ -332,7 +332,7 @@ function ForgotView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
     return (
       <div className="text-center py-8">
         <div className="mb-4 text-green-600 font-medium">Check your email!</div>
-        <p className="text-sm text-gray-500 dark:text-gray-300 mb-6">
+        <p className="text-sm text-gray-600 mb-6">
           If an account exists with that email, we&apos;ve sent a password reset link.
         </p>
         <Button variant="brand" className="w-full" onClick={() => onSwitch("login")}>
@@ -345,8 +345,8 @@ function ForgotView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
   return (
     <div>
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Forgot Password</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">Enter your email and we&apos;ll send you a reset link</p>
+        <h1 className="text-2xl font-bold text-black">Forgot Password</h1>
+        <p className="text-sm text-gray-600 mt-1">Enter your email and we&apos;ll send you a reset link</p>
       </div>
 
       {error && (
@@ -361,7 +361,7 @@ function ForgotView({ onSwitch }: { onSwitch: (v: AuthView) => void }) {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-300">
+      <p className="mt-6 text-center text-sm text-gray-600">
         Remember your password?{" "}
         <button onClick={() => onSwitch("login")} className="text-brand hover:text-brand-dark font-medium cursor-pointer">
           Sign In

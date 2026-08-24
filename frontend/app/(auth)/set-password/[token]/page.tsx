@@ -117,7 +117,7 @@ export default function SetPasswordPage() {
           type="password"
           placeholder="Min 8 characters"
           error={errors.password?.message}
-          className="bg-gray-50 border-gray-200 text-gray-900"
+          className="bg-white border-gray-300 text-black placeholder:text-gray-400"
           {...register("password")}
         />
 
@@ -126,7 +126,7 @@ export default function SetPasswordPage() {
           type="password"
           placeholder="Re-enter password"
           error={errors.confirm_password?.message}
-          className="bg-gray-50 border-gray-200 text-gray-900"
+          className="bg-white border-gray-300 text-black placeholder:text-gray-400"
           {...register("confirm_password")}
         />
 

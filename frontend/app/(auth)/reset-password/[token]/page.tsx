@@ -8,7 +8,6 @@ import { z } from "zod";
 import { Button, Input } from "@/components/ui";
 import api from "@/services/api";
 import { Loading } from "@/components/common/Loading";
-import { useAuthModal } from "@/components/auth/auth-modal-context";
 
 const schema = z
   .object({
@@ -25,7 +24,6 @@ type ResetPasswordForm = z.infer<typeof schema>;
 export default function ResetPasswordPage() {
   const params = useParams();
   const router = useRouter();
-  const { openAuth } = useAuthModal();
   const token = params.token as string;
 
   const [error, setError] = useState("");
@@ -108,7 +106,7 @@ export default function ResetPasswordPage() {
           type="password"
           placeholder="Min 8 characters"
           error={errors.new_password?.message}
-          className="bg-gray-50 border-gray-200 text-gray-900"
+          className="bg-white border-gray-300 text-black placeholder:text-gray-400"
           {...register("new_password")}
         />
 
@@ -117,7 +115,7 @@ export default function ResetPasswordPage() {
           type="password"
           placeholder="Re-enter your password"
           error={errors.confirm_password?.message}
-          className="bg-gray-50 border-gray-200 text-gray-900"
+          className="bg-white border-gray-300 text-black placeholder:text-gray-400"
           {...register("confirm_password")}
         />
 
@@ -125,13 +123,6 @@ export default function ResetPasswordPage() {
           Reset Password
         </Button>
       </form>
-
-      <p className="mt-6 text-center text-sm text-gray-500">
-        Remember your password?{" "}
-        <button onClick={() => openAuth("login")} className="text-orange-500 hover:text-orange-600 font-medium cursor-pointer">
-          Sign In
-        </button>
-      </p>
     </div>
   );
 }

@@ -25,7 +25,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             id={id}
             required={required}
             type={isPassword && showPassword ? "text" : type}
-            className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 dark:bg-gray-900/60 dark:border-gray-600 dark:text-white dark:placeholder:text-gray-500 dark:disabled:bg-gray-800 ${
+            className={`w-full px-3 py-2 border rounded-lg text-sm text-black bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 ${
               isPassword ? "pr-10" : ""
             } ${error ? "border-red-500" : "border-gray-300"} ${className}`}
             {...props}
