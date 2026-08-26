@@ -73,10 +73,23 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 8;
   const [selectedOptions, setSelectedOptions] = useState<Record<string, number>>({});
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!openDropdown) return;
+    const close = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(`[data-dropdown="${openDropdown}"]`)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [openDropdown]);
 
   useEffect(() => {
     try {
@@ -591,42 +604,52 @@ export default function Home() {
                               .filter((v) => v.available)
                               .sort((a, b) => a.display_order - b.display_order);
                             const hasVal = !!selectedOptions[groupKey];
+                            const isOpen = openDropdown === groupKey;
+                            const selectedVal = values.find((v) => v.id === selectedOptions[groupKey]);
+                            const placeholder = group.name === "Size"
+                              ? `${t("select")} ${currentLang === "am" ? group.name_amharic || group.name : group.name} *`
+                              : hasVal
+                                ? currentLang === "am" ? "ይቅር ይበሉ" : "Unselect"
+                                : `${t("select")} ${currentLang === "am" ? group.name_amharic || group.name : group.name}`;
                             return (
-                              <div key={group.id} className="flex-1 min-w-0">
-                                <div className="relative">
-                                  <select
-                                    value={selectedOptions[groupKey] ?? ""}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      setSelectedOptions((prev) => {
-                                        if (val === "") {
-                                          const { [groupKey]: _, ...rest } = prev;
-                                          return rest;
-                                        }
-                                        return { ...prev, [groupKey]: Number(val) };
-                                      });
-                                    }}
-                                    className={`w-full appearance-none bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-full pl-4 pr-9 py-2.5 min-h-[44px] cursor-pointer outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-400 transition-colors truncate ${
-                                      hasVal ? "text-red-600 font-extrabold text-base tracking-tight border-red-200 dark:border-red-800 bg-red-50/60 dark:bg-red-900/20" : "text-gray-700 dark:text-gray-200 font-medium text-base"
-                                    }`}
-                                  >
-                                    <option value="" disabled={group.name === "Size"}>
-                                      {group.name === "Size"
-                                        ? `${t("select")} ${currentLang === "am" ? group.name_amharic || group.name : group.name} *`
-                                        : hasVal
-                                          ? currentLang === "am" ? "ይቅር ይበሉ" : "Unselect"
-                                          : `${t("select")} ${currentLang === "am" ? group.name_amharic || group.name : group.name}`}
-                                    </option>
+                              <div key={group.id} className="flex-1 min-w-0 relative" data-dropdown={groupKey}>
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenDropdown(isOpen ? null : groupKey)}
+                                  className={`w-full text-left bg-gray-50 dark:bg-gray-900 border rounded-full pl-4 pr-9 py-2.5 min-h-[44px] cursor-pointer outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-400 transition-colors truncate ${
+                                    hasVal
+                                      ? "text-red-600 font-extrabold text-base tracking-tight border-red-200 dark:border-red-800 bg-red-50/60 dark:bg-red-900/20"
+                                      : "text-gray-700 dark:text-gray-200 font-medium text-base border-gray-200 dark:border-gray-600"
+                                  }`}
+                                >
+                                  {selectedVal
+                                    ? `${currentLang === "am" ? selectedVal.name_amharic || selectedVal.name : selectedVal.name} ${t("currency")} ${Number(selectedVal.price_adjustment).toFixed(2)}`
+                                    : placeholder}
+                                </button>
+                                <span className={`absolute inset-y-0 right-3.5 flex items-center pointer-events-none transition-colors ${hasVal ? "text-red-600" : "text-gray-500 dark:text-gray-400"}`}>
+                                  <i className={`fas fa-chevron-down text-xs transition-transform ${isOpen ? "rotate-180" : ""}`}></i>
+                                </span>
+                                {isOpen && (
+                                  <div className="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto">
                                     {values.map((v) => (
-                                      <option key={v.id} value={v.id}>
+                                      <button
+                                        key={v.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedOptions((prev) => ({ ...prev, [groupKey]: v.id }));
+                                          setOpenDropdown(null);
+                                        }}
+                                        className={`w-full text-left px-4 py-2.5 text-sm cursor-pointer transition-colors ${
+                                          selectedOptions[groupKey] === v.id
+                                            ? "bg-red-50 dark:bg-red-900/20 text-red-600 font-bold"
+                                            : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                        }`}
+                                      >
                                         {currentLang === "am" ? v.name_amharic || v.name : v.name} {t("currency")} {Number(v.price_adjustment).toFixed(2)}
-                                      </option>
+                                      </button>
                                     ))}
-                                  </select>
-                                  <span className={`absolute inset-y-0 right-3.5 flex items-center pointer-events-none transition-colors ${hasVal ? "text-red-600" : "text-gray-500 dark:text-gray-400"}`}>
-                                    <i className="fas fa-chevron-down text-xs"></i>
-                                  </span>
-                                </div>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
