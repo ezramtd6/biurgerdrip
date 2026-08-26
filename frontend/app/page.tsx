@@ -565,7 +565,7 @@ export default function Home() {
                   const sizeGroup = groups.find((g) => g.name === "Size");
                   const missingRequired = !!sizeGroup && !selectedOptions[`${item.id}:${sizeGroup.id}`];
                   return (
-                    <div key={item.id} className="menu-card bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300" style={{ animationDelay: `${index * 0.05}s` }}>
+                    <div key={item.id} className="menu-card bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300" style={{ animationDelay: `${index * 0.05}s` }}>
                       <div className="relative overflow-hidden">
                         {item.image ? (
                           <img src={item.image} alt={itemName} className="w-full h-48 object-contain bg-gray-50 dark:bg-gray-900 p-4" />
