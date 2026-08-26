@@ -66,6 +66,7 @@ const readRegistrationError = (err: unknown): string => {
 export default function AuthModalProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<AuthView>("login");
+  const [redirectTo, setRedirectTo] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (sessionStorage.getItem("auth_pending") === "login") {
@@ -75,8 +76,9 @@ export default function AuthModalProvider({ children }: { children: React.ReactN
     }
   }, []);
 
-  const openAuth = (nextView: AuthView = "login") => {
+  const openAuth = (nextView: AuthView = "login", nextRedirect?: string) => {
     setView(nextView);
+    setRedirectTo(nextRedirect);
     setOpen(true);
   };
 
@@ -97,7 +99,7 @@ export default function AuthModalProvider({ children }: { children: React.ReactN
               </svg>
             </DialogClose>
           </div>
-          {view === "login" && <LoginView onSwitch={setView} onSuccess={closeAuth} />}
+          {view === "login" && <LoginView onSwitch={setView} onSuccess={closeAuth} redirectTo={redirectTo} />}
           {view === "register" && <RegisterView onSwitch={setView} />}
           {view === "forgot" && <ForgotView onSwitch={setView} />}
         </DialogPopup>
@@ -106,7 +108,7 @@ export default function AuthModalProvider({ children }: { children: React.ReactN
   );
 }
 
-function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; onSuccess: () => void }) {
+function LoginView({ onSwitch, onSuccess, redirectTo }: { onSwitch: (v: AuthView) => void; onSuccess: () => void; redirectTo?: string }) {
   const router = useRouter();
   const { login } = useAuth();
   const [resendState, setResendState] = useState<"idle" | "loading" | "done">("idle");
@@ -137,11 +139,11 @@ function LoginView({ onSwitch, onSuccess }: { onSwitch: (v: AuthView) => void; o
     if (login.isSuccess && role) {
       const timer = setTimeout(() => {
         onSuccess();
-        router.replace(roleRedirects[role] || "/");
+        router.replace(redirectTo || roleRedirects[role] || "/");
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [login.isSuccess, role, router, onSuccess]);
+  }, [login.isSuccess, role, router, onSuccess, redirectTo]);
 
   const onSubmit = (data: LoginForm) => login.mutate(data);
 

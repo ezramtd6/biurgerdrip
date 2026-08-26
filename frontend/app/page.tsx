@@ -937,7 +937,7 @@ export default function Home() {
             <button
               onClick={() => {
                 setCartOpen(false);
-                if (!user) openAuth("login");
+                if (!user) openAuth("login", "/orders");
                 else router.push("/orders");
               }}
               className="w-full bg-red-600 text-white py-4 rounded-2xl font-black text-lg hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-red-600/30 flex items-center justify-center gap-2"

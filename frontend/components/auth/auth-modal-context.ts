@@ -5,7 +5,7 @@ import { createContext, useContext } from "react";
 export type AuthView = "login" | "register" | "forgot";
 
 export interface AuthModalContextValue {
-  openAuth: (view?: AuthView) => void;
+  openAuth: (view?: AuthView, redirectTo?: string) => void;
   closeAuth: () => void;
 }
 
