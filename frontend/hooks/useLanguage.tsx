@@ -97,6 +97,11 @@ const translations: Record<string, Record<string, string>> = {
     confirm_pickup: "Confirm Pickup",
     your_cart_empty: "Your cart is empty",
     view_order_history_btn: "View Order History",
+    language: "Language",
+    dark_mode: "Dark Mode",
+    light_mode: "Light Mode",
+    change_password: "Change Password",
+    logout: "Logout",
   },
   am: {
     store_locations: "የመሸጫ ቦታዎች",
@@ -192,6 +197,11 @@ const translations: Record<string, Record<string, string>> = {
     confirm_pickup: "መረከብን አረጋግጥ",
     your_cart_empty: "ጋሪዎ ባዶ ነው",
     view_order_history_btn: "የትዕዛዝ ታሪክን ይመልከቱ",
+    language: "ቋንቋ",
+    dark_mode: "ጥቁር ዘይቤ",
+    light_mode: "ብሩህ ዘይቤ",
+    change_password: "የይለፍ ቃል ቀይር",
+    logout: "ውጣ",
   },
 };
 

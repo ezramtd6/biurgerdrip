@@ -165,18 +165,40 @@ export default function HomeNavbar() {
       </div>
 
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg">
-          <div className="px-4 py-4 space-y-1">
+        <div className="lg:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="px-5 py-5 space-y-1">
+            {user && mounted && (
+              <div className="px-4 py-3 mb-2 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                <p className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">{user.first_name} {user.last_name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{user.email}</p>
+              </div>
+            )}
+
             {user && mounted && (
               <>
-                <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("orders")}</Link>
-                <Link href="/orders/history" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("my_orders")}</Link>
+                <div className="h-px bg-gray-200 dark:bg-gray-700 mx-2 my-1"></div>
+                <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">
+                  <i className="fas fa-receipt"></i> {t("orders")}
+                </Link>
+                <Link href="/orders/history" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">
+                  <i className="fas fa-clock-rotate-left"></i> {t("my_orders")}
+                </Link>
+                <button onClick={() => { setPwdOpen(true); setMobileMenuOpen(false); }} className="flex items-center justify-center gap-2 w-full py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all cursor-pointer">
+                  <i className="fas fa-lock"></i> {t("change_password")}
+                </button>
               </>
             )}
+
+            <div className="h-px bg-gray-200 dark:bg-gray-700 mx-2 my-1"></div>
+
             {user && mounted ? (
-              <button onClick={() => { setLogoutOpen(true); setMobileMenuOpen(false); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">Logout</button>
+              <button onClick={() => { setLogoutOpen(true); setMobileMenuOpen(false); }} className="flex items-center justify-center gap-2 w-full py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">
+                <i className="fas fa-right-from-bracket"></i> {t("logout")}
+              </button>
             ) : (
-              <button onClick={() => { setMobileMenuOpen(false); openAuth("login"); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all cursor-pointer">{t("my_account")}</button>
+              <button onClick={() => { setMobileMenuOpen(false); openAuth("login"); }} className="flex items-center justify-center gap-2 w-full py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all cursor-pointer">
+                <i className="far fa-user"></i> {t("my_account")}
+              </button>
             )}
           </div>
         </div>

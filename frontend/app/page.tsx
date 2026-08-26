@@ -374,21 +374,55 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className={`lg:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg ${mobileMenuOpen ? "" : "hidden"}`}>
-          <div className="px-4 py-4 space-y-1">
-            <a href="#menu" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("menu")}</a>
-            <a href="#store-locations" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("store_locations")}</a>
-            <a href="#about-us" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("about_us")}</a>
-            {user && mounted && (
-              <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="block text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">{t("orders")}</Link>
-            )}
-            {user && mounted ? (
-              <button onClick={() => { setLogoutOpen(true); setMobileMenuOpen(false); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">Logout</button>
-            ) : (
-              <button onClick={() => { setMobileMenuOpen(false); openAuth("login"); }} className="block w-full text-center py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all cursor-pointer">{t("my_account")}</button>
-            )}
+        {mobileMenuOpen && (
+          <div className="lg:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="px-5 py-5 space-y-1">
+              {user && mounted && (
+                <div className="px-4 py-3 mb-2 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                  <p className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">{user.first_name} {user.last_name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{user.email}</p>
+                </div>
+              )}
+
+              <a href="#menu" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">
+                <i className="fas fa-utensils"></i> {t("menu")}
+              </a>
+              <a href="#store-locations" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">
+                <i className="fas fa-location-dot"></i> {t("store_locations")}
+              </a>
+              <a href="#about-us" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">
+                <i className="fas fa-circle-info"></i> {t("about_us")}
+              </a>
+
+              {user && mounted && (
+                <>
+                  <div className="h-px bg-gray-200 dark:bg-gray-700 mx-2 my-1"></div>
+                  <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">
+                    <i className="fas fa-receipt"></i> {t("orders")}
+                  </Link>
+                  <Link href="/orders/history" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">
+                    <i className="fas fa-clock-rotate-left"></i> {t("my_orders")}
+                  </Link>
+                  <button onClick={() => { setPwdOpen(true); setMobileMenuOpen(false); }} className="flex items-center justify-center gap-2 w-full py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all cursor-pointer">
+                    <i className="fas fa-lock"></i> {t("change_password")}
+                  </button>
+                </>
+              )}
+
+              <div className="h-px bg-gray-200 dark:bg-gray-700 mx-2 my-1"></div>
+
+              {user && mounted ? (
+                <button onClick={() => { setLogoutOpen(true); setMobileMenuOpen(false); }} className="flex items-center justify-center gap-2 w-full py-3 px-4 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all">
+                  <i className="fas fa-right-from-bracket"></i> {t("logout")}
+                </button>
+              ) : (
+                <button onClick={() => { setMobileMenuOpen(false); openAuth("login"); }} className="flex items-center justify-center gap-2 w-full py-3 px-4 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 hover:text-red-600 rounded-xl transition-all cursor-pointer">
+                  <i className="far fa-user"></i> {t("my_account")}
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       <section className="relative overflow-hidden min-h-[600px] flex items-center" style={{ background: "linear-gradient(135deg, #C8102E 0%, #8B0A1E 50%, #C8102E 100%)", backgroundSize: "200% 200%" }}>
@@ -406,13 +440,13 @@ export default function Home() {
         </div>
         <div className="max-w-7xl mx-auto px-4 py-20 md:py-28 relative z-10">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="text-white">
+            <div className="text-white text-center md:text-left">
               <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight tracking-tight">
                 <span className="block">No One OutPizzas</span>
                 <span className="block text-yellow-300">the Hut!</span>
               </h1>
-              <p className="text-lg md:text-xl text-red-100 mb-10 max-w-lg leading-relaxed">{t("hero_desc")}</p>
-              <div className="flex flex-wrap gap-4">
+              <p className="text-lg md:text-xl text-red-100 mb-10 max-w-lg leading-relaxed mx-auto md:mx-0">{t("hero_desc")}</p>
+              <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                 <a href="#menu" className="group bg-white text-red-600 px-8 py-4 rounded-full font-black text-lg hover:bg-gray-100 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 flex items-center gap-2">
                   {t("order_now")} <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                 </a>
@@ -437,7 +471,7 @@ export default function Home() {
           <div className="bg-gradient-to-r from-red-600 to-red-800 rounded-3xl p-10 md:p-14 text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 w-40 h-40 bg-yellow-400 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 animate-pulse" />
             <div className="absolute bottom-0 left-0 w-60 h-60 bg-yellow-300 rounded-full translate-y-1/2 -translate-x-1/4 opacity-10" />
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-center md:justify-between gap-6 text-center md:text-left">
               <div>
                 <span className="bg-yellow-400 text-red-800 text-xs font-black px-4 py-1.5 rounded-full inline-block mb-4">{t("hot_deal")}</span>
                 <h3 className="text-4xl md:text-5xl font-black mb-2">{t("deal_title")}</h3>
