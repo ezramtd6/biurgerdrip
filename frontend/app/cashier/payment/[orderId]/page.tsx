@@ -57,6 +57,9 @@ export default function PaymentPage() {
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [rejectReason, setRejectReason] = useState("");
   const [discarding, setDiscarding] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const { data: paymentSystems } = usePaymentSystems();
 
   const { data: order, isLoading } = useQuery<Order>({
@@ -227,7 +230,7 @@ export default function PaymentPage() {
               <div className="flex gap-3">
                 <Button
                   className="flex-1 bg-green-600 hover:bg-green-700"
-                  onClick={() => processPayment.mutate({ action: "accept" })}
+                  onClick={() => setShowAcceptConfirm(true)}
                   loading={processPayment.isPending}
                 >
                   <i className="fas fa-check mr-1"></i> Accept Payment
@@ -235,7 +238,7 @@ export default function PaymentPage() {
                 <Button
                   className="flex-1 bg-red-600 hover:bg-red-700"
                   variant="secondary"
-                  onClick={() => processPayment.mutate({ action: "reject", reason: rejectReason })}
+                  onClick={() => setShowRejectConfirm(true)}
                   loading={processPayment.isPending}
                 >
                   <i className="fas fa-xmark mr-1"></i> Reject
@@ -299,7 +302,7 @@ export default function PaymentPage() {
 
               <Button
                 className="w-full"
-                onClick={() => processPayment.mutate({ action: "accept" })}
+                onClick={() => setShowConfirm(true)}
                 loading={processPayment.isPending}
               >
                 Complete Payment - ETB {Number(order.total).toFixed(2)}
@@ -345,6 +348,99 @@ export default function PaymentPage() {
       >
         &larr; {draft ? "Back (order will be discarded)" : "Back to orders"}
       </button>
+
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowConfirm(false)}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i className="fas fa-credit-card text-orange-600 text-xl"></i>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 text-center mb-2">Complete Payment?</h3>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              Are you sure you want to mark this order as paid? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
+              >
+                No, Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirm(false);
+                  processPayment.mutate({ action: "accept" });
+                }}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-xl transition-colors cursor-pointer"
+              >
+                Yes, Complete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAcceptConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowAcceptConfirm(false)}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i className="fas fa-check text-green-600 text-xl"></i>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 text-center mb-2">Accept Payment?</h3>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              Are you sure you want to accept this payment proof? The order will be marked as paid.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowAcceptConfirm(false)}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
+              >
+                No, Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowAcceptConfirm(false);
+                  processPayment.mutate({ action: "accept" });
+                }}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-xl transition-colors cursor-pointer"
+              >
+                Yes, Accept
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRejectConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowRejectConfirm(false)}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i className="fas fa-xmark text-red-600 text-xl"></i>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 text-center mb-2">Reject Payment?</h3>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              Are you sure you want to reject this payment proof? The customer will be notified.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRejectConfirm(false)}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
+              >
+                No, Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowRejectConfirm(false);
+                  processPayment.mutate({ action: "reject", reason: rejectReason });
+                }}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors cursor-pointer"
+              >
+                Yes, Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

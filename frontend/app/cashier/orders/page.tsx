@@ -194,7 +194,9 @@ export default function CashierOrdersPage() {
 
   const searchQuery = search.trim().toLowerCase();
   const filtered = (orders || []).filter((o) => {
-    if (filter && o.status !== filter) return false;
+    if (filter === "ONLINE" && !o.customer) return false;
+    if (filter === "WALKIN" && o.customer) return false;
+    if (filter && filter !== "ONLINE" && filter !== "WALKIN" && o.status !== filter) return false;
     if (!searchQuery) return true;
     return (
       o.order_number.toLowerCase().includes(searchQuery) ||
@@ -235,17 +237,28 @@ export default function CashierOrdersPage() {
         </div>
 
         <div className="flex gap-2 mb-6 overflow-x-auto">
-          {["", "PENDING", "PREPARING", "READY", "COMPLETED", "REFUND_REQUESTED", "REFUNDED", "REJECTED"].map((status) => (
+          {[
+            { value: "", label: "All" },
+            { value: "PENDING", label: "PENDING" },
+            { value: "PREPARING", label: "PREPARING" },
+            { value: "READY", label: "READY" },
+            { value: "COMPLETED", label: "COMPLETED" },
+            { value: "REFUND_REQUESTED", label: "REFUND_REQUESTED" },
+            { value: "REFUNDED", label: "REFUNDED" },
+            { value: "REJECTED", label: "REJECTED" },
+            { value: "ONLINE", label: "🌐 Online" },
+            { value: "WALKIN", label: "🏪 Walk-in" },
+          ].map((item) => (
             <button
-              key={status}
-              onClick={() => setFilter(status)}
+              key={item.value}
+              onClick={() => setFilter(item.value)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer ${
-                filter === status
+                filter === item.value
                   ? "bg-orange-500 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              {status || "All"}
+              {item.label}
             </button>
           ))}
         </div>
@@ -323,7 +336,7 @@ export default function CashierOrdersPage() {
                     </Button>
                   )}
                   {["PREPARING", "READY"].includes(order.status) && order.customer && (
-                    <Button size="sm" variant="secondary" onClick={() => setRefundTarget(order)} disabled={refundOrder.isPending}>
+                    <Button size="sm" variant="secondary" onClick={() => setRefundTarget(order)} disabled={refundOrder.isPending || order.status === "READY"}>
                       Refund
                     </Button>
                   )}

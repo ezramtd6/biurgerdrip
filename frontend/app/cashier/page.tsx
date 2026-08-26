@@ -1,17 +1,20 @@
 "use client";
 
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/services/api";
 import { Order } from "@/types";
 import Link from "next/link";
 import { Button } from "@/components/ui";
+import { usePaymentSystems } from "@/hooks/usePaymentSystems";
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
   PREPARING: "bg-blue-100 text-blue-700",
   READY: "bg-green-100 text-green-700",
   COMPLETED: "bg-gray-100 text-gray-700",
-  CANCELLED: "bg-red-100 text-red-700",
+  REJECTED: "bg-red-100 text-red-700",
 };
 
 export default function CashierDashboardPage() {
@@ -23,20 +26,51 @@ export default function CashierDashboardPage() {
     },
   });
 
+  const { data: paymentSystems } = usePaymentSystems();
+
   const todayOrders = orders || [];
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
+  const router = useRouter();
   const pendingCount = todayOrders.filter((o) => o.status === "PENDING").length;
   const preparingCount = todayOrders.filter((o) => o.status === "PREPARING").length;
   const readyCount = todayOrders.filter((o) => o.status === "READY").length;
+  const completedCount = todayOrders.filter((o) => o.status === "COMPLETED").length;
+  const rejectedCount = todayOrders.filter((o) => o.status === "REJECTED").length;
+  const refundedCount = todayOrders.filter((o) => o.status === "REFUNDED").length;
   const todayRevenue = todayOrders
     .filter((o) => o.status === "COMPLETED")
     .reduce((sum, o) => sum + Number(o.total), 0);
 
-  const stats = [
-    { label: "Pending", value: pendingCount, color: "bg-yellow-500" },
-    { label: "Preparing", value: preparingCount, color: "bg-blue-500" },
-    { label: "Ready", value: readyCount, color: "bg-green-500" },
-    { label: "Today's Revenue", value: `ETB ${todayRevenue.toFixed(2)}`, color: "bg-orange-500" },
-  ];
+  const totalOrders = todayOrders.length;
+
+  const filteredOrders = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return todayOrders;
+    return todayOrders.filter(
+      (o) =>
+        o.order_number.toLowerCase().includes(q) ||
+        o.status.toLowerCase().includes(q) ||
+        Number(o.total).toFixed(2).includes(q)
+    );
+  }, [todayOrders, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedOrders = filteredOrders.slice((safeCurrentPage - 1) * PAGE_SIZE, safeCurrentPage * PAGE_SIZE);
+
+  const STATUS_CONFIG: Record<string, { color: string; bar: string; icon: string }> = {
+    COMPLETED: { color: "bg-gray-100 text-gray-700 border-gray-200", bar: "bg-gray-400", icon: "📦" },
+    REJECTED: { color: "bg-red-100 text-red-700 border-red-200", bar: "bg-red-400", icon: "🚫" },
+    REFUNDED: { color: "bg-purple-100 text-purple-700 border-purple-200", bar: "bg-purple-400", icon: "💸" },
+  };
+
+  const statusCounts: Record<string, number> = {
+    COMPLETED: completedCount,
+    REJECTED: rejectedCount,
+    REFUNDED: refundedCount,
+  };
 
   return (
     <div>
@@ -47,39 +81,181 @@ export default function CashierDashboardPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl border border-gray-100 p-5">
-            <p className="text-sm text-gray-500">{stat.label}</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+      {/* Top Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl p-5 text-white shadow-lg shadow-yellow-200">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <i className="fas fa-clock text-lg"></i>
+            </div>
+            <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-full">Queue</span>
           </div>
-        ))}
+          <p className="text-3xl font-black">{pendingCount}</p>
+          <p className="text-sm text-yellow-100 mt-1">Pending</p>
+        </div>
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg shadow-blue-200">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <i className="fas fa-fire-burner text-lg"></i>
+            </div>
+            <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-full">Active</span>
+          </div>
+          <p className="text-3xl font-black">{preparingCount}</p>
+          <p className="text-sm text-blue-100 mt-1">Preparing</p>
+        </div>
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-5 text-white shadow-lg shadow-green-200">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <i className="fas fa-check-circle text-lg"></i>
+            </div>
+            <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-full">Ready</span>
+          </div>
+          <p className="text-3xl font-black">{readyCount}</p>
+          <p className="text-sm text-green-100 mt-1">Ready</p>
+        </div>
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-5 text-white shadow-lg shadow-orange-200">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <i className="fas fa-coins text-lg"></i>
+            </div>
+            <span className="text-xs font-medium bg-white/20 px-2 py-1 rounded-full">Today</span>
+          </div>
+          <p className="text-3xl font-black">ETB {todayRevenue.toFixed(0)}</p>
+          <p className="text-sm text-orange-100 mt-1">Revenue</p>
+          </div>
       </div>
 
+      {/* Orders by Status with Progress Bars */}
+      {totalOrders > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-bold text-gray-900">Orders by Status</h2>
+            <span className="text-xs text-gray-400">{totalOrders} total</span>
+          </div>
+          <div className="space-y-3">
+            {Object.entries(statusCounts).map(([status, count]) => {
+              const cfg = STATUS_CONFIG[status] || { color: "bg-gray-100 text-gray-600 border-gray-200", bar: "bg-gray-400", icon: "📋" };
+              const pct = totalOrders > 0 ? (count / totalOrders) * 100 : 0;
+              return (
+                <div key={status}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{cfg.icon}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${cfg.color}`}>{status}</span>
+                    </div>
+                    <span className="text-sm font-bold text-gray-700">{count}</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${cfg.bar} transition-all duration-500`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Orders as Table */}
       {todayOrders.length > 0 && (
         <div>
-          <h2 className="font-medium text-gray-900 mb-3">Recent Orders</h2>
-          <div className="bg-white rounded-xl border border-gray-100 divide-y">
-            {todayOrders.slice(0, 5).map((order) => (
-              <Link
-                key={order.id}
-                href={`/cashier/payment/${order.id}`}
-                className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div>
-                  <p className="font-medium text-sm">{order.order_number}</p>
-                  <p className="text-xs text-gray-400">
-                    {new Date(order.created_at).toLocaleTimeString()}
-                  </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-bold text-gray-900">Recent Orders</h2>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input
+                  type="text"
+                  placeholder="Search orders..."
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                  className="pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all w-56"
+                />
+              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={safeCurrentPage === 1}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    <i className="fas fa-chevron-left text-xs"></i>
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                        page === safeCurrentPage
+                          ? "bg-orange-500 text-white shadow-sm"
+                          : "border border-gray-200 hover:bg-gray-50 text-gray-600"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={safeCurrentPage === totalPages}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    <i className="fas fa-chevron-right text-xs"></i>
+                  </button>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[order.status]}`}>
-                    {order.status}
-                  </span>
-                  <span className="font-medium text-sm">ETB {Number(order.total).toFixed(2)}</span>
-                </div>
-              </Link>
-            ))}
+              )}
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/50">
+                    <th className="text-left px-5 py-3 font-semibold text-gray-500">Order #</th>
+                    <th className="text-left px-5 py-3 font-semibold text-gray-500">Date</th>
+                    <th className="text-left px-5 py-3 font-semibold text-gray-500">Type</th>
+                    <th className="text-left px-5 py-3 font-semibold text-gray-500">Payment</th>
+                    <th className="text-left px-5 py-3 font-semibold text-gray-500">Status</th>
+                    <th className="text-right px-5 py-3 font-semibold text-gray-500">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {paginatedOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-5 py-8 text-center text-gray-400 text-sm">
+                        No orders found
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedOrders.map((order) => {
+                      const cfg = STATUS_CONFIG[order.status] || { color: "bg-gray-100 text-gray-600 border-gray-200", bar: "bg-gray-400", icon: "📋" };
+                      return (
+                        <tr
+                          key={order.id}
+                          onClick={() => router.push(`/cashier/payment/${order.id}`)}
+                          className="hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
+                          <td className="px-5 py-3 font-semibold text-gray-900">#{order.order_number}</td>
+                          <td className="px-5 py-3 text-gray-500">{new Date(order.created_at).toLocaleString()}</td>
+                          <td className="px-5 py-3">
+                            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${order.customer ? "bg-blue-100 text-blue-700 border-blue-200" : "bg-orange-100 text-orange-700 border-orange-200"}`}>
+                              {order.customer ? "🌐 Online" : "🏪 Walk-in"}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-sm text-gray-600">
+                            {(paymentSystems || []).find((s) => s.code === order.payment_method)?.name || order.payment_method || "—"}
+                          </td>
+                          <td className="px-5 py-3">
+                            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${cfg.color}`}>
+                              {cfg.icon} {order.status}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-right font-bold text-gray-900">ETB {Number(order.total).toFixed(2)}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
