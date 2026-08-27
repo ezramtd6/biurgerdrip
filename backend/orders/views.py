@@ -520,7 +520,7 @@ class CashierReportsView(APIView):
         )
 
         recent_orders = OrderSerializer(
-            cashier_orders.order_by("-created_at")[:10], many=True,
+            cashier_orders.order_by("-created_at"), many=True,
             context={"request": request},
         ).data
 

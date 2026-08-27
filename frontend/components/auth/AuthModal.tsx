@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -76,16 +76,16 @@ export default function AuthModalProvider({ children }: { children: React.ReactN
     }
   }, []);
 
-  const openAuth = (nextView: AuthView = "login", nextRedirect?: string) => {
+  const openAuth = useCallback((nextView: AuthView = "login", nextRedirect?: string) => {
     setView(nextView);
     setRedirectTo(nextRedirect);
     setOpen(true);
-  };
+  }, []);
 
-  const closeAuth = () => {
+  const closeAuth = useCallback(() => {
     setOpen(false);
     setView("login");
-  };
+  }, []);
 
   return (
     <AuthModalContext.Provider value={{ openAuth, closeAuth }}>

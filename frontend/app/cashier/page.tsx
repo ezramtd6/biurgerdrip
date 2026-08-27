@@ -18,6 +18,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function CashierDashboardPage() {
+  const [fromTime, setFromTime] = useState("");
+  const [toTime, setToTime] = useState("");
   const { data: orders } = useQuery<Order[]>({
     queryKey: ["cashier-orders"],
     queryFn: async () => {
@@ -45,16 +47,31 @@ export default function CashierDashboardPage() {
 
   const totalOrders = todayOrders.length;
 
+  const timeFilteredOrders = useMemo(() => {
+    if (!fromTime && !toTime) return todayOrders;
+    const fromSec = fromTime
+      ? (() => { const [h, m] = fromTime.split(":").map(Number); return h * 3600 + m * 60; })()
+      : 0;
+    const toSec = toTime
+      ? (() => { const [h, m] = toTime.split(":").map(Number); return h * 3600 + m * 60; })()
+      : 86399;
+    return todayOrders.filter((o) => {
+      const d = new Date(o.created_at);
+      const sec = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+      return sec >= fromSec && sec <= toSec;
+    });
+  }, [todayOrders, fromTime, toTime]);
+
   const filteredOrders = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    if (!q) return todayOrders;
-    return todayOrders.filter(
+    if (!q) return timeFilteredOrders;
+    return timeFilteredOrders.filter(
       (o) =>
         o.order_number.toLowerCase().includes(q) ||
         o.status.toLowerCase().includes(q) ||
         Number(o.total).toFixed(2).includes(q)
     );
-  }, [todayOrders, searchQuery]);
+  }, [timeFilteredOrders, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
@@ -161,6 +178,22 @@ export default function CashierDashboardPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 className="font-bold text-gray-900">Recent Orders</h2>
             <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5">
+                <i className="fas fa-clock text-gray-400 text-xs"></i>
+                <input
+                  type="time"
+                  value={fromTime}
+                  onChange={(e) => { setFromTime(e.target.value); setCurrentPage(1); }}
+                  className="bg-transparent text-xs font-medium text-gray-700 focus:outline-none"
+                />
+                <span className="text-gray-400 text-xs">to</span>
+                <input
+                  type="time"
+                  value={toTime}
+                  onChange={(e) => { setToTime(e.target.value); setCurrentPage(1); }}
+                  className="bg-transparent text-xs font-medium text-gray-700 focus:outline-none"
+                />
+              </div>
               <div className="relative">
                 <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
                 <input
