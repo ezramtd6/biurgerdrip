@@ -178,6 +178,18 @@ class RestaurantInfo(models.Model):
 
     about_amharic = models.TextField(blank=True)
 
+    faqs = models.TextField(blank=True)
+
+    faqs_amharic = models.TextField(blank=True)
+
+    terms = models.TextField(blank=True)
+
+    terms_amharic = models.TextField(blank=True)
+
+    privacy_policy = models.TextField(blank=True)
+
+    privacy_policy_amharic = models.TextField(blank=True)
+
     is_active = models.BooleanField(default=True)
 
     available_from = models.TimeField(null=True, blank=True)

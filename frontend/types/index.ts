@@ -72,6 +72,12 @@ export interface RestaurantInfo {
   opening_hours: string;
   about: string;
   about_amharic: string;
+  faqs: string;
+  faqs_amharic: string;
+  terms: string;
+  terms_amharic: string;
+  privacy_policy: string;
+  privacy_policy_amharic: string;
   is_active: boolean;
   available_from: string | null;
   available_to: string | null;

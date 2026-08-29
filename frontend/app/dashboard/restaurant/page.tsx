@@ -43,6 +43,17 @@ const aboutSchema = z.object({
 
 type AboutForm = z.infer<typeof aboutSchema>;
 
+const legalSchema = z.object({
+  faqs: z.string(),
+  faqs_amharic: z.string(),
+  terms: z.string(),
+  terms_amharic: z.string(),
+  privacy_policy: z.string(),
+  privacy_policy_amharic: z.string(),
+});
+
+type LegalForm = z.infer<typeof legalSchema>;
+
 const platformOptions: { value: SocialPlatform; label: string; icon: string }[] = [
   { value: "facebook", label: "Facebook", icon: "fab fa-facebook-f" },
   { value: "instagram", label: "Instagram", icon: "fab fa-instagram" },
@@ -82,6 +93,7 @@ export default function RestaurantPage() {
   const [editing, setEditing] = useState(false);
   const [availEditing, setAvailEditing] = useState(false);
   const [aboutEditing, setAboutEditing] = useState(false);
+  const [editingLegal, setEditingLegal] = useState<"faqs" | "terms" | "privacy" | null>(null);
   const [deleteRestaurant, setDeleteRestaurant] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -192,6 +204,21 @@ export default function RestaurantPage() {
     },
   });
 
+  const legalMutation = useMutation({
+    mutationFn: (data: LegalForm) => api.patch(`/restaurant/${info!.id}/`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["restaurant-info"] });
+      setError(null);
+      setEditingLegal(null);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    },
+    onError: (e: unknown) => {
+      setSuccess(false);
+      setError(extractError(e));
+    },
+  });
+
   const availabilityMutation = useMutation({
     mutationFn: (data: AvailabilityForm) =>
       api.patch(`/restaurant/${info!.id}/`, {
@@ -270,6 +297,20 @@ export default function RestaurantPage() {
       ? {
           available_from: info.available_from ? info.available_from.slice(0, 5) : "",
           available_to: info.available_to ? info.available_to.slice(0, 5) : "",
+        }
+      : undefined,
+  });
+
+  const legalForm = useForm<LegalForm>({
+    resolver: zodResolver(legalSchema),
+    values: info
+      ? {
+          faqs: info.faqs,
+          faqs_amharic: info.faqs_amharic,
+          terms: info.terms,
+          terms_amharic: info.terms_amharic,
+          privacy_policy: info.privacy_policy,
+          privacy_policy_amharic: info.privacy_policy_amharic,
         }
       : undefined,
   });
@@ -627,6 +668,74 @@ export default function RestaurantPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="font-bold text-gray-900 flex items-center gap-2">
+            <i className="fas fa-file-contract text-orange-500"></i> Legal Pages
+          </h2>
+        </div>
+        <div className="p-6">
+          {!info ? (
+            <p className="text-sm text-gray-500">Save the restaurant information first to add legal pages.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                {
+                  key: "faqs" as const,
+                  title: "FAQs",
+                  icon: "fas fa-circle-question",
+                  desc: info.faqs || info.faqs_amharic ? "Click to edit contents" : "Not set yet",
+                  hasContent: !!(info.faqs || info.faqs_amharic),
+                },
+                {
+                  key: "terms" as const,
+                  title: "Terms & Conditions",
+                  icon: "fas fa-scale-balanced",
+                  desc: info.terms || info.terms_amharic ? "Click to edit contents" : "Not set yet",
+                  hasContent: !!(info.terms || info.terms_amharic),
+                },
+                {
+                  key: "privacy" as const,
+                  title: "Privacy Policy",
+                  icon: "fas fa-shield-halved",
+                  desc: info.privacy_policy || info.privacy_policy_amharic ? "Click to edit contents" : "Not set yet",
+                  hasContent: !!(info.privacy_policy || info.privacy_policy_amharic),
+                },
+              ].map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => {
+                    legalForm.reset({
+                      faqs: info.faqs,
+                      faqs_amharic: info.faqs_amharic,
+                      terms: info.terms,
+                      terms_amharic: info.terms_amharic,
+                      privacy_policy: info.privacy_policy,
+                      privacy_policy_amharic: info.privacy_policy_amharic,
+                    });
+                    setError(null);
+                    setEditingLegal(item.key);
+                  }}
+                  className="group bg-gray-50 border border-gray-100 rounded-xl p-5 text-left hover:border-orange-200 hover:bg-orange-50/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="w-10 h-10 bg-white text-orange-600 rounded-xl shadow-sm border border-gray-100 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                      <i className={item.icon}></i>
+                    </span>
+                    <span className="font-semibold text-gray-900">{item.title}</span>
+                  </div>
+                  <span className="text-xs text-gray-500 flex items-center gap-1.5">
+                    {item.hasContent && <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>}
+                    {item.desc}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="font-bold text-gray-900 flex items-center gap-2">
             <i className="fas fa-share-nodes text-orange-500"></i> Social Media Links
           </h2>
           <Button onClick={openAddSocial} disabled={!info}>
@@ -705,6 +814,46 @@ export default function RestaurantPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={!!editingLegal}
+        onClose={() => setEditingLegal(null)}
+        title={
+          editingLegal === "faqs"
+            ? "FAQs"
+            : editingLegal === "terms"
+              ? "Terms & Conditions"
+              : "Privacy Policy"
+        }
+      >
+        {editingLegal && (
+          <form onSubmit={legalForm.handleSubmit((data) => legalMutation.mutate(data))} className="space-y-4">
+            <Textarea
+              label={`${editingLegal === "faqs" ? "FAQs" : editingLegal === "terms" ? "Terms & Conditions" : "Privacy Policy"} (English)`}
+              placeholder="Enter content here..."
+              rows={8}
+              {...legalForm.register(editingLegal === "faqs" ? "faqs" : editingLegal === "terms" ? "terms" : "privacy_policy")}
+            />
+            <Textarea
+              label={`${editingLegal === "faqs" ? "FAQs" : editingLegal === "terms" ? "Terms & Conditions" : "Privacy Policy"} (አማርኛ)`}
+              placeholder="እዚህ ይጻፉ..."
+              rows={8}
+              {...legalForm.register(editingLegal === "faqs" ? "faqs_amharic" : editingLegal === "terms" ? "terms_amharic" : "privacy_policy_amharic")}
+            />
+            <p className="text-xs text-gray-500 -mt-1">
+              This will be shown in a popup on the public website. Leave empty to hide the language toggle content.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button type="button" variant="secondary" onClick={() => setEditingLegal(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={legalMutation.isPending}>
+                Save
+              </Button>
+            </div>
+          </form>
+        )}
       </Modal>
 
       <ConfirmDialog

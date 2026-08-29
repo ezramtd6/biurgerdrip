@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +8,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuthModal } from "@/components/auth/auth-modal-context";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
+import { Modal, Button } from "@/components/ui";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -45,6 +46,16 @@ interface CartItem {
   optionNames?: string;
 }
 
+const emptySubscribe = () => () => {};
+
+function useHydrated() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
+}
+
 export default function Home() {
   const { user, logout } = useAuth();
   const { openAuth } = useAuthModal();
@@ -53,13 +64,24 @@ export default function Home() {
   const [restaurantReady, setRestaurantReady] = useState(true);
   const [checkingRestaurant, setCheckingRestaurant] = useState(true);
   const [restaurant, setRestaurant] = useState<RestaurantInfo | null>(null);
+  const [legalModal, setLegalModal] = useState<"faqs" | "terms" | "privacy" | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoaded, setProductsLoaded] = useState(false);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem("cart");
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
   const { lang: currentLang, setLang: setCurrentLang, t } = useLanguage();
   const [cartOpen, setCartOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<string | number>("all");
@@ -69,15 +91,11 @@ export default function Home() {
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [headerScrolled, setHeaderScrolled] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 8;
   const [selectedOptions, setSelectedOptions] = useState<Record<string, number>>({});
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!openDropdown) return;
@@ -90,18 +108,6 @@ export default function Home() {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [openDropdown]);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("cart");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) setCart(parsed);
-      }
-    } catch {
-      // ignore malformed storage
-    }
-  }, []);
 
   const firstCartWrite = useRef(true);
   useEffect(() => {
@@ -825,9 +831,9 @@ export default function Home() {
             <div className="text-center md:text-left">
               <h4 className="font-black mb-5 text-lg">{t("help_support")}</h4>
               <ul className="space-y-3 text-sm text-gray-500 dark:text-gray-400">
-                <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("faqs")}</span></li>
-                <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("terms")}</span></li>
-                <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("privacy")}</span></li>
+                <li><button type="button" onClick={() => setLegalModal("faqs")} className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("faqs")}</button></li>
+                <li><button type="button" onClick={() => setLegalModal("terms")} className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("terms")}</button></li>
+                <li><button type="button" onClick={() => setLegalModal("privacy")} className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("privacy")}</button></li>
               </ul>
             </div>
             {restaurantReady && (
@@ -965,6 +971,104 @@ export default function Home() {
         confirmLabel="Logout"
         destructive
       />
+
+      <Modal
+        isOpen={!!legalModal}
+        onClose={() => setLegalModal(null)}
+        maxWidth="2xl"
+      >
+        {restaurant && legalModal && (
+          <div className="-m-6 grid md:grid-cols-[220px_1fr] min-h-[380px] overflow-hidden rounded-xl">
+            <div className="bg-gradient-to-b from-red-600 via-red-500 to-orange-500 text-white relative overflow-hidden p-7 md:flex md:flex-col justify-between gap-6">
+              <div className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-white/10"></div>
+              <div className="absolute -bottom-12 -left-8 w-28 h-28 rounded-full bg-white/10"></div>
+
+              <div className="relative">
+                <span className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl shadow-lg">
+                  <i
+                    className={
+                      legalModal === "faqs"
+                        ? "fas fa-circle-question"
+                        : legalModal === "terms"
+                          ? "fas fa-scale-balanced"
+                          : "fas fa-shield-halved"
+                    }
+                  ></i>
+                </span>
+                <p className="text-red-100 text-xs font-semibold uppercase tracking-widest mt-5">
+                  {currentLang === "am" ? "ህጋዊ መረጃ" : "Legal Information"}
+                </p>
+                <h3 className="text-2xl font-black mt-1 leading-tight">
+                  {currentLang === "am"
+                    ? legalModal === "faqs"
+                      ? t("faqs")
+                      : legalModal === "terms"
+                        ? t("terms")
+                        : t("privacy")
+                    : legalModal === "faqs"
+                      ? "FAQs"
+                      : legalModal === "terms"
+                        ? "Terms & Conditions"
+                        : "Privacy Policy"}
+                </h3>
+              </div>
+
+              <div className="relative hidden md:block">
+                <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center">
+                  <i className="fas fa-scroll text-lg"></i>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-7 py-6 flex flex-col md:col-start-2 md:row-start-1 bg-white dark:bg-gray-900 md:rounded-r-xl rounded-b-xl">
+              {(() => {
+                const isAm = currentLang === "am";
+                const content =
+                  legalModal === "faqs"
+                    ? isAm
+                      ? restaurant.faqs_amharic || restaurant.faqs
+                      : restaurant.faqs || restaurant.faqs_amharic
+                    : legalModal === "terms"
+                      ? isAm
+                        ? restaurant.terms_amharic || restaurant.terms
+                        : restaurant.terms || restaurant.terms_amharic
+                      : isAm
+                        ? restaurant.privacy_policy_amharic || restaurant.privacy_policy
+                        : restaurant.privacy_policy || restaurant.privacy_policy_amharic;
+                if (!content) {
+                  return (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
+                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center text-2xl text-gray-400 mb-4">
+                        <i className="fas fa-file-circle-exclamation"></i>
+                      </div>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">
+                        {currentLang === "am"
+                          ? "ይህ ይዘት ገና አልተጨመረም።"
+                          : "This content has not been added yet."}
+                      </p>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="flex-1 overflow-y-auto max-h-[60vh] pr-2 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/50 p-6">
+                    <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">{content}</p>
+                  </div>
+                );
+              })()}
+
+              <div className="flex items-center justify-between gap-3 pt-4 mt-4 border-t border-gray-100 dark:border-gray-700">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  &copy; {new Date().getFullYear()} {restaurant.name}. {t("rights")}
+                </p>
+                <Button onClick={() => setLegalModal(null)}>
+                  <i className="fas fa-check mr-1 text-xs"></i>
+                  {currentLang === "am" ? "ዝጋ" : "Close"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
