@@ -1,20 +1,23 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/services/api";
-import { Order } from "@/types";
+import { Order, ProofAttempt } from "@/types";
 import Link from "next/link";
 import { Button } from "@/components/ui";
 import { usePaymentSystems } from "@/hooks/usePaymentSystems";
+import AppModal from "@/components/ui/AppModal";
 
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: "bg-yellow-100 text-yellow-700",
-  PREPARING: "bg-blue-100 text-blue-700",
-  READY: "bg-green-100 text-green-700",
-  COMPLETED: "bg-gray-100 text-gray-700",
-  REJECTED: "bg-red-100 text-red-700",
+const STATUS_CONFIG: Record<string, { color: string; bar: string; icon: string }> = {
+  PENDING: { color: "bg-yellow-100 text-yellow-700 border-yellow-200", bar: "bg-yellow-400", icon: "⏳" },
+  PREPARING: { color: "bg-blue-100 text-blue-700 border-yellow-200", bar: "bg-blue-400", icon: "🔥" },
+  READY: { color: "bg-green-100 text-green-700 border-green-200", bar: "bg-green-400", icon: "✅" },
+  COMPLETED: { color: "bg-gray-100 text-gray-700 border-gray-200", bar: "bg-gray-400", icon: "📦" },
+  REJECTED: { color: "bg-red-100 text-red-700 border-red-200", bar: "bg-red-400", icon: "🚫" },
+  REFUNDED: { color: "bg-purple-100 text-purple-700 border-purple-200", bar: "bg-purple-400", icon: "💸" },
+  CANCELLED: { color: "bg-red-100 text-red-700 border-red-200", bar: "bg-red-400", icon: "❌" },
+  REFUND_REQUESTED: { color: "bg-orange-100 text-orange-700 border-orange-200", bar: "bg-orange-400", icon: "🔄" },
 };
 
 export default function CashierDashboardPage() {
@@ -33,8 +36,8 @@ export default function CashierDashboardPage() {
   const todayOrders = orders || [];
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const PAGE_SIZE = 10;
-  const router = useRouter();
   const pendingCount = todayOrders.filter((o) => o.status === "PENDING").length;
   const preparingCount = todayOrders.filter((o) => o.status === "PREPARING").length;
   const readyCount = todayOrders.filter((o) => o.status === "READY").length;
@@ -76,12 +79,6 @@ export default function CashierDashboardPage() {
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
   const paginatedOrders = filteredOrders.slice((safeCurrentPage - 1) * PAGE_SIZE, safeCurrentPage * PAGE_SIZE);
-
-  const STATUS_CONFIG: Record<string, { color: string; bar: string; icon: string }> = {
-    COMPLETED: { color: "bg-gray-100 text-gray-700 border-gray-200", bar: "bg-gray-400", icon: "📦" },
-    REJECTED: { color: "bg-red-100 text-red-700 border-red-200", bar: "bg-red-400", icon: "🚫" },
-    REFUNDED: { color: "bg-purple-100 text-purple-700 border-purple-200", bar: "bg-purple-400", icon: "💸" },
-  };
 
   const statusCounts: Record<string, number> = {
     COMPLETED: completedCount,
@@ -263,7 +260,7 @@ export default function CashierDashboardPage() {
                       return (
                         <tr
                           key={order.id}
-                          onClick={() => router.push(`/cashier/payment/${order.id}`)}
+                          onClick={() => setSelectedOrder(order)}
                           className="hover:bg-gray-50 transition-colors cursor-pointer"
                         >
                           <td className="px-5 py-3 font-semibold text-gray-900">#{order.order_number}</td>
@@ -292,6 +289,232 @@ export default function CashierDashboardPage() {
           </div>
         </div>
       )}
+
+      <AppModal
+        isOpen={!!selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        title="Order Details"
+        maxWidth="2xl"
+      >
+        {selectedOrder && (
+          <div>
+            {(() => {
+              const cfg = STATUS_CONFIG[selectedOrder.status] || { color: "bg-gray-100 text-gray-600 border-gray-200", bar: "bg-gray-400", icon: "📋" };
+              const customer = selectedOrder.customer_details;
+              const cashier = selectedOrder.cashier_details;
+              const paymentName = (paymentSystems || []).find((s) => s.code === selectedOrder.payment_method)?.name || selectedOrder.payment_method || "—";
+              const refundName = (paymentSystems || []).find((s) => s.code === selectedOrder.refund_method)?.name || selectedOrder.refund_method || "—";
+
+              return (
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between rounded-xl px-5 py-4 bg-gray-900 text-white">
+                    <div>
+                      <p className="text-lg font-bold">#{selectedOrder.order_number}</p>
+                      <p className="text-sm text-gray-400 flex items-center gap-1.5 mt-0.5">
+                        <i className="fas fa-calendar-alt text-xs"></i>
+                        {new Date(selectedOrder.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <span className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border ${cfg.color}`}>
+                      {cfg.icon} {selectedOrder.status}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <div className="space-y-4">
+                      {customer ? (
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                          <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                            <i className="fas fa-user text-[11px]"></i> Customer
+                          </p>
+                          <p className="font-bold text-gray-900">
+                            {customer.first_name} {customer.last_name}
+                          </p>
+                          <p className="text-sm text-blue-700">
+                            <i className="fas fa-phone mr-1"></i> {customer.phone || "—"}
+                          </p>
+                          {customer.email && (
+                            <p className="text-sm text-blue-700">
+                              <i className="fas fa-envelope mr-1"></i> {customer.email}
+                            </p>
+                          )}
+                          <span className="inline-block mt-2 text-[11px] font-semibold px-2.5 py-1 rounded-full border bg-blue-100 text-blue-700 border-blue-200">
+                            🌐 Online
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center gap-2">
+                          <span className="text-xl">🏪</span>
+                          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full border bg-orange-100 text-orange-700 border-orange-200">
+                            Walk-in customer
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="bg-gray-50 rounded-xl p-3">
+                          <p className="text-xs text-gray-400">Cashier</p>
+                          <p className="text-sm font-semibold text-gray-800 mt-0.5">
+                            {cashier ? `${cashier.first_name} ${cashier.last_name}` : "—"}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-xl p-3">
+                          <p className="text-xs text-gray-400">Payment Method</p>
+                          <p className="text-sm font-semibold text-gray-800 mt-0.5">{paymentName}</p>
+                        </div>
+                        <div className="bg-gray-50 rounded-xl p-3">
+                          <p className="text-xs text-gray-400">Type</p>
+                          <p className="text-sm font-semibold text-gray-800 mt-0.5">{customer ? "Online" : "Walk-in"}</p>
+                        </div>
+                      </div>
+
+                      {customer &&
+                        (selectedOrder.status === "COMPLETED" ||
+                          selectedOrder.status === "PREPARING" ||
+                          selectedOrder.status === "READY") &&
+                        selectedOrder.payment_proof && (
+                          <div className="p-3 bg-green-50 rounded-xl border border-green-200">
+                            <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-2">Accepted Payment Proof</p>
+                            <p className="text-xs text-gray-500 mb-2">
+                              The payment proof attached by the customer was accepted for this order.
+                            </p>
+                            <>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={selectedOrder.payment_proof}
+                                alt="Accepted payment proof"
+                                className="w-full max-h-40 object-contain rounded border border-green-200 bg-white cursor-pointer hover:scale-[1.02] transition-transform"
+                                onClick={() => window.open(selectedOrder.payment_proof!, "_blank")}
+                              />
+                            </>
+                          </div>
+                        )}
+
+                      {selectedOrder.status === "REJECTED" && (
+                        <div className="p-3 bg-red-50 rounded-xl border border-red-200">
+                          <p className="text-xs font-semibold text-red-700 uppercase tracking-wide mb-2">Rejection Information</p>
+                          <div className="space-y-3">
+                            {(
+                              (selectedOrder.proof_history && selectedOrder.proof_history.length > 0
+                                ? selectedOrder.proof_history
+                                : [
+                                    {
+                                      id: 0,
+                                      image: selectedOrder.payment_proof,
+                                      attempt: selectedOrder.proof_attempts,
+                                      rejection_reason: selectedOrder.rejection_reason,
+                                      created_at: selectedOrder.updated_at,
+                                    } as ProofAttempt,
+                                  ].filter((p) => p.image || p.rejection_reason))
+                            ).map((attempt) => (
+                              <div key={attempt.id} className="flex items-start gap-3">
+                                {attempt.image && (
+                                  <>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                      src={attempt.image}
+                                      alt="Payment proof"
+                                      className="h-16 w-16 object-cover rounded border border-gray-200 cursor-pointer hover:scale-105 transition-transform shrink-0"
+                                      onClick={() => window.open(attempt.image!, "_blank")}
+                                    />
+                                  </>
+                                )}
+                                <div>
+                                  {attempt.rejection_reason && (
+                                    <p className="text-xs text-red-600">
+                                      <span className="font-semibold">Reason:</span> {attempt.rejection_reason}
+                                    </p>
+                                  )}
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    {attempt.attempt > 0 ? `Attempt ${attempt.attempt}` : "Proof"}
+                                    {attempt.created_at ? ` — ${new Date(attempt.created_at).toLocaleString()}` : ""}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {(selectedOrder.status === "REFUNDED" || selectedOrder.status === "REFUND_REQUESTED") && (
+                        <div className="p-3 bg-purple-50 rounded-xl border border-purple-200">
+                          <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2">
+                            Refund Information
+                          </p>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-purple-700/70">Refund Method</span>
+                              <span className="font-semibold text-purple-900">{refundName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-purple-700/70">Refund Account</span>
+                              <span className="font-semibold text-purple-900">{selectedOrder.refund_account || "—"}</span>
+                            </div>
+                            <div className="flex justify-between pt-1 border-t border-purple-200">
+                              <span className="text-purple-700/70">Refund Amount</span>
+                              <span className="font-bold text-purple-900">ETB {Number(selectedOrder.total).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="lg:border-l lg:border-gray-200 lg:pl-5 space-y-4">
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Items</p>
+                        <div className="space-y-2">
+                          {selectedOrder.items?.map((item) => (
+                            <div key={item.id} className="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
+                              <div>
+                                <span className="text-gray-900">
+                                  {item.quantity}x {item.product_name}
+                                </span>
+                                {item.options && item.options.length > 0 && (
+                                  <div className="text-xs text-gray-400">
+                                    {item.options.map((o) => (
+                                      <span key={o.id} className="mr-2">
+                                        + {o.option_name} (ETB {Number(o.price_adjustment).toFixed(2)})
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <span className="text-gray-900">ETB {Number(item.total_price).toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50 rounded-xl p-4 space-y-1.5">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">Subtotal</span>
+                          <span>ETB {Number(selectedOrder.subtotal).toFixed(2)}</span>
+                        </div>
+                        {Number(selectedOrder.discount) > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Discount</span>
+                            <span className="text-green-600">-ETB {Number(selectedOrder.discount).toFixed(2)}</span>
+                          </div>
+                        )}
+                        {Number(selectedOrder.tax) > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Tax</span>
+                            <span>ETB {Number(selectedOrder.tax).toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-200">
+                          <span>Total</span>
+                          <span>ETB {Number(selectedOrder.total).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+      </AppModal>
     </div>
   );
 }

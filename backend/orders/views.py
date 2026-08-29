@@ -54,14 +54,16 @@ class OrderListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.role == "CUSTOMER":
-            return Order.objects.filter(customer=user).order_by("-created_at")
+            qs = Order.objects.filter(customer=user)
         elif user.role == "CASHIER":
-            return Order.objects.filter(
-                created_at__date=timezone.now().date()
-            ).order_by("-created_at")
+            qs = Order.objects.filter(created_at__date=timezone.now().date())
         elif user.role == "MANAGER":
-            return Order.objects.all().order_by("-created_at")
-        return Order.objects.none()
+            qs = Order.objects.all()
+        else:
+            return Order.objects.none()
+        if self.request.query_params.get("today") and user.role in ("CASHIER", "MANAGER"):
+            qs = qs.filter(created_at__date=timezone.now().date())
+        return qs.order_by("-created_at")
 
     def perform_create(self, serializer):
         if self.request.user.role == "CASHIER":
@@ -87,6 +89,16 @@ class OrderDetailView(generics.RetrieveUpdateAPIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
         return super().partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        if request.user.role not in ("MANAGER", "ADMIN"):
+            return Response(
+                {"error": "You do not have permission to delete orders."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        order = self.get_object()
+        order.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 def _handle_payment(request, order):
@@ -564,7 +576,7 @@ class ReportsView(APIView):
         )
 
         recent_orders = OrderSerializer(
-            Order.objects.all()[:10], many=True,
+            Order.objects.order_by("-created_at"), many=True,
             context={"request": request},
         ).data
 

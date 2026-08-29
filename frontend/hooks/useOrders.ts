@@ -15,6 +15,17 @@ export function useOrders() {
   });
 }
 
+export function useTodayOrders() {
+  return useQuery<Order[]>({
+    queryKey: ["today-orders"],
+    queryFn: async () => {
+      const res = await api.get("/orders/?today=1");
+      return res.data.results || res.data;
+    },
+    refetchInterval: 5000,
+  });
+}
+
 export function useCashierOrders() {
   return useQuery<Order[]>({
     queryKey: ["cashier-orders"],

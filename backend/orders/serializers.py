@@ -74,6 +74,8 @@ class OrderSerializer(serializers.ModelSerializer):
     proof_history = PaymentProofAttemptSerializer(many=True, read_only=True)
     has_unavailable_items = serializers.SerializerMethodField(read_only=True)
     support_phone = serializers.SerializerMethodField(read_only=True)
+    customer_details = serializers.SerializerMethodField(read_only=True)
+    cashier_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Order
@@ -81,7 +83,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "id", "order_number", "customer", "cashier", "subtotal",
             "discount", "tax", "total", "coupon", "payment_method", "status",
             "payment_proof", "proof_attempts", "rejection_reason", "notifications", "proof_history",
-            "has_unavailable_items", "support_phone",
+            "has_unavailable_items", "support_phone", "customer_details", "cashier_details",
             "refund_method", "refund_account",
             "created_at", "updated_at", "items",
         ]
@@ -110,6 +112,26 @@ class OrderSerializer(serializers.ModelSerializer):
             .first()
         )
         return cashier.phone if cashier else None
+
+    def get_customer_details(self, obj):
+        if not obj.customer_id:
+            return None
+        customer = obj.customer
+        return {
+            "first_name": customer.first_name,
+            "last_name": customer.last_name,
+            "phone": customer.phone,
+            "email": customer.email,
+        }
+
+    def get_cashier_details(self, obj):
+        if not obj.cashier_id:
+            return None
+        cashier = obj.cashier
+        return {
+            "first_name": cashier.first_name,
+            "last_name": cashier.last_name,
+        }
 
 
 class OrderCreateSerializer(serializers.Serializer):

@@ -113,6 +113,18 @@ export interface Contact {
   created_at?: string;
 }
 
+export interface CustomerDetails {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email: string;
+}
+
+export interface CashierDetails {
+  first_name: string;
+  last_name: string;
+}
+
 export interface Order {
   id: number;
   order_number: string;
@@ -131,6 +143,8 @@ export interface Order {
   created_at: string;
   updated_at: string;
   items: OrderItem[];
+  customer_details?: CustomerDetails | null;
+  cashier_details?: CashierDetails | null;
   notifications?: OrderNotification[];
   proof_history?: ProofAttempt[];
   has_unavailable_items?: boolean;
