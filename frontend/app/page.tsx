@@ -89,6 +89,7 @@ export default function Home() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactModal, setContactModal] = useState<{ open: boolean; type: "phone" | "email"; label: string; href: string }>({ open: false, type: "phone", label: "", href: "" });
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoaded, setProductsLoaded] = useState(false);
@@ -912,27 +913,26 @@ export default function Home() {
                 {contacts.length > 0 ? (
                   <ul className="space-y-3">
                     {contacts.map((c) => (
-                      <div key={c.id} className="space-y-3">
-                        {[
-                          { icon: "fas fa-phone-alt", label: c.phone, href: `tel:${c.phone.replace(/[^+\d]/g, "")}` },
-                          { icon: "fas fa-envelope", label: c.email, href: `mailto:${c.email}` },
-                          { icon: "fas fa-map-marker-alt", label: c.location },
-                        ].map((it, i) => (
-                          <li key={i}>
-                            <a
-                              href={it.href || undefined}
-                              target={it.href?.startsWith("http") ? "_blank" : undefined}
-                              rel="noopener noreferrer"
-                              className="w-full group bg-white dark:bg-gray-800 rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:-translate-y-0.5 hover:shadow-lg hover:border-red-200 transition-all duration-300 flex items-center gap-4"
-                            >
-                              <span className="w-11 h-11 bg-red-50 dark:bg-red-500/15 rounded-xl flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition shrink-0">
-                                <i className={`${it.icon} text-red-600 group-hover:text-white text-lg`}></i>
-                              </span>
-                              <span className="font-medium text-gray-700 dark:text-gray-200 break-all">{it.label}</span>
-                            </a>
-                          </li>
-                        ))}
-                      </div>
+                        <div key={c.id} className="space-y-3">
+                          {([
+                            { icon: "fas fa-phone-alt", label: c.phone, action: () => setContactModal({ open: true, type: "phone", label: c.phone, href: `tel:${c.phone.replace(/[^+\d]/g, "")}` }) },
+                            { icon: "fas fa-envelope", label: c.email, action: () => setContactModal({ open: true, type: "email", label: c.email, href: `mailto:${c.email}` }) },
+                            { icon: "fas fa-map-marker-alt", label: c.location, action: null },
+                          ] as { icon: string; label: string; action: (() => void) | null }[]).map((it, i) => (
+                            <li key={i}>
+                              <button
+                                onClick={() => it.action?.()}
+                                className="w-full text-left group bg-white dark:bg-gray-800 rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:-translate-y-0.5 hover:shadow-lg hover:border-red-200 transition-all duration-300 flex items-center gap-4 cursor-pointer"
+                              >
+                                <span className="w-11 h-11 bg-red-50 dark:bg-red-500/15 rounded-xl flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition shrink-0">
+                                  <i className={`${it.icon} text-red-600 group-hover:text-white text-lg`}></i>
+                                </span>
+                                <span className="font-medium text-gray-700 dark:text-gray-200 break-all">{it.label}</span>
+                                {it.action && <i className="fas fa-chevron-right text-gray-300 group-hover:text-red-600 ml-auto transition"></i>}
+                              </button>
+                            </li>
+                          ))}
+                        </div>
                     ))}
                   </ul>
                 ) : (
@@ -968,6 +968,48 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {contactModal.open && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div onClick={() => setContactModal((m) => ({ ...m, open: false }))} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-sm px-6 py-8 text-center animate-in fade-in zoom-in-95 duration-200">
+            <button onClick={() => setContactModal((m) => ({ ...m, open: false }))} className="absolute top-4 right-4 w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center transition">
+              <i className="fas fa-times text-gray-500 dark:text-gray-300"></i>
+            </button>
+            <div className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-5 ${contactModal.type === "phone" ? "bg-red-50 dark:bg-red-500/15 text-red-600" : "bg-blue-50 dark:bg-blue-500/15 text-blue-600"}`}>
+              <i className={`${contactModal.type === "phone" ? "fas fa-phone-alt" : "fas fa-envelope"} text-2xl`}></i>
+            </div>
+            <h3 className="font-black text-xl text-gray-800 dark:text-white mb-1">
+              {contactModal.type === "phone" ? "Call us" : "Email us"}
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">
+              {contactModal.type === "phone" ? "Share this phone number" : "Share this email address"}
+            </p>
+            <p className="font-bold text-lg text-gray-900 dark:text-gray-100 break-all mb-6">{contactModal.label}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => {
+                  navigator.clipboard?.writeText(contactModal.label);
+                  showToast("Copied to clipboard");
+                }}
+                className="flex items-center justify-center gap-2 rounded-xl border-2 border-gray-200 dark:border-gray-600 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
+              >
+                <i className="fas fa-copy text-xs"></i> Copy
+              </button>
+              <a
+                href={contactModal.href}
+                className="flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white hover:bg-red-700 transition shadow"
+              >
+                {contactModal.type === "phone" ? <i className="fas fa-phone-alt text-xs"></i> : <i className="fas fa-paper-plane text-xs"></i>}
+                {contactModal.type === "phone" ? "Call" : "Email"}
+              </a>
+            </div>
+            <button onClick={() => setContactModal((m) => ({ ...m, open: false }))} className="w-full mt-3 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 py-2 font-medium">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       <div onClick={() => setCartOpen(false)} className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-all duration-300 ${cartOpen ? "" : "hidden"}`} />
       <div className={`fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-gray-800 z-50 shadow-2xl flex flex-col ${cartOpen ? "translate-x-0" : "translate-x-full"}`} style={{ transition: "transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)" }}>
