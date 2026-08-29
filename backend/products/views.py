@@ -276,7 +276,6 @@ class RestaurantInfoViewSet(ActiveStateMixin, viewsets.ModelViewSet):
         Promotion.objects.filter(products__category__restaurant=instance).update(is_active=False)
         PaymentSystem.objects.all().update(is_active=False)
         User.objects.filter(role=User.Role.CASHIER, branch__restaurant=instance).update(is_active=False)
-        User.objects.filter(role=User.Role.CUSTOMER, orders__isnull=False).update(is_active=False)
 
     def cascade_unfreeze(self, instance):
         instance.categories.all().update(is_active=True)
@@ -288,7 +287,6 @@ class RestaurantInfoViewSet(ActiveStateMixin, viewsets.ModelViewSet):
         Promotion.objects.filter(products__category__restaurant=instance).update(is_active=True)
         PaymentSystem.objects.all().update(is_active=True)
         User.objects.filter(role=User.Role.CASHIER, branch__restaurant=instance).update(is_active=True)
-        User.objects.filter(role=User.Role.CUSTOMER, orders__isnull=False).update(is_active=True)
 
     def check_unfreeze(self, instance):
         pass
@@ -300,7 +298,6 @@ class RestaurantInfoViewSet(ActiveStateMixin, viewsets.ModelViewSet):
         Promotion.objects.filter(products__category__restaurant=instance).distinct().delete()
         PaymentSystem.objects.all().delete()
         User.objects.filter(role=User.Role.CASHIER, branch__restaurant=instance).delete()
-        User.objects.filter(role=User.Role.CUSTOMER, orders__isnull=False).delete()
         super().perform_destroy(instance)
 
 
