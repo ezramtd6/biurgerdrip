@@ -825,7 +825,6 @@ export default function Home() {
             <div className="text-center md:text-left">
               <h4 className="font-black mb-5 text-lg">{t("help_support")}</h4>
               <ul className="space-y-3 text-sm text-gray-500 dark:text-gray-400">
-                <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("contact_us")}</span></li>
                 <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("faqs")}</span></li>
                 <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("terms")}</span></li>
                 <li><span className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("privacy")}</span></li>
