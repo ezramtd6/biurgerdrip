@@ -22,13 +22,6 @@ const schema = z.object({
 
 type CategoryForm = z.infer<typeof schema>;
 
-const hoursSchema = z.object({
-  available_from: z.string().optional(),
-  available_to: z.string().optional(),
-});
-
-type HoursForm = z.infer<typeof hoursSchema>;
-
 export default function CategoriesPage() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
@@ -38,7 +31,6 @@ export default function CategoriesPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [bulkTarget, setBulkTarget] = useState<"freeze-all" | "unfreeze-all" | null>(null);
-  const [hoursOpen, setHoursOpen] = useState(false);
 
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["admin-categories"],
@@ -67,19 +59,6 @@ export default function CategoriesPage() {
       }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-categories"] }); setIsOpen(false); setEditing(null); resetForm(); },
     onError: (e: unknown) => setFormError(apiErrorMessage(e, "Failed to update category")),
-  });
-
-  const hoursMutation = useMutation({
-    mutationFn: (data: HoursForm) =>
-      api.post("/categories/set-hours/", {
-        available_from: data.available_from || null,
-        available_to: data.available_to || null,
-      }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-categories"] }); setHoursOpen(false); },
-    onError: (e: unknown) => {
-      setErrorMessage(apiErrorMessage(e, "Failed to update working hours"));
-      setHoursOpen(false);
-    },
   });
 
   const bulkMutation = useMutation({
@@ -123,15 +102,6 @@ export default function CategoriesPage() {
     resolver: zodResolver(schema),
   });
 
-  const {
-    register: registerHours,
-    handleSubmit: submitHours,
-    reset: resetHours,
-    formState: { errors: hoursErrors },
-  } = useForm<HoursForm>({
-    resolver: zodResolver(hoursSchema),
-  });
-
   const resetForm = () => { reset({ name: "", name_amharic: "" }); };
 
   const openCreate = () => { setEditing(null); resetForm(); setFormError(null); setIsOpen(true); };
@@ -143,15 +113,6 @@ export default function CategoriesPage() {
     });
     setFormError(null);
     setIsOpen(true);
-  };
-
-  const openHours = () => {
-    const withHours = categories?.find((c) => c.available_from && c.available_to);
-    resetHours({
-      available_from: withHours?.available_from?.slice(0, 5) ?? "",
-      available_to: withHours?.available_to?.slice(0, 5) ?? "",
-    });
-    setHoursOpen(true);
   };
 
   const onSubmit = (data: CategoryForm) => {
@@ -177,9 +138,6 @@ export default function CategoriesPage() {
         <div className="flex gap-2">
           {categories && categories.length > 0 && (
             <>
-              <Button variant="secondary" onClick={openHours}>
-                Working Hours
-              </Button>
               {categories.every((c) => !c.is_active) ? (
                 <Button
                   variant="brand"
@@ -223,21 +181,6 @@ export default function CategoriesPage() {
             { key: "id", header: "ID" },
             { key: "name", header: "Name (English)" },
             { key: "name_amharic", header: "Name (Amharic)", render: (item: Record<string, unknown>) => <span className="text-gray-500">{item.name_amharic as string}</span> },
-            {
-              key: "hours",
-              header: "Working Hours",
-              render: (item: Record<string, unknown>) => {
-                const cat = item as unknown as Category;
-                if (!cat.available_from || !cat.available_to) {
-                  return <span className="text-gray-400 text-sm">Always</span>;
-                }
-                return (
-                  <span className="text-sm text-gray-700">
-                    {cat.available_from.slice(0, 5)} – {cat.available_to.slice(0, 5)}
-                  </span>
-                );
-              },
-            },
             {
               key: "is_active",
               header: "Status",
@@ -302,38 +245,10 @@ export default function CategoriesPage() {
           <Input label="Name in English" error={errors.name?.message || formError || undefined} {...register("name")} />
           <Input label="Name in Amharic" error={errors.name_amharic?.message} {...register("name_amharic")} />
 
-          <p className="text-xs text-gray-500 -mt-1">
-            Working hours are shared by all categories. Use the &quot;Working Hours&quot; button to set them.
-          </p>
-
           <div className="flex gap-3 justify-end">
             <Button variant="secondary" type="button" onClick={() => setIsOpen(false)}>Cancel</Button>
             <Button type="submit" loading={createMutation.isPending || updateMutation.isPending}>
               {editing ? "Update" : "Create"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      <Modal isOpen={hoursOpen} onClose={() => setHoursOpen(false)} title="Working Hours – All Categories">
-        <form onSubmit={submitHours((data) => hoursMutation.mutate(data))} className="space-y-4">
-          <div>
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Available From" type="time" error={hoursErrors.available_from?.message} {...registerHours("available_from")} />
-              <Input label="Available To" type="time" error={hoursErrors.available_to?.message} {...registerHours("available_to")} />
-            </div>
-            <p className="mt-1.5 text-xs text-gray-500">
-              One schedule for every category. Leave both empty for always available. Overnight ranges like 22:00 – 02:00 are supported.
-            </p>
-          </div>
-
-          <div className="flex gap-3 justify-end">
-            <Button variant="secondary" type="button" onClick={() => setHoursOpen(false)}>Cancel</Button>
-            <Button variant="ghost" type="button" loading={hoursMutation.isPending} onClick={() => hoursMutation.mutate({ available_from: "", available_to: "" })}>
-              Clear
-            </Button>
-            <Button type="submit" loading={hoursMutation.isPending}>
-              Apply to All
             </Button>
           </div>
         </form>
