@@ -947,7 +947,7 @@ export default function Home() {
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-5">
-          {cart.length === 0 ? (
+          {!mounted || cart.length === 0 ? (
             <div className="text-center py-16">
               <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
                 <i className="fas fa-shopping-basket text-gray-300 dark:text-gray-500 text-4xl"></i>
@@ -984,7 +984,7 @@ export default function Home() {
             </div>
           )}
         </div>
-        {cart.length > 0 && (
+        {mounted && cart.length > 0 && (
           <div className="p-5 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
             <div className="flex justify-between mb-3 text-sm">
               <span className="text-gray-500 dark:text-gray-400">{t("subtotal")}</span>

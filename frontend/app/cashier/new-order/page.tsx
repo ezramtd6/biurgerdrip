@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/services/api";
 import { Product, Category, OptionGroup, OptionValue } from "@/types";
 import { useValidateCoupon } from "@/hooks/usePromotions";
+import { useRestaurant } from "@/hooks/useRestaurant";
 import { Button } from "@/components/ui";
 import AppModal from "@/components/ui/AppModal";
 import { useRouter } from "next/navigation";
@@ -29,6 +30,13 @@ export default function NewOrderPage() {
   const [couponStatus, setCouponStatus] = useState<CouponStatus>({ state: "idle" });
   const couponDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const validateCoupon = useValidateCoupon();
+  const { data: restaurant } = useRestaurant();
+
+  const restaurantUnavailable = !!restaurant && restaurant.is_available_now === false;
+  const restaurantFrozen = !!restaurant && restaurant.is_active === false;
+  const unavailableReason = restaurantFrozen
+    ? "The restaurant is temporarily closed for business."
+    : "We're currently outside working hours. Please check back during opening hours.";
   const [productOptions, setProductOptions] = useState<Record<string, Record<number, number>>>({});
   const [errorModal, setErrorModal] = useState<{ open: boolean; message: string }>({ open: false, message: "" });
 
@@ -213,6 +221,20 @@ export default function NewOrderPage() {
       <div className="flex-1 overflow-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">New Walk-in Order</h1>
 
+        {restaurantUnavailable ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-2xl border border-gray-100">
+            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-5">
+              <i className="fas fa-store-slash text-red-500 text-3xl"></i>
+            </div>
+            <h2 className="text-xl font-black text-gray-900 mb-2">Ordering Currently Unavailable</h2>
+            <p className="text-sm text-gray-500 mb-4">The restaurant is not accepting orders right now.</p>
+            <p className="inline-flex items-center gap-2 text-sm font-semibold text-red-500 bg-red-50 rounded-full px-4 py-2">
+              <i className="fas fa-circle-info"></i>
+              {unavailableReason}
+            </p>
+          </div>
+        ) : (
+        <>
         <div className="flex gap-2 overflow-x-auto pb-3 mb-4">
           <button
             onClick={() => setSelectedCategory(null)}
@@ -329,6 +351,8 @@ export default function NewOrderPage() {
             );
           })}
         </div>
+        </>
+        )}
       </div>
 
       <div className="w-96 bg-white border border-gray-100 shadow-lg rounded-2xl flex flex-col">

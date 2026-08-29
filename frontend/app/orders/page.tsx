@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCreateOrder } from "@/hooks/useOrders";
 import type { Order } from "@/types";
 import { usePaymentSystems } from "@/hooks/usePaymentSystems";
+import { useRestaurant } from "@/hooks/useRestaurant";
 import { useValidateCoupon } from "@/hooks/usePromotions";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Loading } from "@/components/common/Loading";
@@ -44,6 +45,7 @@ const readCart = (): CartItem[] => {
 export default function OrdersPage() {
   const { lang: currentLang, t } = useLanguage();
   const { data: paymentSystems } = usePaymentSystems();
+  const { data: restaurant } = useRestaurant();
   const createOrder = useCreateOrder();
   const validateCoupon = useValidateCoupon();
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -60,6 +62,12 @@ export default function OrdersPage() {
   const [unavailableNotice, setUnavailableNotice] = useState<string | null>(null);
   const proofInputRef = useRef<HTMLInputElement>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [unavailableOpen, setUnavailableOpen] = useState(false);
+  const unavailableShownRef = useRef(false);
+
+  const restaurantUnavailable = !!restaurant && restaurant.is_available_now === false;
+  const restaurantFrozen = !!restaurant && restaurant.is_active === false;
+  const unavailableReason = restaurantFrozen ? t("frozen_notice") : t("closed_notice");
 
   useEffect(() => {
     setCart(readCart());
@@ -68,6 +76,13 @@ export default function OrdersPage() {
       if (couponDebounceRef.current) clearTimeout(couponDebounceRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (cartReady && restaurantUnavailable && cart.length > 0 && !unavailableShownRef.current) {
+      unavailableShownRef.current = true;
+      setUnavailableOpen(true);
+    }
+  }, [cartReady, restaurantUnavailable, cart.length]);
 
   const handleProofChange = (file: File | undefined | null) => {
     setProofError("");
@@ -306,7 +321,7 @@ export default function OrdersPage() {
                 <i className="fas fa-circle-exclamation"></i> {couponStatus.message}
               </p>
             )}
-            {paymentSystems && paymentSystems.length > 0 && (
+            {!restaurantUnavailable && paymentSystems && paymentSystems.length > 0 && (
               <div className="mt-4">
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t("payment_method")}</p>
                 <div className="grid grid-cols-3 gap-2">
@@ -346,6 +361,7 @@ export default function OrdersPage() {
               </div>
             )}
 
+            {!restaurantUnavailable && (
             <div className="mt-5">
               <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                 <i className="fas fa-camera-retro text-red-500"></i> {t("payment_proof")}
@@ -395,6 +411,7 @@ export default function OrdersPage() {
                 </p>
               )}
             </div>
+            )}
 
             {orderError && (
               <div className="mt-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-sm text-red-600 flex items-start gap-2">
@@ -403,6 +420,7 @@ export default function OrdersPage() {
               </div>
             )}
 
+            {!restaurantUnavailable && (
             <button
               onClick={() => setConfirmOpen(true)}
               disabled={createOrder.isPending || !proofFile}
@@ -416,6 +434,7 @@ export default function OrdersPage() {
                 </>
               )}
             </button>
+            )}
           </div>
         )}
       </div>
@@ -454,6 +473,32 @@ export default function OrdersPage() {
             </div>
           </div>
         </>
+      )}
+
+      {unavailableOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div onClick={() => setUnavailableOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full p-8 text-center">
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/40 rounded-full flex items-center justify-center mx-auto mb-5">
+              <i className="fas fa-store-slash text-red-600 dark:text-red-400 text-3xl"></i>
+            </div>
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-3">{t("not_available_title")}</h2>
+            <div className="w-12 h-1 bg-red-600 rounded-full mx-auto mb-4" />
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+              {t("not_available_desc")}
+            </p>
+            <p className="inline-flex items-center gap-2 text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 rounded-full px-4 py-2 mb-6">
+              <i className="fas fa-circle-info"></i>
+              {unavailableReason}
+            </p>
+            <button
+              onClick={() => setUnavailableOpen(false)}
+              className="w-full px-4 py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition cursor-pointer"
+            >
+              {t("understand")}
+            </button>
+          </div>
+        </div>
       )}
     </>
   );

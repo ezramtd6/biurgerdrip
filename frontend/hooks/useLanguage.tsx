@@ -102,6 +102,11 @@ const translations: Record<string, Record<string, string>> = {
     light_mode: "Light Mode",
     change_password: "Change Password",
     logout: "Logout",
+    not_available_title: "Orders Are Currently Unavailable",
+    not_available_desc: "Sorry, we're not accepting orders right now. Please try again later.",
+    frozen_notice: "The restaurant is temporarily closed for business.",
+    closed_notice: "We're currently outside our working hours. Please check back during opening hours.",
+    understand: "Got It",
   },
   am: {
     store_locations: "የመሸጫ ቦታዎች",
@@ -202,6 +207,11 @@ const translations: Record<string, Record<string, string>> = {
     light_mode: "ብሩህ ዘይቤ",
     change_password: "የይለፍ ቃል ቀይር",
     logout: "ውጣ",
+    not_available_title: "ትዕዛዞች በአሁኑ ጊዜ አይገኙም",
+    not_available_desc: "ይቅርታ፣ በአሁኑ ሰዓት ትዕዛዞችን እየተቀበልን አይደለም። እባክዎ በኋላ እንደገና ይሞክሩ።",
+    frozen_notice: "ምግብ ቤቱ ለጊዜው ለንግድ ተዘግቷል።",
+    closed_notice: "በአሁኑ ጊዜ ከስራ ሰዓታችን ውጭ ነን። እባክዎ በስራ ሰዓት እንደገና ይሞክሩ።",
+    understand: "ግልጽ ነው",
   },
 };
 
