@@ -107,6 +107,7 @@ const translations: Record<string, Record<string, string>> = {
     frozen_notice: "The restaurant is temporarily closed for business.",
     closed_notice: "We're currently outside our working hours. Please check back during opening hours.",
     understand: "Got It",
+    search_menu_placeholder: "Search the menu...",
   },
   am: {
     store_locations: "የመሸጫ ቦታዎች",
@@ -212,6 +213,7 @@ const translations: Record<string, Record<string, string>> = {
     frozen_notice: "ምግብ ቤቱ ለጊዜው ለንግድ ተዘግቷል።",
     closed_notice: "በአሁኑ ጊዜ ከስራ ሰዓታችን ውጭ ነን። እባክዎ በስራ ሰዓት እንደገና ይሞክሩ።",
     understand: "ግልጽ ነው",
+    search_menu_placeholder: "ምናሌን ይፈልጉ...",
   },
 };
 

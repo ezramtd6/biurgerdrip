@@ -26,6 +26,7 @@ export default function NewOrderPage() {
   const router = useRouter();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [couponStatus, setCouponStatus] = useState<CouponStatus>({ state: "idle" });
   const couponDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -67,9 +68,13 @@ export default function NewOrderPage() {
   const visibleSelected = categories?.some((c) => c.id === selectedCategory)
     ? selectedCategory
     : null;
-  const products = visibleSelected
-    ? allProducts?.filter((p) => p.category === visibleSelected)
-    : allProducts;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const products = (visibleSelected ? allProducts?.filter((p) => p.category === visibleSelected) : allProducts)?.filter((p) => {
+    if (!normalizedQuery) return true;
+    const nameEn = (p.name || "").toLowerCase();
+    const nameAm = (p.name_amharic || "").toLowerCase();
+    return nameEn.includes(normalizedQuery) || nameAm.includes(normalizedQuery);
+  });
 
   const setProductOption = (productId: number, groupId: number, value: string) => {
     setProductOptions((prev) => {
@@ -235,6 +240,21 @@ export default function NewOrderPage() {
           </div>
         ) : (
         <>
+        <div className="relative mb-3">
+          <i className="fas fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search products by name..."
+            className="w-full pl-11 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs cursor-pointer hover:bg-orange-500 hover:text-white transition" aria-label="Clear search">
+              <i className="fas fa-xmark"></i>
+            </button>
+          )}
+        </div>
         <div className="flex gap-2 overflow-x-auto pb-3 mb-4">
           <button
             onClick={() => setSelectedCategory(null)}
@@ -350,6 +370,13 @@ export default function NewOrderPage() {
               </div>
             );
           })}
+          {products?.length === 0 && (
+            <div className="col-span-full flex flex-col items-center justify-center py-16 text-gray-400">
+              <i className="fas fa-magnifying-glass text-4xl mb-3"></i>
+              <p className="text-sm font-semibold text-gray-500">No products found</p>
+              <p className="text-xs mt-1">Try a different search term.</p>
+            </div>
+          )}
         </div>
         </>
         )}

@@ -106,6 +106,7 @@ export default function Home() {
   const { lang: currentLang, setLang: setCurrentLang, t } = useLanguage();
   const [cartOpen, setCartOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<string | number>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [toast, setToast] = useState<{ message: string; visible: boolean }>({ message: "", visible: false });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
@@ -291,7 +292,14 @@ export default function Home() {
     }
   }, []);
 
-  const filteredItems = currentCategory === "all" ? products : products.filter((i) => i.category === currentCategory);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredItems = products.filter((i) => {
+    if (currentCategory !== "all" && i.category !== currentCategory) return false;
+    if (!normalizedQuery) return true;
+    const nameEn = (i.name || "").toLowerCase();
+    const nameAm = (i.name_amharic || "").toLowerCase();
+    return nameEn.includes(normalizedQuery) || nameAm.includes(normalizedQuery);
+  });
   const pageItems = filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -533,14 +541,29 @@ export default function Home() {
               <div className="w-16 h-1 bg-red-600 rounded-full mb-2 mx-auto" />
               <p className="text-gray-500 dark:text-gray-400">{t("menu_subtitle")}</p>
             </div>
-            {menuAvailable && (
+            {menuAvailable && (<> 
               <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-2 mt-6">
                 <button onClick={() => { setCurrentCategory("all"); setPage(1); }} className={`filter-btn flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition whitespace-nowrap ${currentCategory === "all" ? "active brand-selected" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"}`}>{t("all")}</button>
                 {categories.map((cat) => (
                   <button key={cat.id} onClick={() => { setCurrentCategory(cat.id); setPage(1); }} className={`filter-btn flex-shrink-0 px-6 py-2.5 rounded-full text-sm font-bold transition whitespace-nowrap ${currentCategory === cat.id ? "active brand-selected" : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"}`}>{currentLang === "am" ? cat.name_amharic || cat.name : cat.name}</button>
                 ))}
               </div>
-            )}
+              <div className="relative max-w-md mx-auto mt-6">
+                <i className="fas fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+                  placeholder={t("search_menu_placeholder")}
+                  className="w-full pl-11 pr-10 py-3 rounded-full border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                />
+                {searchQuery && (
+                  <button onClick={() => { setSearchQuery(""); setPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-300 flex items-center justify-center text-xs cursor-pointer hover:bg-red-600 hover:text-white transition" aria-label="Clear search">
+                    <i className="fas fa-xmark"></i>
+                  </button>
+                )}
+              </div>
+            </>)}
           </div>
           {!menuAvailable && checkingRestaurant && (
             <div className="flex items-center justify-center py-20">
@@ -695,7 +718,15 @@ export default function Home() {
               </div>
               {filteredItems.length === 0 && (
                 <div className="text-center py-16">
-                  <p className="text-gray-500 dark:text-gray-400">No products in this category yet</p>
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i className="fas fa-magnifying-glass text-gray-400 dark:text-gray-500 text-xl"></i>
+                  </div>
+                  <p className="text-gray-500 dark:text-gray-400 font-semibold">
+                    {searchQuery.trim() ? `No results for "${searchQuery.trim()}"` : "No products in this category yet"}
+                  </p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                    {searchQuery.trim() ? "Try a different search term." : "Please check back later."}
+                  </p>
                 </div>
               )}
               {totalPages > 1 && (
