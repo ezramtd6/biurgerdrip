@@ -86,6 +86,30 @@ function extractError(e: unknown): string {
   return err?.message || "Request failed";
 }
 
+interface FaqItem {
+  q: string;
+  a: string;
+}
+
+function parseFaqs(raw: string | undefined | null): FaqItem[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed
+        .filter((i) => i && typeof i === "object")
+        .map((i) => ({ q: String(i.q ?? ""), a: String(i.a ?? "") }));
+    }
+    return [{ q: "", a: raw }];
+  } catch {
+    return [{ q: "", a: raw }];
+  }
+}
+
+function faqsToJson(items: FaqItem[]): string {
+  return JSON.stringify(items.filter((i) => i.q.trim() || i.a.trim()));
+}
+
 export default function RestaurantPage() {
   const queryClient = useQueryClient();
   const [success, setSuccess] = useState(false);
@@ -94,6 +118,9 @@ export default function RestaurantPage() {
   const [availEditing, setAvailEditing] = useState(false);
   const [aboutEditing, setAboutEditing] = useState(false);
   const [editingLegal, setEditingLegal] = useState<"faqs" | "terms" | "privacy" | null>(null);
+  const [faqLang, setFaqLang] = useState<"en" | "am">("en");
+  const [faqItemsEn, setFaqItemsEn] = useState<FaqItem[]>([]);
+  const [faqItemsAm, setFaqItemsAm] = useState<FaqItem[]>([]);
   const [deleteRestaurant, setDeleteRestaurant] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -681,8 +708,12 @@ export default function RestaurantPage() {
                   key: "faqs" as const,
                   title: "FAQs",
                   icon: "fas fa-circle-question",
-                  desc: info.faqs || info.faqs_amharic ? "Click to edit contents" : "Not set yet",
-                  hasContent: !!(info.faqs || info.faqs_amharic),
+                  desc:
+                    parseFaqs(info.faqs).length > 0 || parseFaqs(info.faqs_amharic).length > 0
+                      ? "Click to edit FAQs"
+                      : "Not set yet",
+                  hasContent:
+                    parseFaqs(info.faqs).length > 0 || parseFaqs(info.faqs_amharic).length > 0,
                 },
                 {
                   key: "terms" as const,
@@ -711,6 +742,13 @@ export default function RestaurantPage() {
                       privacy_policy: info.privacy_policy,
                       privacy_policy_amharic: info.privacy_policy_amharic,
                     });
+                    if (item.key === "faqs") {
+                      const itemsEn = parseFaqs(info.faqs);
+                      const itemsAm = parseFaqs(info.faqs_amharic);
+                      setFaqItemsEn(itemsEn.length ? itemsEn : [{ q: "", a: "" }]);
+                      setFaqItemsAm(itemsAm.length ? itemsAm : [{ q: "", a: "" }]);
+                      setFaqLang("en");
+                    }
                     setError(null);
                     setEditingLegal(item.key);
                   }}
@@ -826,20 +864,136 @@ export default function RestaurantPage() {
               ? "Terms & Conditions"
               : "Privacy Policy"
         }
+        maxWidth="2xl"
       >
-        {editingLegal && (
+        {editingLegal === "faqs" ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">
+                Add questions and answers. Customers will see them as a Q&amp;A list on the website.
+              </p>
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden shrink-0 ml-2">
+                {(["en", "am"] as const).map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setFaqLang(lang)}
+                    className={`px-4 py-1.5 text-sm font-medium transition ${
+                      faqLang === lang
+                        ? "bg-orange-500 text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {lang === "en" ? "English" : "አማርኛ"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
+              {(faqLang === "en" ? faqItemsEn : faqItemsAm).map((item, i, arr) => {
+                const setItems = faqLang === "en" ? setFaqItemsEn : setFaqItemsAm;
+                const items = faqLang === "en" ? faqItemsEn : faqItemsAm;
+                const updateItem = (patch: Partial<FaqItem>) => {
+                  const next = items.map((it, idx) => (idx === i ? { ...it, ...patch } : it));
+                  setItems(next);
+                };
+                return (
+                  <div key={i} className="rounded-xl border border-gray-200 bg-gray-50/60 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        <span className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold">
+                          {i + 1}
+                        </span>
+                        Q&amp;A
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const next = items.filter((_, idx) => idx !== i);
+                          setItems(next.length ? next : [{ q: "", a: "" }]);
+                        }}
+                      >
+                        <i className="fas fa-trash mr-1"></i> Remove
+                      </Button>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                        Question {faqLang === "en" ? "(English)" : "(አማርኛ)"}
+                      </label>
+                      <input
+                        value={item.q}
+                        onChange={(e) => updateItem({ q: e.target.value })}
+                        placeholder={faqLang === "en" ? "e.g. How long does delivery take?" : "ለምሳሌ፡- ማድረስ ምን ያህል ጊዜ ይወስዳል?"}
+                        className="w-full h-9 rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200 transition"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                        Answer {faqLang === "en" ? "(English)" : "(አማርኛ)"}
+                      </label>
+                      <Textarea
+                        value={item.a}
+                        onChange={(e) => updateItem({ a: e.target.value })}
+                        placeholder={faqLang === "en" ? "Write the answer here..." : "መልሱን እዚህ ይጻፉ..."}
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                const setItems = faqLang === "en" ? setFaqItemsEn : setFaqItemsAm;
+                const items = faqLang === "en" ? faqItemsEn : faqItemsAm;
+                setItems([...items, { q: "", a: "" }]);
+              }}
+            >
+              <i className="fas fa-plus mr-1"></i> Add Question
+            </Button>
+
+            <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+              <Button type="button" variant="secondary" onClick={() => setEditingLegal(null)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                loading={legalMutation.isPending}
+                onClick={() =>
+                  legalMutation.mutate({
+                    faqs: faqsToJson(faqItemsEn),
+                    faqs_amharic: faqsToJson(faqItemsAm),
+                    terms: info?.terms ?? "",
+                    terms_amharic: info?.terms_amharic ?? "",
+                    privacy_policy: info?.privacy_policy ?? "",
+                    privacy_policy_amharic: info?.privacy_policy_amharic ?? "",
+                  } as LegalForm)
+                }
+              >
+                Save FAQs
+              </Button>
+            </div>
+          </div>
+        ) : (
           <form onSubmit={legalForm.handleSubmit((data) => legalMutation.mutate(data))} className="space-y-4">
             <Textarea
-              label={`${editingLegal === "faqs" ? "FAQs" : editingLegal === "terms" ? "Terms & Conditions" : "Privacy Policy"} (English)`}
+              label={`${editingLegal === "terms" ? "Terms & Conditions" : "Privacy Policy"} (English)`}
               placeholder="Enter content here..."
               rows={8}
-              {...legalForm.register(editingLegal === "faqs" ? "faqs" : editingLegal === "terms" ? "terms" : "privacy_policy")}
+              {...legalForm.register(editingLegal === "terms" ? "terms" : "privacy_policy")}
             />
             <Textarea
-              label={`${editingLegal === "faqs" ? "FAQs" : editingLegal === "terms" ? "Terms & Conditions" : "Privacy Policy"} (አማርኛ)`}
+              label={`${editingLegal === "terms" ? "Terms & Conditions" : "Privacy Policy"} (አማርኛ)`}
               placeholder="እዚህ ይጻፉ..."
               rows={8}
-              {...legalForm.register(editingLegal === "faqs" ? "faqs_amharic" : editingLegal === "terms" ? "terms_amharic" : "privacy_policy_amharic")}
+              {...legalForm.register(editingLegal === "terms" ? "terms_amharic" : "privacy_policy_amharic")}
             />
             <p className="text-xs text-gray-500 -mt-1">
               This will be shown in a popup on the public website. Leave empty to hide the language toggle content.

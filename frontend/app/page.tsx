@@ -56,6 +56,26 @@ function useHydrated() {
   );
 }
 
+interface FaqItem {
+  q: string;
+  a: string;
+}
+
+function parseFaqs(raw: string | undefined | null): FaqItem[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed
+        .filter((i) => i && typeof i === "object")
+        .map((i) => ({ q: String(i.q ?? ""), a: String(i.a ?? "") }));
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
 export default function Home() {
   const { user, logout } = useAuth();
   const { openAuth } = useAuthModal();
@@ -65,6 +85,7 @@ export default function Home() {
   const [checkingRestaurant, setCheckingRestaurant] = useState(true);
   const [restaurant, setRestaurant] = useState<RestaurantInfo | null>(null);
   const [legalModal, setLegalModal] = useState<"faqs" | "terms" | "privacy" | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -807,52 +828,86 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white pt-16 pb-8 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 via-red-400 to-red-600" />
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-12">
+      <footer className="bg-gray-50 dark:bg-gray-900 pt-16 pb-10 relative overflow-hidden transition-colors duration-500">
+        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-600 via-orange-500 to-red-600" />
+        <div className="max-w-7xl mx-auto px-4 relative">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
             <div className="text-center md:text-left">
-              <div className="flex items-center gap-3 mb-5 justify-center md:justify-start">
-                {restaurant?.logo ? (
-                  <img src={restaurant.logo} alt={restaurant.name || "Restaurant"} className="w-10 h-10 rounded-full object-cover shadow-lg" />
-                ) : (
-                  <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
-                    <svg viewBox="0 0 100 100" className="w-6 h-6" fill="white">
-                      <path d="M50 5 L85 25 L85 35 L50 20 L15 35 L15 25 Z" />
-                      <path d="M20 35 L20 75 Q20 85 30 85 L40 85 L40 45 L35 45 L35 35 Z" />
-                      <path d="M45 35 L45 85 L55 85 L55 35 Z" />
-                      <path d="M60 35 L60 45 L65 45 L65 85 L70 85 Q80 85 80 75 L80 35 Z" />
-                    </svg>
-                  </div>
-                )}
-                <span className="text-xl font-black">{restaurant?.name || "Pizza Hut"}</span>
-              </div>
-            </div>
-            <div className="text-center md:text-left">
-              <h4 className="font-black mb-5 text-lg">{t("help_support")}</h4>
-              <ul className="space-y-3 text-sm text-gray-500 dark:text-gray-400">
-                <li><button type="button" onClick={() => setLegalModal("faqs")} className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("faqs")}</button></li>
-                <li><button type="button" onClick={() => setLegalModal("terms")} className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("terms")}</button></li>
-                <li><button type="button" onClick={() => setLegalModal("privacy")} className="hover:text-red-600 hover:pl-2 transition-all duration-300 flex items-center gap-2 justify-center md:justify-start cursor-pointer"><i className="fas fa-chevron-right text-xs text-red-600 opacity-0 hover:opacity-100 transition-opacity"></i> {t("privacy")}</button></li>
+              <h4 className="font-black text-xl text-gray-800 dark:text-white mb-3">{t("help_support")}</h4>
+              <div className="w-10 h-1 bg-red-600 rounded-full mx-auto md:mx-0 mb-6" />
+              <ul className="space-y-3">
+                <li>
+                  <button type="button" onClick={() => setLegalModal("faqs")} className="w-full group bg-white dark:bg-gray-800 rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:-translate-y-0.5 hover:shadow-lg hover:border-red-200 transition-all duration-300 flex items-center gap-4 cursor-pointer">
+                    <span className="w-11 h-11 bg-red-50 dark:bg-red-500/15 rounded-xl flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition shrink-0">
+                      <i className="fas fa-circle-question text-red-600 group-hover:text-white text-lg"></i>
+                    </span>
+                    <span className="flex-1 text-left">
+                      <span className="block font-semibold text-gray-800 dark:text-white">{t("faqs")}</span>
+                      <span className="block text-xs text-gray-400 mt-0.5">Common questions & answers</span>
+                    </span>
+                    <i className="fas fa-arrow-right text-gray-300 group-hover:text-red-600 group-hover:translate-x-1 transition-all"></i>
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => setLegalModal("terms")} className="w-full group bg-white dark:bg-gray-800 rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:-translate-y-0.5 hover:shadow-lg hover:border-red-200 transition-all duration-300 flex items-center gap-4 cursor-pointer">
+                    <span className="w-11 h-11 bg-red-50 dark:bg-red-500/15 rounded-xl flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition shrink-0">
+                      <i className="fas fa-scale-balanced text-red-600 group-hover:text-white text-lg"></i>
+                    </span>
+                    <span className="flex-1 text-left">
+                      <span className="block font-semibold text-gray-800 dark:text-white">{t("terms")}</span>
+                      <span className="block text-xs text-gray-400 mt-0.5">Rules & conditions of use</span>
+                    </span>
+                    <i className="fas fa-arrow-right text-gray-300 group-hover:text-red-600 group-hover:translate-x-1 transition-all"></i>
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => setLegalModal("privacy")} className="w-full group bg-white dark:bg-gray-800 rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:-translate-y-0.5 hover:shadow-lg hover:border-red-200 transition-all duration-300 flex items-center gap-4 cursor-pointer">
+                    <span className="w-11 h-11 bg-red-50 dark:bg-red-500/15 rounded-xl flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition shrink-0">
+                      <i className="fas fa-shield-halved text-red-600 group-hover:text-white text-lg"></i>
+                    </span>
+                    <span className="flex-1 text-left">
+                      <span className="block font-semibold text-gray-800 dark:text-white">{t("privacy")}</span>
+                      <span className="block text-xs text-gray-400 mt-0.5">How we protect your data</span>
+                    </span>
+                    <i className="fas fa-arrow-right text-gray-300 group-hover:text-red-600 group-hover:translate-x-1 transition-all"></i>
+                  </button>
+                </li>
               </ul>
             </div>
             {restaurantReady && (
               <div className="text-center md:text-left">
-                <h4 className="font-black mb-5 text-lg">{t("contact")}</h4>
-                <ul className="space-y-3 text-sm text-gray-500 dark:text-gray-400">
-                  {contacts.length > 0 ? (
-                    contacts.map((c) => (
+                <h4 className="font-black text-xl text-gray-800 dark:text-white mb-3">{t("contact")}</h4>
+                <div className="w-10 h-1 bg-red-600 rounded-full mx-auto md:mx-0 mb-6" />
+                {contacts.length > 0 ? (
+                  <ul className="space-y-3">
+                    {contacts.map((c) => (
                       <div key={c.id} className="space-y-3">
-                        <li className="flex items-center gap-3 justify-center md:justify-start hover:text-red-600 transition-colors cursor-pointer"><i className="fas fa-phone-alt text-red-600"></i> {c.phone}</li>
-                        <li className="flex items-center gap-3 justify-center md:justify-start hover:text-red-600 transition-colors cursor-pointer"><i className="fas fa-envelope text-red-600"></i> {c.email}</li>
-                        <li className="flex items-center gap-3 justify-center md:justify-start hover:text-red-600 transition-colors"><i className="fas fa-map-marker-alt text-red-600"></i> {c.location}</li>
+                        {[
+                          { icon: "fas fa-phone-alt", label: c.phone, href: `tel:${c.phone.replace(/[^+\d]/g, "")}` },
+                          { icon: "fas fa-envelope", label: c.email, href: `mailto:${c.email}` },
+                          { icon: "fas fa-map-marker-alt", label: c.location },
+                        ].map((it, i) => (
+                          <li key={i}>
+                            <a
+                              href={it.href || undefined}
+                              target={it.href?.startsWith("http") ? "_blank" : undefined}
+                              rel="noopener noreferrer"
+                              className="w-full group bg-white dark:bg-gray-800 rounded-2xl px-5 py-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:-translate-y-0.5 hover:shadow-lg hover:border-red-200 transition-all duration-300 flex items-center gap-4"
+                            >
+                              <span className="w-11 h-11 bg-red-50 dark:bg-red-500/15 rounded-xl flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition shrink-0">
+                                <i className={`${it.icon} text-red-600 group-hover:text-white text-lg`}></i>
+                              </span>
+                              <span className="font-medium text-gray-700 dark:text-gray-200 break-all">{it.label}</span>
+                            </a>
+                          </li>
+                        ))}
                       </div>
-                    ))
-                  ) : (
-                    <li className="text-gray-400 dark:text-gray-500">No contact info yet</li>
-                  )}
-                </ul>
-                <div className="flex gap-3 mt-6 justify-center md:justify-start">
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-400 dark:text-gray-500">No contact info yet</p>
+                )}
+                <div className="flex gap-3 mt-7 justify-center md:justify-start">
                   {socialLinks.length > 0 ? (
                     socialLinks.map((link) => (
                       <a
@@ -861,7 +916,7 @@ export default function Home() {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={link.platform}
-                        className="social-icon w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center hover:bg-red-600 hover:text-white transition"
+                        className="w-11 h-11 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl flex items-center justify-center text-gray-500 dark:text-gray-300 shadow-sm hover:bg-red-600 hover:text-white hover:border-red-600 hover:-translate-y-1 transition-all duration-200"
                       >
                         <i className={socialIconMap[link.platform] || "fas fa-link"}></i>
                       </a>
@@ -875,9 +930,9 @@ export default function Home() {
           </div>
           <div className="border-t border-gray-200 dark:border-gray-700 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-500 dark:text-gray-400 text-sm">&copy; {new Date().getFullYear()} {restaurant?.name || "Pizza Hut"} {t("rights")}</p>
-            <div className="flex items-center gap-4 text-gray-500 text-sm">
-              <span>{t("delivered_by")}</span>
-              <span className="font-black text-white bg-red-600 px-3 py-1 rounded-full text-xs">{restaurant?.name || t("ph_ethiopia")}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-gray-400 dark:text-gray-500 text-sm">{t("delivered_by")}</span>
+              <span className="font-black text-white bg-gradient-to-r from-red-600 to-orange-500 px-5 py-2 rounded-full text-xs shadow-md">{restaurant?.name || t("ph_ethiopia")}</span>
             </div>
           </div>
         </div>
@@ -1023,38 +1078,97 @@ export default function Home() {
             <div className="px-7 py-6 flex flex-col md:col-start-2 md:row-start-1 bg-white dark:bg-gray-900 md:rounded-r-xl rounded-b-xl">
               {(() => {
                 const isAm = currentLang === "am";
-                const content =
-                  legalModal === "faqs"
-                    ? isAm
-                      ? restaurant.faqs_amharic || restaurant.faqs
-                      : restaurant.faqs || restaurant.faqs_amharic
-                    : legalModal === "terms"
+
+                  if (legalModal === "faqs") {
+                    const items = (isAm
+                      ? parseFaqs(restaurant.faqs_amharic)
+                      : parseFaqs(restaurant.faqs));
+                    if (items.length === 0) {
+                      return (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
+                          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center text-2xl text-gray-400 mb-4">
+                            <i className="fas fa-file-circle-exclamation"></i>
+                          </div>
+                          <p className="text-gray-500 dark:text-gray-400 text-sm">
+                            {isAm
+                              ? "ይህ ይዘት ገና አልተጨመረም።"
+                              : "This content has not been added yet."}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="flex-1 overflow-y-auto max-h-[60vh] pr-2 space-y-3">
+                        {items.map((item, i) => {
+                          const open = openFaq === i;
+                          return (
+                            <div
+                              key={i}
+                              className={`rounded-xl border transition-all overflow-hidden ${
+                                open
+                                  ? "border-red-300 dark:border-red-700 shadow-sm"
+                                  : "border-gray-100 dark:border-gray-700"
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setOpenFaq(open ? null : i)}
+                                className="w-full flex items-center justify-between gap-3 px-5 py-4 bg-gray-50/60 dark:bg-gray-800/50 text-left"
+                              >
+                                <span className="flex items-center gap-3 text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                  <span className="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                                    {i + 1}
+                                  </span>
+                                  {item.q}
+                                </span>
+                                <i
+                                  className={`fas fa-chevron-down text-red-500 transition-transform shrink-0 ${
+                                    open ? "rotate-180" : ""
+                                  }`}
+                                ></i>
+                              </button>
+                              {open && (
+                                <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700">
+                                  <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                                    {item.a}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
+
+                  const content =
+                    legalModal === "terms"
                       ? isAm
                         ? restaurant.terms_amharic || restaurant.terms
                         : restaurant.terms || restaurant.terms_amharic
                       : isAm
                         ? restaurant.privacy_policy_amharic || restaurant.privacy_policy
                         : restaurant.privacy_policy || restaurant.privacy_policy_amharic;
-                if (!content) {
-                  return (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
-                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center text-2xl text-gray-400 mb-4">
-                        <i className="fas fa-file-circle-exclamation"></i>
+                  if (!content) {
+                    return (
+                      <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
+                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center text-2xl text-gray-400 mb-4">
+                          <i className="fas fa-file-circle-exclamation"></i>
+                        </div>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
+                          {isAm
+                            ? "ይህ ይዘት ገና አልተጨመረም።"
+                            : "This content has not been added yet."}
+                        </p>
                       </div>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm">
-                        {currentLang === "am"
-                          ? "ይህ ይዘት ገና አልተጨመረም።"
-                          : "This content has not been added yet."}
-                      </p>
+                    );
+                  }
+                  return (
+                    <div className="flex-1 overflow-y-auto max-h-[60vh] pr-2 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/50 p-6">
+                      <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">{content}</p>
                     </div>
                   );
-                }
-                return (
-                  <div className="flex-1 overflow-y-auto max-h-[60vh] pr-2 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/50 p-6">
-                    <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">{content}</p>
-                  </div>
-                );
-              })()}
+                })()}
 
               <div className="flex items-center justify-between gap-3 pt-4 mt-4 border-t border-gray-100 dark:border-gray-700">
                 <p className="text-xs text-gray-400 dark:text-gray-500">

@@ -19,7 +19,7 @@ export default function BranchMap({ restaurant, branches }: BranchMapProps) {
     const container = containerRef.current;
     if (!container) return;
 
-    const map = L.map(container);
+    const map = L.map(container, { fadeAnimation: false, zoomAnimation: false, markerZoomAnimation: false });
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
@@ -135,9 +135,10 @@ export default function BranchMap({ restaurant, branches }: BranchMapProps) {
       map.fitBounds(L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number])), {
         padding: [40, 40],
         maxZoom: 15,
+        animate: false,
       });
     } else {
-      map.setView([8.9806, 38.7578], 12);
+      map.setView([8.9806, 38.7578], 12, { animate: false });
     }
 
     return () => {
