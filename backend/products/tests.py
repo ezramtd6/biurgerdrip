@@ -1,6 +1,18 @@
+from datetime import date, timedelta
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from products.models import Product, Category, OptionGroup, OptionValue
+from promotions.models import Promotion
+from products.models import (
+    Product,
+    Category,
+    OptionGroup,
+    OptionValue,
+    RestaurantInfo,
+    SocialLink,
+    Contact,
+)
 
 
 def assert_constraint_message(instance, message):
@@ -48,3 +60,100 @@ class NameUniquenessTests(TestCase):
             OptionValue(option_group=self.g1, name="BBQ", price_adjustment=0),
             "An option value with this name already exists in this group.",
         )
+
+
+class ProductPricingTests(TestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name="Burgers")
+        self.product = Product.objects.create(
+            category=self.category,
+            name="Classic Burger",
+            description="x",
+            price=Decimal("100.00"),
+        )
+
+    def _promo(self, percent=None, amount=None, **kw):
+        promo = Promotion.objects.create(
+            type=Promotion.Type.DISCOUNT,
+            title="Promo",
+            discount_percent=percent,
+            discount_amount=amount,
+            **kw,
+        )
+        promo.products.add(self.product)
+        return promo
+
+    def test_no_running_promo_returns_none(self):
+        self.assertIsNone(self.product.get_discounted_price())
+
+    def test_cheapest_promo_wins(self):
+        self._promo(percent=Decimal("20.00"))
+        self._promo(amount=Decimal("25.00"))
+        self.assertEqual(self.product.get_discounted_price(), Decimal("75.00"))
+
+    def test_percent_and_amount_combined(self):
+        self._promo(percent=Decimal("20.00"), amount=Decimal("5.00"))
+        self.assertEqual(self.product.get_discounted_price(), Decimal("75.00"))
+
+    def test_discount_clamped_to_zero(self):
+        self._promo(amount=Decimal("500.00"))
+        self.assertEqual(self.product.get_discounted_price(), Decimal("0.00"))
+
+    def test_expired_promo_ignored(self):
+        self._promo(percent=Decimal("90.00"), end_date=date.today() - timedelta(days=1))
+        self._promo(percent=Decimal("10.00"))
+        self.assertEqual(self.product.get_discounted_price(), Decimal("90.00"))
+
+
+class SocialLinkConstraintTests(TestCase):
+    def setUp(self):
+        self.restaurant = RestaurantInfo.objects.create(
+            name="Test Restaurant",
+            address="Addis Ababa",
+            phone="0911 234 567",
+            opening_hours="9-5",
+        )
+
+    def test_duplicate_platform_raises(self):
+        SocialLink.objects.create(
+            restaurant=self.restaurant,
+            platform=SocialLink.Platform.FACEBOOK,
+            url="https://facebook.com/one",
+        )
+        with self.assertRaises(ValidationError):
+            SocialLink(
+                restaurant=self.restaurant,
+                platform=SocialLink.Platform.FACEBOOK,
+                url="https://facebook.com/two",
+            ).full_clean()
+
+    def test_same_url_different_platforms_allowed(self):
+        SocialLink.objects.create(
+            restaurant=self.restaurant,
+            platform=SocialLink.Platform.FACEBOOK,
+            url="https://facebook.com/one",
+        )
+        SocialLink.objects.create(
+            restaurant=self.restaurant,
+            platform=SocialLink.Platform.INSTAGRAM,
+            url="https://instagram.com/one",
+        )
+        self.assertEqual(self.restaurant.social_links.count(), 2)
+
+
+class ContactPhoneValidationTests(TestCase):
+    def _contact(self, phone):
+        return Contact(phone=phone, email="a@example.com", location="Addis Ababa")
+
+    def test_local_ethiopian_phone_with_spaces(self):
+        self._contact("0911 234 567").full_clean()
+
+    def test_international_phone_with_spaces(self):
+        self._contact("+251 911 234 567").full_clean()
+
+    def test_compact_local_phone(self):
+        self._contact("0911234567").full_clean()
+
+    def test_invalid_phone_raises(self):
+        with self.assertRaises(ValidationError):
+            self._contact("12345").full_clean()

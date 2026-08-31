@@ -68,6 +68,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    "EXCEPTION_HANDLER": "api.exceptions.custom_exception_handler",
 }
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -172,3 +173,46 @@ EMAIL_USE_TLS = True
 EMAIL_TIMEOUT = 15
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER or "admin@localhost"
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+# Logging
+LOGGING_DIR = BASE_DIR / "logs"
+LOGGING_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} {levelname} {name} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOGGING_DIR / "django.log",
+            "maxBytes": 5 * 1024 * 1024,
+            "backupCount": 5,
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+        },
+        "django.request": {
+            "handlers": ["console", "file"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    },
+    "root": {
+        "handlers": ["console", "file"],
+        "level": "WARNING",
+    },
+}

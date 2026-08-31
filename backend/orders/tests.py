@@ -14,7 +14,13 @@ TINY_PNG = (
 )
 
 from accounts.models import User
-from orders.models import PaymentSystem, Order, OrderNotification
+from orders.models import (
+    PaymentSystem,
+    Order,
+    OrderNotification,
+    notify_cashiers,
+    notify_user,
+)
 from products.models import Category, Product, RestaurantInfo
 
 
@@ -131,8 +137,9 @@ class PaymentSystemTests(TestCase):
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         order.refresh_from_db()
-        self.assertEqual(order.status, Order.Status.COMPLETED)
+        self.assertEqual(order.status, Order.Status.PREPARING)
         self.assertEqual(order.payment_method, "TELEBIRR")
+        self.assertEqual(order.cashier, self.cashier)
 
     def test_payment_with_unknown_method_rejected(self):
         order = Order.objects.create(
@@ -159,8 +166,9 @@ class PaymentSystemTests(TestCase):
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data["status"], "rejected")
+        self.assertFalse(res.data["final_rejection"])
         order.refresh_from_db()
-        self.assertEqual(order.status, Order.Status.PENDING)
+        self.assertEqual(order.status, Order.Status.REJECTED)
         notif = order.notifications.first()
         self.assertIsNotNone(notif)
         self.assertEqual(notif.user, self.customer)
@@ -191,19 +199,33 @@ class PaymentSystemTests(TestCase):
             subtotal=Decimal("100.00"),
             total=Decimal("100.00"),
         )
-        client = self.client_for(self.cashier)
+        cashier_client = self.client_for(self.cashier)
+        customer_client = self.client_for(self.customer)
+
+        def resubmit():
+            return customer_client.post(
+                f"/api/orders/{order.id}/resubmit-proof/",
+                {
+                    "payment_proof": SimpleUploadedFile(
+                        "proof.png", TINY_PNG, content_type="image/png"
+                    ),
+                },
+                format="multipart",
+            )
 
         for attempt in (1, 2):
-            res = client.post(
+            res = cashier_client.post(
                 f"/api/orders/{order.id}/payment/",
                 {"action": "reject", "reason": "bad"},
             )
             self.assertEqual(res.status_code, status.HTTP_200_OK)
             self.assertFalse(res.data["final_rejection"])
+            self.assertEqual(res.data["proof_attempts"], attempt)
             order.refresh_from_db()
-            self.assertEqual(order.status, Order.Status.PENDING)
+            self.assertEqual(order.status, Order.Status.REJECTED)
+            self.assertEqual(resubmit().status_code, status.HTTP_200_OK)
 
-        res = client.post(
+        res = cashier_client.post(
             f"/api/orders/{order.id}/payment/", {"action": "reject", "reason": "bad"}
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -212,7 +234,11 @@ class PaymentSystemTests(TestCase):
         order.refresh_from_db()
         self.assertEqual(order.status, Order.Status.REJECTED)
         self.assertIn("after 3 attempts", res.data["message"])
-        self.assertEqual(order.notifications.count(), 3)
+        self.assertEqual(order.proof_history.count(), 2)
+        self.assertIn(
+            "after 3 attempts",
+            order.notifications.filter(user=self.customer).first().message,
+        )
 
     def test_resubmit_proof_blocked_after_three_rejections(self):
         order = Order.objects.create(
@@ -220,19 +246,29 @@ class PaymentSystemTests(TestCase):
             subtotal=Decimal("100.00"),
             total=Decimal("100.00"),
         )
-        client = self.client_for(self.cashier)
-        for _ in range(3):
-            client.post(f"/api/orders/{order.id}/payment/", {"action": "reject"})
+        cashier_client = self.client_for(self.cashier)
+        customer_client = self.client_for(self.customer)
 
-        res = self.client_for(self.customer).post(
-            f"/api/orders/{order.id}/resubmit-proof/",
-            {
-                "payment_proof": SimpleUploadedFile(
-                    "proof.png", TINY_PNG, content_type="image/png"
-                ),
-            },
-            format="multipart",
-        )
+        def resubmit():
+            return customer_client.post(
+                f"/api/orders/{order.id}/resubmit-proof/",
+                {
+                    "payment_proof": SimpleUploadedFile(
+                        "proof.png", TINY_PNG, content_type="image/png"
+                    ),
+                },
+                format="multipart",
+            )
+
+        for _ in range(2):
+            cashier_client.post(
+                f"/api/orders/{order.id}/payment/", {"action": "reject"}
+            )
+            self.assertEqual(resubmit().status_code, status.HTTP_200_OK)
+
+        cashier_client.post(f"/api/orders/{order.id}/payment/", {"action": "reject"})
+
+        res = resubmit()
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_cashier_notified_on_customer_order_placed(self):
@@ -316,6 +352,9 @@ class PaymentSystemTests(TestCase):
             subtotal=Decimal("100.00"),
             total=Decimal("100.00"),
         )
+        self.client_for(self.cashier).post(
+            f"/api/orders/{order.id}/payment/", {"action": "reject", "reason": "unclear"}
+        )
         res = self.client_for(self.customer).post(
             f"/api/orders/{order.id}/resubmit-proof/",
             {
@@ -360,3 +399,50 @@ class PaymentSystemTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         notif.refresh_from_db()
         self.assertTrue(notif.is_read)
+
+
+class OrderModelUnitTests(TestCase):
+    def setUp(self):
+        self.customer = User.objects.create_user(
+            email="customer@unit.test", password="pass12345", role=User.Role.CUSTOMER
+        )
+
+    def _order(self):
+        return Order.objects.create(
+            customer=self.customer,
+            subtotal=Decimal("10.00"),
+            total=Decimal("10.00"),
+        )
+
+    def test_order_number_generated_with_prefix(self):
+        order = self._order()
+        self.assertRegex(order.order_number, r"^ORD-[0-9A-F]{8}$")
+
+    def test_order_numbers_are_unique(self):
+        first = self._order()
+        second = self._order()
+        self.assertNotEqual(first.order_number, second.order_number)
+
+    def test_notify_user_replaces_existing(self):
+        order = self._order()
+        notify_user(self.customer, order, "First message")
+        notify_user(self.customer, order, "Second message")
+
+        self.assertEqual(order.notifications.count(), 1)
+        self.assertEqual(order.notifications.first().message, "Second message")
+
+    def test_notify_cashiers_only_active_cashiers(self):
+        cashier = User.objects.create_user(
+            email="cashier@unit.test", password="pass12345", role=User.Role.CASHIER
+        )
+        User.objects.create_user(
+            email="inactive@unit.test",
+            password="pass12345",
+            role=User.Role.CASHIER,
+            is_active=False,
+        )
+        order = self._order()
+        notify_cashiers(order, "New order")
+
+        self.assertEqual(order.notifications.count(), 1)
+        self.assertEqual(order.notifications.first().user, cashier)

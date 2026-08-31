@@ -1,0 +1,26 @@
+import logging
+
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import exception_handler as drf_exception_handler
+
+logger = logging.getLogger(__name__)
+
+GENERIC_ERROR_MESSAGE = "An unexpected error occurred. Please try again later."
+
+
+def custom_exception_handler(exc, context):
+    response = drf_exception_handler(exc, context)
+    if response is not None:
+        return response
+
+    logger.error(
+        "Unhandled exception in %s: %s",
+        context.get("view"),
+        exc,
+        exc_info=True,
+    )
+    return Response(
+        {"detail": GENERIC_ERROR_MESSAGE},
+        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    )

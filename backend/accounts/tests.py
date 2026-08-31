@@ -1,9 +1,14 @@
-from django.test import TestCase
+from unittest.mock import patch
+
+from django.core import mail
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from products.models import RestaurantInfo
 from .models import User
+from .utils import send_password_reset_email, send_set_password_email
 
 
 from django.utils import timezone
@@ -112,3 +117,52 @@ class ResetPasswordTokenTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["error"], "Invalid or expired token.")
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    EMAIL_HOST_USER="",
+    FRONTEND_URL="http://localhost:3000",
+)
+class EmailUtilsTests(TestCase):
+    def test_set_password_email_content(self):
+        send_set_password_email("abebe@example.com", "Abebe", "MANAGER", "token123")
+
+        self.assertEqual(len(mail.outbox), 1)
+        msg = mail.outbox[0]
+        self.assertEqual(msg.to, ["abebe@example.com"])
+        self.assertIn("Burger House", msg.subject)
+        self.assertIn("Set Your Password", msg.subject)
+        self.assertIn("http://localhost:3000/set-password/token123", msg.body)
+        self.assertIn("Abebe", msg.body)
+        self.assertIn("MANAGER", msg.body)
+        self.assertIn("48 hours", msg.body)
+        self.assertEqual(msg.from_email, "No-Reply <admin@localhost>")
+
+    def test_reset_password_email_content_with_context(self):
+        send_password_reset_email("user@example.com", "Sara", "token456", context="Support")
+
+        self.assertEqual(len(mail.outbox), 1)
+        msg = mail.outbox[0]
+        self.assertEqual(msg.to, ["user@example.com"])
+        self.assertEqual(msg.subject, "Burger House - Password Reset")
+        self.assertIn("http://localhost:3000/reset-password/token456", msg.body)
+        self.assertIn("Sara", msg.body)
+        self.assertIn("24 hours", msg.body)
+        self.assertEqual(msg.from_email, "No-Reply Support <admin@localhost>")
+
+    def test_uses_restaurant_name_when_present(self):
+        RestaurantInfo.objects.create(name="Burger Drip")
+
+        send_set_password_email("user@example.com", "A", "CUSTOMER", "token789")
+
+        self.assertIn("Burger Drip", mail.outbox[0].subject)
+        self.assertIn("Burger Drip", mail.outbox[0].body)
+
+    def test_send_failure_is_swallowed(self):
+        with patch(
+            "accounts.utils.send_mail", side_effect=Exception("SMTP down")
+        ):
+            send_set_password_email("user@example.com", "A", "CUSTOMER", "token999")
+
+        self.assertEqual(len(mail.outbox), 0)

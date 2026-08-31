@@ -3,6 +3,7 @@ import json
 from decimal import Decimal
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -206,3 +207,116 @@ class CouponOrderTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         order = self._latest_order()
         self.assertEqual(order.subtotal, Decimal("160.00"))
+
+
+class PromotionDiscountLogicTests(TestCase):
+    def _promo(self, type=Promotion.Type.DISCOUNT, percent=None, amount=None, **kw):
+        return Promotion.objects.create(
+            type=type, title="Promo", discount_percent=percent, discount_amount=amount, **kw
+        )
+
+    def test_percent_only(self):
+        promo = self._promo(percent=Decimal("20.00"))
+        result = promo.discount_for(Decimal("100.00"))
+        self.assertEqual(result.quantize(Decimal("0.01")), Decimal("80.00"))
+
+    def test_amount_only(self):
+        promo = self._promo(amount=Decimal("25.00"))
+        result = promo.discount_for(Decimal("100.00"))
+        self.assertEqual(result.quantize(Decimal("0.01")), Decimal("75.00"))
+
+    def test_percent_then_amount(self):
+        promo = self._promo(percent=Decimal("20.00"), amount=Decimal("5.00"))
+        result = promo.discount_for(Decimal("100.00"))
+        self.assertEqual(result.quantize(Decimal("0.01")), Decimal("75.00"))
+
+    def test_discount_never_below_zero(self):
+        promo = self._promo(amount=Decimal("500.00"))
+        self.assertEqual(promo.discount_for(Decimal("100.00")), Decimal("0.00"))
+
+    def test_inactive_promotion_returns_none(self):
+        promo = self._promo(percent=Decimal("20.00"), is_active=False)
+        self.assertIsNone(promo.discount_for(Decimal("100.00")))
+
+    def test_banner_promotion_returns_none(self):
+        promo = self._promo(type=Promotion.Type.BANNER, percent=Decimal("20.00"))
+        self.assertIsNone(promo.discount_for(Decimal("100.00")))
+
+    def test_not_started_returns_none(self):
+        promo = self._promo(
+            percent=Decimal("20.00"),
+            start_date=datetime.date.today() + datetime.timedelta(days=1),
+        )
+        self.assertIsNone(promo.discount_for(Decimal("100.00")))
+
+    def test_expired_returns_none(self):
+        promo = self._promo(
+            percent=Decimal("20.00"),
+            end_date=datetime.date.today() - datetime.timedelta(days=1),
+        )
+        self.assertIsNone(promo.discount_for(Decimal("100.00")))
+
+
+class CouponModelUnitTests(TestCase):
+    def _coupon(self, **kw):
+        kw.setdefault("code", "SAVE10")
+        return Coupon.objects.create(**kw)
+
+    def test_resolve_is_case_insensitive(self):
+        coupon = self._coupon()
+        self.assertEqual(Coupon.resolve("save10").pk, coupon.pk)
+
+    def test_resolve_missing_returns_none(self):
+        self.assertIsNone(Coupon.resolve("NOPE"))
+
+    def test_validate_for_below_min_subtotal(self):
+        coupon = self._coupon(min_subtotal=Decimal("100.00"))
+        message = coupon.validate_for(Decimal("50.00"))
+        self.assertIsNotNone(message)
+        self.assertIn("minimum subtotal", message)
+
+    def test_validate_for_meets_min_and_valid(self):
+        coupon = self._coupon(min_subtotal=Decimal("100.00"))
+        self.assertIsNone(coupon.validate_for(Decimal("150.00")))
+
+    def test_error_inactive(self):
+        self.assertEqual(
+            self._coupon(is_active=False).error_message(),
+            "This coupon is not active.",
+        )
+
+    def test_error_not_valid_yet(self):
+        coupon = self._coupon(
+            valid_from=datetime.date.today() + datetime.timedelta(days=1)
+        )
+        self.assertEqual(coupon.error_message(), "This coupon is not valid yet.")
+
+    def test_error_expired(self):
+        coupon = self._coupon(
+            valid_until=datetime.date.today() - datetime.timedelta(days=1)
+        )
+        self.assertEqual(coupon.error_message(), "This coupon has expired.")
+
+    def test_error_usage_limit_reached(self):
+        coupon = self._coupon(usage_limit=1, times_used=1)
+        self.assertEqual(
+            coupon.error_message(), "This coupon has reached its usage limit."
+        )
+
+    def test_percent_discount_with_max_cap(self):
+        coupon = self._coupon(
+            discount_percent=Decimal("20.00"), max_discount=Decimal("30.00")
+        )
+        self.assertEqual(coupon.calculate_discount(Decimal("200.00")), Decimal("30.00"))
+
+    def test_percent_discount_without_max_cap(self):
+        coupon = self._coupon(discount_percent=Decimal("20.00"))
+        self.assertEqual(coupon.calculate_discount(Decimal("200.00")), Decimal("40.00"))
+
+    def test_amount_discount_capped_by_subtotal(self):
+        coupon = self._coupon(discount_amount=Decimal("10.00"))
+        self.assertEqual(coupon.calculate_discount(Decimal("5.00")), Decimal("5.00"))
+
+    def test_no_discount_fields(self):
+        coupon = self._coupon()
+        self.assertEqual(coupon.calculate_discount(Decimal("100.00")), Decimal("0.00"))
