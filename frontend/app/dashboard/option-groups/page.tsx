@@ -124,7 +124,14 @@ export default function OptionGroupsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Option Groups</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Option Groups
+          {groups && groups.length > 0 && (
+            <span className="ml-2 align-middle text-sm font-semibold bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full">
+              {groups.length}
+            </span>
+          )}
+        </h1>
         <Button onClick={openCreate}>Add Option Group</Button>
       </div>
 

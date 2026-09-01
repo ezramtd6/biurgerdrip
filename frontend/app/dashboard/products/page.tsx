@@ -14,6 +14,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Search } from "lucide-react";
 import { apiErrorMessage } from "@/lib/utils";
+import BulkExcelImport from "@/components/BulkExcelImport";
+import ProductBulkComplete from "@/components/ProductBulkComplete";
 
 function invalidateProductQueries(queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: ["admin-products"] });
@@ -54,6 +56,8 @@ export default function ProductsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
+  const [completeIds, setCompleteIds] = useState<number[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: products, isLoading: loadingProducts } = useQuery<Product[]>({
@@ -166,8 +170,20 @@ export default function ProductsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-        <Button onClick={openCreate}>Add Product</Button>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Products
+          {products && products.length > 0 && (
+            <span className="ml-2 align-middle text-sm font-semibold bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full">
+              {products.length}
+            </span>
+          )}
+        </h1>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setImportOpen(true)}>
+            <i className="fas fa-file-excel mr-2"></i>Bulk Import
+          </Button>
+          <Button onClick={openCreate}>Add Product</Button>
+        </div>
       </div>
 
       {products && products.length > 0 && (
@@ -324,6 +340,34 @@ export default function ProductsPage() {
         destructive
       />
       <ErrorDialog open={!!errorMessage} onClose={() => setErrorMessage(null)} message={errorMessage || ""} />
+
+      <BulkExcelImport
+        isOpen={importOpen}
+        onClose={() => setImportOpen(false)}
+        title="Import Products"
+        endpoint="/products/import/"
+        templateUrl="/products/template/"
+        columns={["Name", "Name (Amharic)", "Description", "Description (Amharic)"]}
+        onImported={(ids) => setCompleteIds(ids)}
+        invalidateKeys={[
+          ["admin-products"],
+          ["admin-option-groups"],
+          ["admin-categories"],
+          ["products"],
+          ["product"],
+          ["cashier-products"],
+          ["cashier-categories"],
+          ["categories"],
+        ]}
+      />
+
+      <ProductBulkComplete
+        key={completeIds.join(",")}
+        isOpen={completeIds.length > 0}
+        ids={completeIds}
+        onClose={() => setCompleteIds([])}
+        onDone={() => setCompleteIds([])}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useSyncExternalStore } from "react";
+import { useState, useEffect, useRef, useMemo, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -176,8 +176,7 @@ export default function Home() {
         .catch(() => {});
     };
     load();
-    const id = setInterval(load, 10000);
-    return () => { cancelled = true; clearInterval(id); };
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -187,14 +186,19 @@ export default function Home() {
         .then((res) => {
           if (cancelled) return;
           const data = res.data.results || res.data;
-          setProducts(Array.isArray(data) ? data : []);
+          const list = Array.isArray(data) ? data : [];
+          const shuffled = [...list];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          setProducts(shuffled);
           setProductsLoaded(true);
         })
         .catch(() => {});
     };
     load();
-    const id = setInterval(load, 10000);
-    return () => { cancelled = true; clearInterval(id); };
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -301,8 +305,43 @@ export default function Home() {
     const nameAm = (i.name_amharic || "").toLowerCase();
     return nameEn.includes(normalizedQuery) || nameAm.includes(normalizedQuery);
   });
-  const pageItems = filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  const FOOD_PER_PAGE = Math.round((PAGE_SIZE * 75) / 100);
+  const DRINK_PER_PAGE = PAGE_SIZE - FOOD_PER_PAGE;
+  const categoryTypeOf = useMemo(
+    () => new Map(categories.map((c) => [c.id, c.type])),
+    [categories]
+  );
+  const isFoodItem = (i: Product) => categoryTypeOf.get(i.category) !== "drink";
+  const pageItems = useMemo(() => {
+    const filtered = products.filter((i) => {
+      if (currentCategory !== "all" && i.category !== currentCategory) return false;
+      if (!normalizedQuery) return true;
+      const nameEn = (i.name || "").toLowerCase();
+      const nameAm = (i.name_amharic || "").toLowerCase();
+      return nameEn.includes(normalizedQuery) || nameAm.includes(normalizedQuery);
+    });
+    if (currentCategory !== "all") {
+      return filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    }
+    const foods = filtered.filter((i) => isFoodItem(i));
+    const drinks = filtered.filter((i) => !isFoodItem(i));
+    const foodStart = (page - 1) * FOOD_PER_PAGE;
+    const drinkStart = (page - 1) * DRINK_PER_PAGE;
+    const items = [
+      ...foods.slice(foodStart, foodStart + FOOD_PER_PAGE),
+      ...drinks.slice(drinkStart, drinkStart + DRINK_PER_PAGE),
+    ];
+    return items;
+  }, [currentCategory, page, normalizedQuery, products, isFoodItem]);
+  const totalPages = Math.max(
+    1,
+    currentCategory === "all"
+      ? Math.max(
+          Math.ceil(filteredItems.filter((i) => isFoodItem(i)).length / FOOD_PER_PAGE),
+          Math.ceil(filteredItems.filter((i) => !isFoodItem(i)).length / DRINK_PER_PAGE)
+        )
+      : Math.ceil(filteredItems.length / PAGE_SIZE)
+  );
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
   const totalQty = cart.reduce((sum, i) => sum + i.qty, 0);
   const totalCartPrice = cart.reduce((sum, i) => sum + i.price * i.qty, 0);

@@ -11,6 +11,7 @@ export interface User {
 
 export interface Category {
   id: number;
+  type: "food" | "drink";
   name: string;
   name_amharic: string;
   image: string | null;

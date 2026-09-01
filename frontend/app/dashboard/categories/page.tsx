@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/services/api";
-import { Button, Input, Modal, Table } from "@/components/ui";
+import { Button, Input, Select, Modal, Table } from "@/components/ui";
 import { Category } from "@/types";
 import { Loading } from "@/components/common/Loading";
 import EmptyState from "@/components/common/EmptyState";
@@ -14,10 +14,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Search, ChevronUp, ChevronDown } from "lucide-react";
 import { apiErrorMessage } from "@/lib/utils";
+import BulkExcelImport from "@/components/BulkExcelImport";
+import CategoryBulkComplete from "@/components/CategoryBulkComplete";
 
 const schema = z.object({
   name: z.string().min(1, "Name in English is required"),
   name_amharic: z.string().min(1, "Name in Amharic is required"),
+  type: z.enum(["food", "drink"]),
 });
 
 type CategoryForm = z.infer<typeof schema>;
@@ -31,6 +34,8 @@ export default function CategoriesPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [bulkTarget, setBulkTarget] = useState<"freeze-all" | "unfreeze-all" | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [completeIds, setCompleteIds] = useState<number[]>([]);
 
   const { data: categories, isLoading } = useQuery<Category[]>({
     queryKey: ["admin-categories"],
@@ -102,7 +107,7 @@ export default function CategoriesPage() {
     resolver: zodResolver(schema),
   });
 
-  const resetForm = () => { reset({ name: "", name_amharic: "" }); };
+  const resetForm = () => { reset({ name: "", name_amharic: "", type: "food" }); };
 
   const openCreate = () => { setEditing(null); resetForm(); setFormError(null); setIsOpen(true); };
   const openEdit = (cat: Category) => {
@@ -110,6 +115,7 @@ export default function CategoriesPage() {
     reset({
       name: cat.name,
       name_amharic: cat.name_amharic,
+      type: cat.type,
     });
     setFormError(null);
     setIsOpen(true);
@@ -134,7 +140,14 @@ export default function CategoriesPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Categories
+          {categories && categories.length > 0 && (
+            <span className="ml-2 align-middle text-sm font-semibold bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full">
+              {categories.length}
+            </span>
+          )}
+        </h1>
         <div className="flex gap-2">
           {categories && categories.length > 0 && (
             <>
@@ -157,6 +170,9 @@ export default function CategoriesPage() {
               )}
             </>
           )}
+          <Button variant="secondary" onClick={() => setImportOpen(true)}>
+            <i className="fas fa-file-excel mr-2"></i>Bulk Import
+          </Button>
           <Button onClick={openCreate}>Add Category</Button>
         </div>
       </div>
@@ -181,6 +197,7 @@ export default function CategoriesPage() {
             { key: "id", header: "ID" },
             { key: "name", header: "Name (English)" },
             { key: "name_amharic", header: "Name (Amharic)", render: (item: Record<string, unknown>) => <span className="text-gray-500">{item.name_amharic as string}</span> },
+            { key: "type", header: "Type", render: (item: Record<string, unknown>) => <span className="text-gray-700 capitalize">{item.type === "drink" ? "Drink" : "Food"}</span> },
             {
               key: "is_active",
               header: "Status",
@@ -244,6 +261,7 @@ export default function CategoriesPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input label="Name in English" error={errors.name?.message || formError || undefined} {...register("name")} />
           <Input label="Name in Amharic" error={errors.name_amharic?.message} {...register("name_amharic")} />
+          <Select label="Type" error={errors.type?.message} options={[{ value: "food", label: "Food" }, { value: "drink", label: "Drink" }]} {...register("type")} />
 
           <div className="flex gap-3 justify-end">
             <Button variant="secondary" type="button" onClick={() => setIsOpen(false)}>Cancel</Button>
@@ -282,6 +300,26 @@ export default function CategoriesPage() {
         destructive
       />
       <ErrorDialog open={!!errorMessage} onClose={() => setErrorMessage(null)} message={errorMessage || ""} />
+
+      <BulkExcelImport
+        isOpen={importOpen}
+        onClose={() => setImportOpen(false)}
+        title="Import Categories"
+        endpoint="/categories/import/"
+        templateUrl="/categories/template/"
+        columns={["Name", "Name (Amharic)"]}
+        example={["Burgers", "በርገር"]}
+        onImported={(ids) => setCompleteIds(ids)}
+        invalidateKeys={[["admin-categories"], ["categories"], ["cashier-categories"]]}
+      />
+
+      <CategoryBulkComplete
+        key={completeIds.join(",")}
+        isOpen={completeIds.length > 0}
+        ids={completeIds}
+        onClose={() => setCompleteIds([])}
+        onDone={() => setCompleteIds([])}
+      />
     </div>
   );
 }

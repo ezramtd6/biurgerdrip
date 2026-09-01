@@ -15,12 +15,22 @@ def is_within_time_window(start, end, now=None):
 
 # Create your models here.
 class Category(models.Model):
+    class Type(models.TextChoices):
+        FOOD = "food", "Food"
+        DRINK = "drink", "Drink"
+
     restaurant = models.ForeignKey(
         "RestaurantInfo",
         on_delete=models.CASCADE,
         related_name="categories",
         null=True,
         blank=True,
+    )
+
+    type = models.CharField(
+        max_length=20,
+        choices=Type.choices,
+        default=Type.FOOD,
     )
 
     name=models.CharField(max_length=100, unique=True, error_messages={"unique": "A category with this name already exists."})

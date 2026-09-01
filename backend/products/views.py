@@ -4,7 +4,9 @@ from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from django.http import HttpResponse
 from .models import Category, Product, OptionGroup, OptionValue, RestaurantInfo, Branch, SocialLink, Contact
+from .imports import import_categories, import_products, build_category_template, build_product_template
 from .serializers import (
     CategorySerializer,
     ProductSerializer,
@@ -153,6 +155,31 @@ class CategoryViewSet(ActiveStateMixin, viewsets.ModelViewSet):
             return Response({"detail": f"All {count} categories are now always available."})
         return Response({"detail": f"Working hours {start.strftime('%H:%M')}–{end.strftime('%H:%M')} applied to all {count} categories."})
 
+    @action(detail=False, methods=["get"], url_path="template")
+    def template(self, request):
+        buf = build_category_template()
+        response = HttpResponse(
+            buf.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = 'attachment; filename="categories.xlsx"'
+        return response
+
+    @action(detail=False, methods=["post"], url_path="import")
+    def import_file(self, request):
+        """Bulk create categories from an uploaded Excel (.xlsx) workbook."""
+        file = request.FILES.get("file")
+        if not file:
+            raise ValidationError({"detail": "Please upload an Excel (.xlsx) file."})
+        try:
+            from openpyxl import load_workbook
+            workbook = load_workbook(file, data_only=True)
+            restaurant = RestaurantInfo.objects.first()
+            created, ids, errors = import_categories(workbook, restaurant=restaurant)
+        except ValueError as exc:
+            raise ValidationError({"detail": str(exc)}) from exc
+        return Response({"created": created, "ids": ids, "errors": errors})
+
 
 class ProductViewSet(ActiveStateMixin, viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -196,6 +223,32 @@ class ProductViewSet(ActiveStateMixin, viewsets.ModelViewSet):
             raise ValidationError(
                 {"detail": "Cannot unfreeze this product because its category is frozen. Unfreeze the category first."}
             )
+
+    @action(detail=False, methods=["get"], url_path="template")
+    def template(self, request):
+        buf = build_product_template()
+        response = HttpResponse(
+            buf.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = 'attachment; filename="products.xlsx"'
+        return response
+
+    @action(detail=False, methods=["post"], url_path="import")
+    def import_file(self, request):
+        """Bulk create products (name/description only) from an uploaded Excel
+        (.xlsx) workbook. The manager completes each product afterwards."""
+        file = request.FILES.get("file")
+        if not file:
+            raise ValidationError({"detail": "Please upload an Excel (.xlsx) file."})
+        try:
+            from openpyxl import load_workbook
+            workbook = load_workbook(file, data_only=True)
+            restaurant = RestaurantInfo.objects.first()
+            created, ids, errors = import_products(workbook, restaurant=restaurant)
+        except ValueError as exc:
+            raise ValidationError({"detail": str(exc)}) from exc
+        return Response({"created": created, "ids": ids, "errors": errors})
 
 
 class OptionGroupViewSet(ActiveStateMixin, viewsets.ModelViewSet):
