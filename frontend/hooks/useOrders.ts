@@ -169,9 +169,10 @@ export function useMarkNotificationRead() {
 export function useResubmitProof() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, file }: { id: number; file: File }) => {
+    mutationFn: async ({ id, file, paymentMethod }: { id: number; file: File; paymentMethod?: string }) => {
       const formData = new FormData();
       formData.append("payment_proof", file);
+      if (paymentMethod) formData.append("payment_method", paymentMethod);
       const res = await api.post(`/orders/${id}/resubmit-proof/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });

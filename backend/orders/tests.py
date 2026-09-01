@@ -271,6 +271,48 @@ class PaymentSystemTests(TestCase):
         res = resubmit()
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_resubmit_can_change_payment_method(self):
+        order = Order.objects.create(
+            customer=self.customer,
+            payment_method="TELEBIRR",
+            subtotal=Decimal("100.00"),
+            total=Decimal("100.00"),
+        )
+        PaymentSystem.objects.create(name="CBE Birr", code="CBE_BIRR", display_order=2)
+        self.client_for(self.cashier).post(
+            f"/api/orders/{order.id}/payment/", {"action": "reject"}
+        )
+
+        customer_client = self.client_for(self.customer)
+        res = customer_client.post(
+            f"/api/orders/{order.id}/resubmit-proof/",
+            {
+                "payment_proof": SimpleUploadedFile(
+                    "proof.png", TINY_PNG, content_type="image/png"
+                ),
+                "payment_method": "CBE_BIRR",
+            },
+            format="multipart",
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        order.refresh_from_db()
+        self.assertEqual(order.payment_method, "CBE_BIRR")
+        self.assertEqual(order.status, Order.Status.PENDING)
+
+        res = customer_client.post(
+            f"/api/orders/{order.id}/resubmit-proof/",
+            {
+                "payment_proof": SimpleUploadedFile(
+                    "proof.png", TINY_PNG, content_type="image/png"
+                ),
+                "payment_method": "BITCOIN",
+            },
+            format="multipart",
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        order.refresh_from_db()
+        self.assertEqual(order.payment_method, "CBE_BIRR")
+
     def test_cashier_notified_on_customer_order_placed(self):
         res = self.client_for(self.customer).post(
             "/api/orders/",

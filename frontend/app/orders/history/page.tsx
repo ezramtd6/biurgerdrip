@@ -185,11 +185,13 @@ export default function OrderHistoryPage() {
   const confirmPickup = useConfirmPickup();
   const [pickingFor, setPickingFor] = useState<number | null>(null);
   const [uploadedId, setUploadedId] = useState<number | null>(null);
+  const [paymentMethodByOrder, setPaymentMethodByOrder] = useState<Record<number, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const productMap = new Map((products ?? []).map((p) => [p.id, p]));
   const paymentMethodName = (code: string | null | undefined) =>
     paymentSystems?.find((s) => s.code === code)?.name || code || "";
+  const customerMethods = (paymentSystems ?? []).filter((ps) => ps.is_active && ps.customer_enabled);
 
   const notificationsByOrder = new Map<number, OrderNotification[]>();
   for (const n of notifications ?? []) {
@@ -202,7 +204,10 @@ export default function OrderHistoryPage() {
     setPickingFor(null);
     if (!file) return;
     if (!file.type.startsWith("image/")) return;
-    resubmit.mutate({ id: orderId, file }, { onSuccess: () => setUploadedId(orderId) });
+    resubmit.mutate(
+      { id: orderId, file, paymentMethod: paymentMethodByOrder[orderId] || undefined },
+      { onSuccess: () => setUploadedId(orderId) }
+    );
   };
 
   if (isLoading) {
@@ -290,6 +295,29 @@ export default function OrderHistoryPage() {
                         </p>
                       ) : (
                         <div className="mt-3 flex items-center gap-3 flex-wrap">
+                          {customerMethods.length > 0 && (
+                            <label className="block min-w-full">
+                              <span className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                                {t("payment_method")}
+                              </span>
+                              <select
+                                value={paymentMethodByOrder[order.id] ?? order.payment_method ?? ""}
+                                onChange={(e) =>
+                                  setPaymentMethodByOrder((prev) => ({ ...prev, [order.id]: e.target.value }))
+                                }
+                                className="w-full px-3 py-2.5 rounded-lg border border-red-200 dark:border-red-900/60 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/40 focus:border-red-400 transition"
+                              >
+                                <option value="" disabled>
+                                  {t("select")}...
+                                </option>
+                                {customerMethods.map((m) => (
+                                  <option key={m.code} value={m.code}>
+                                    {m.name} ({m.code})
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          )}
                           <button
                             onClick={() => {
                               setPickingFor(order.id);

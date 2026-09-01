@@ -727,9 +727,20 @@ class ResubmitProofView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        payment_method = (request.data.get("payment_method") or "").strip()
+        if payment_method:
+            if not PaymentSystem.objects.filter(
+                code=payment_method, is_active=True, customer_enabled=True
+            ).exists():
+                return Response(
+                    {"error": "Invalid payment method."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            order.payment_method = payment_method
+
         order.payment_proof = proof
         order.status = Order.Status.PENDING
-        order.save(update_fields=["payment_proof", "status", "updated_at"])
+        order.save(update_fields=["payment_proof", "status", "payment_method", "updated_at"])
         order.notifications.filter(is_read=False).update(is_read=True)
 
         from .models import PaymentProofAttempt
