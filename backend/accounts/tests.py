@@ -38,7 +38,7 @@ class AuthRefreshTests(TestCase):
         self.assertIn("access_token", self.client.cookies)
         self.assertIn("refresh_token", self.client.cookies)
 
-    def test_refresh_rotates_and_blacklists(self):
+    def test_refresh_keeps_same_refresh_token_and_slides_expiry(self):
         res = self.client.post(
             reverse("login"),
             {"email": "test@example.com", "password": "Password1!"},
@@ -51,12 +51,12 @@ class AuthRefreshTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data["access"], self.client.cookies["access_token"].value)
 
+        # The refresh cookie must stay identical across refreshes so that
+        # concurrent refreshes from multiple tabs never race into a logout.
         new_refresh = self.client.cookies["refresh_token"].value
-        self.assertNotEqual(old_refresh, new_refresh)
+        self.assertEqual(old_refresh, new_refresh)
 
-        with self.assertRaises(Exception):
-            RefreshToken(old_refresh).access_token
-
+        # And the same token keeps working for subsequent refreshes.
         res = self.client.post(reverse("token_refresh"), {}, format="json")
         self.assertEqual(res.status_code, 200)
 
@@ -72,8 +72,8 @@ class AuthRefreshTests(TestCase):
         )
         old_refresh = self.client.cookies["refresh_token"].value
 
-        self.client.post(reverse("token_refresh"), {}, format="json")
-        self.client.cookies["refresh_token"] = old_refresh
+        # A token that was explicitly blacklisted (e.g. on logout) must be rejected.
+        RefreshToken(old_refresh).blacklist()
 
         res = self.client.post(reverse("token_refresh"), {}, format="json")
         self.assertEqual(res.status_code, 401)

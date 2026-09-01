@@ -102,28 +102,17 @@ class CustomTokenRefreshView(APIView):
                 secure=not settings.DEBUG,
                 samesite="Lax",
             )
-
-            if settings.SIMPLE_JWT.get("ROTATE_REFRESH_TOKENS"):
-                refresh.set_jti()
-                refresh.set_exp()
-                refresh.set_iat()
-                refresh.outstand()
-                new_refresh_token = str(refresh)
-
-                if settings.SIMPLE_JWT.get("BLACKLIST_AFTER_ROTATION"):
-                    try:
-                        RefreshToken(refresh_token).blacklist()
-                    except (AttributeError, TokenError):
-                        pass
-
-                response.set_cookie(
-                    "refresh_token",
-                    new_refresh_token,
-                    max_age=7 * 24 * 60 * 60,
-                    httponly=True,
-                    secure=not settings.DEBUG,
-                    samesite="Lax",
-                )
+            # Keep the SAME refresh token (never rotate/blacklist mid-session so
+            # concurrent refreshes from multiple tabs all succeed) but roll its
+            # 7-day expiry forward while the user keeps using the app.
+            response.set_cookie(
+                "refresh_token",
+                refresh_token,
+                max_age=7 * 24 * 60 * 60,
+                httponly=True,
+                secure=not settings.DEBUG,
+                samesite="Lax",
+            )
 
             return response
         except TokenError:
