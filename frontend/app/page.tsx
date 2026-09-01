@@ -153,15 +153,22 @@ export default function Home() {
   }, [user, router]);
 
   useEffect(() => {
-    api.get("/restaurant/")
-      .then((res) => {
-        const data = res.data.results || res.data;
-        const first = data && data.length > 0 ? data[0] : null;
-        setRestaurant(first);
-        setRestaurantReady(!!first && first.is_active !== false);
-      })
-      .catch(() => setRestaurantReady(false))
-      .finally(() => setCheckingRestaurant(false));
+    let cancelled = false;
+    const load = () => {
+      api.get("/restaurant/")
+        .then((res) => {
+          if (cancelled) return;
+          const data = res.data.results || res.data;
+          const first = data && data.length > 0 ? data[0] : null;
+          setRestaurant(first);
+          setRestaurantReady(!!first && first.is_active !== false);
+        })
+        .catch(() => setRestaurantReady(false))
+        .finally(() => setCheckingRestaurant(false));
+    };
+    load();
+    const id = setInterval(load, 5000);
+    return () => { cancelled = true; clearInterval(id); };
   }, []);
 
   useEffect(() => {
@@ -176,29 +183,33 @@ export default function Home() {
         .catch(() => {});
     };
     load();
-    return () => { cancelled = true; };
+    const id = setInterval(load, 5000);
+    return () => { cancelled = true; clearInterval(id); };
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    const load = () => {
+    const load = (shuffle: boolean) => {
       api.get("/products/")
         .then((res) => {
           if (cancelled) return;
           const data = res.data.results || res.data;
           const list = Array.isArray(data) ? data : [];
-          const shuffled = [...list];
-          for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          const result = [...list];
+          if (shuffle) {
+            for (let i = result.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [result[i], result[j]] = [result[j], result[i]];
+            }
           }
-          setProducts(shuffled);
+          setProducts(result);
           setProductsLoaded(true);
         })
         .catch(() => {});
     };
-    load();
-    return () => { cancelled = true; };
+    load(true);
+    const id = setInterval(() => load(false), 5000);
+    return () => { cancelled = true; clearInterval(id); };
   }, []);
 
   useEffect(() => {

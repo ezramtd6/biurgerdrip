@@ -26,6 +26,9 @@ frontend/.env.production
 # Django media uploads
 backend/media/
 
+# Django runtime logs
+backend/logs/
+
 # IDE
 .vscode/
 .idea/
