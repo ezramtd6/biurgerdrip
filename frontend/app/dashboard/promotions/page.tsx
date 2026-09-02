@@ -34,6 +34,7 @@ interface CouponForm {
   valid_from: string;
   valid_until: string;
   usage_limit: string;
+  per_person_limit: string;
   is_active: boolean;
 }
 
@@ -59,6 +60,7 @@ const emptyCouponForm: CouponForm = {
   valid_from: "",
   valid_until: "",
   usage_limit: "",
+  per_person_limit: "",
   is_active: true,
 };
 
@@ -291,6 +293,7 @@ export default function PromotionsPage() {
       valid_from: couponForm.valid_from || null,
       valid_until: couponForm.valid_until || null,
       usage_limit: couponForm.usage_limit ? Number(couponForm.usage_limit) : null,
+      per_person_limit: couponForm.per_person_limit ? Number(couponForm.per_person_limit) : null,
       is_active: couponForm.is_active,
     };
   };
@@ -321,6 +324,7 @@ export default function PromotionsPage() {
       valid_from: c.valid_from || "",
       valid_until: c.valid_until || "",
       usage_limit: c.usage_limit != null ? String(c.usage_limit) : "",
+      per_person_limit: c.per_person_limit != null ? String(c.per_person_limit) : "",
       is_active: c.is_active,
     });
     setCouponError(null);
@@ -465,156 +469,163 @@ export default function PromotionsPage() {
             />
           )}
 
-          <Modal isOpen={promoOpen} onClose={() => { setPromoOpen(false); setPromoEditing(null); }} title={promoEditing ? "Edit Promotion" : "Add Promotion"} maxWidth="lg">
+          <Modal isOpen={promoOpen} onClose={() => { setPromoOpen(false); setPromoEditing(null); }} title={promoEditing ? "Edit Promotion" : "Add Promotion"} maxWidth="2xl">
             <form
               onSubmit={(e) => { e.preventDefault(); submitPromo(); }}
               className="space-y-4"
             >
-              <Select
-                label="Type"
-                value={promoForm.type}
-                onChange={(e) => setPromoForm({ ...promoForm, type: e.target.value as Promotion["type"] })}
-                options={[
-                  { value: "DISCOUNT", label: "Product discount" },
-                  { value: "BANNER", label: "Marketing banner" },
-                ]}
-              />
-              <Input
-                label="Title"
-                required
-                value={promoForm.title}
-                onChange={(e) => setPromoForm({ ...promoForm, title: e.target.value })}
-              />
-              <Textarea
-                label="Description"
-                value={promoForm.description}
-                onChange={(e) => setPromoForm({ ...promoForm, description: e.target.value })}
-              />
-
-              {promoForm.type === "DISCOUNT" ? (
-                <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <Select
+                    label="Type"
+                    value={promoForm.type}
+                    onChange={(e) => setPromoForm({ ...promoForm, type: e.target.value as Promotion["type"] })}
+                    options={[
+                      { value: "DISCOUNT", label: "Product discount" },
+                      { value: "BANNER", label: "Marketing banner" },
+                    ]}
+                  />
+                  <Input
+                    label="Title"
+                    required
+                    value={promoForm.title}
+                    onChange={(e) => setPromoForm({ ...promoForm, title: e.target.value })}
+                  />
+                  <Textarea
+                    label="Description"
+                    value={promoForm.description}
+                    onChange={(e) => setPromoForm({ ...promoForm, description: e.target.value })}
+                  />
                   <div className="grid grid-cols-2 gap-3">
                     <Input
-                      label="Discount %"
-                      type="number"
-                      min={0}
-                      max={100}
-                      step="0.01"
-                      placeholder="e.g. 20"
-                      value={promoForm.discount_percent}
-                      onChange={(e) => setPromoForm({ ...promoForm, discount_percent: e.target.value })}
+                      label="Start date"
+                      type="date"
+                      value={promoForm.start_date}
+                      onChange={(e) => setPromoForm({ ...promoForm, start_date: e.target.value })}
                     />
                     <Input
-                      label="Discount Amount (ETB)"
+                      label="End date"
+                      type="date"
+                      value={promoForm.end_date}
+                      onChange={(e) => setPromoForm({ ...promoForm, end_date: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      label="Display order"
                       type="number"
                       min={0}
-                      step="0.01"
-                      placeholder="e.g. 50"
-                      value={promoForm.discount_amount}
-                      onChange={(e) => setPromoForm({ ...promoForm, discount_amount: e.target.value })}
+                      value={promoForm.display_order}
+                      onChange={(e) => setPromoForm({ ...promoForm, display_order: e.target.value })}
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Apply to products</label>
-                    <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3 space-y-1">
-                      {!products || products.length === 0 ? (
-                        <p className="text-sm text-gray-400">No products available</p>
-                      ) : (
-                        products.map((prod) => (
-                          <label key={prod.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                            <input
-                              type="checkbox"
-                              className="rounded"
-                              checked={selectedProducts.includes(prod.id)}
-                              onChange={() => toggleProduct(prod.id)}
-                            />
-                            <span className="truncate">{prod.name}</span>
-                            <span className="text-gray-400 text-xs ml-auto whitespace-nowrap">
-                              {Number(prod.price).toFixed(2)}
-                            </span>
-                          </label>
-                        ))
-                      )}
+                    <div className="flex items-end pb-1">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="rounded"
+                          checked={promoForm.is_active}
+                          onChange={(e) => setPromoForm({ ...promoForm, is_active: e.target.checked })}
+                        />
+                        Active
+                      </label>
                     </div>
-                    <p className="mt-1 text-xs text-gray-400">Leave unchecked to apply to all products.</p>
                   </div>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setImageFile(file);
-                          setImagePreview(URL.createObjectURL(file));
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-orange-400 transition-colors cursor-pointer"
-                    >
-                      {imagePreview ? (
-                        <div className="flex flex-col items-center gap-2">
-                          <img src={imagePreview} alt="Preview" className="w-40 h-24 object-cover rounded-lg" />
-                          <span className="text-sm text-gray-500">Click to change</span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2">
-                          <span className="text-2xl">+</span>
-                          <span className="text-sm text-gray-500">Click to upload banner image</span>
-                        </div>
-                      )}
-                    </button>
-                    {imageError && <p className="mt-1 text-sm text-red-500">{imageError}</p>}
-                  </div>
-                  <Input
-                    label="Link (optional)"
-                    value={promoForm.link}
-                    onChange={(e) => setPromoForm({ ...promoForm, link: e.target.value })}
-                  />
-                </>
-              )}
+                </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  label="Start date"
-                  type="date"
-                  value={promoForm.start_date}
-                  onChange={(e) => setPromoForm({ ...promoForm, start_date: e.target.value })}
-                />
-                <Input
-                  label="End date"
-                  type="date"
-                  value={promoForm.end_date}
-                  onChange={(e) => setPromoForm({ ...promoForm, end_date: e.target.value })}
-                />
+                <div className="space-y-4">
+                  {promoForm.type === "DISCOUNT" ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Input
+                          label="Discount %"
+                          type="number"
+                          min={0}
+                          max={100}
+                          step="0.01"
+                          placeholder="e.g. 20"
+                          value={promoForm.discount_percent}
+                          onChange={(e) => setPromoForm({ ...promoForm, discount_percent: e.target.value })}
+                        />
+                        <Input
+                          label="Discount Amount (ETB)"
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          placeholder="e.g. 50"
+                          value={promoForm.discount_amount}
+                          onChange={(e) => setPromoForm({ ...promoForm, discount_amount: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Apply to products</label>
+                        <div className="max-h-[16rem] overflow-y-auto border border-gray-300 rounded-lg p-3 space-y-1">
+                          {!products || products.length === 0 ? (
+                            <p className="text-sm text-gray-400">No products available</p>
+                          ) : (
+                            products.map((prod) => (
+                              <label key={prod.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  className="rounded"
+                                  checked={selectedProducts.includes(prod.id)}
+                                  onChange={() => toggleProduct(prod.id)}
+                                />
+                                <span className="truncate">{prod.name}</span>
+                                <span className="text-gray-400 text-xs ml-auto whitespace-nowrap">
+                                  {Number(prod.price).toFixed(2)}
+                                </span>
+                              </label>
+                            ))
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs text-gray-400">Leave unchecked to apply to all products.</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setImageFile(file);
+                              setImagePreview(URL.createObjectURL(file));
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-orange-400 transition-colors cursor-pointer"
+                        >
+                          {imagePreview ? (
+                            <div className="flex flex-col items-center gap-2">
+                              <img src={imagePreview} alt="Preview" className="w-40 h-24 object-cover rounded-lg" />
+                              <span className="text-sm text-gray-500">Click to change</span>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center gap-2">
+                              <span className="text-2xl">+</span>
+                              <span className="text-sm text-gray-500">Click to upload banner image</span>
+                            </div>
+                          )}
+                        </button>
+                        {imageError && <p className="mt-1 text-sm text-red-500">{imageError}</p>}
+                      </div>
+                      <Input
+                        label="Link (optional)"
+                        value={promoForm.link}
+                        onChange={(e) => setPromoForm({ ...promoForm, link: e.target.value })}
+                      />
+                    </>
+                  )}
+                </div>
               </div>
-
-              <Input
-                label="Display order"
-                type="number"
-                min={0}
-                value={promoForm.display_order}
-                onChange={(e) => setPromoForm({ ...promoForm, display_order: e.target.value })}
-              />
-
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="rounded"
-                  checked={promoForm.is_active}
-                  onChange={(e) => setPromoForm({ ...promoForm, is_active: e.target.checked })}
-                />
-                Active
-              </label>
 
               {promoError && <p className="text-sm text-red-500">{promoError}</p>}
 
@@ -671,7 +682,12 @@ export default function PromotionsPage() {
                 {
                   key: "usage",
                   header: "Usage",
-                  render: (c) => `${c.times_used}${c.usage_limit != null ? ` / ${c.usage_limit}` : ""}`,
+                  render: (c) => (
+                    <span>
+                      {c.times_used}{c.usage_limit != null ? ` / ${c.usage_limit}` : ""}
+                      {c.per_person_limit != null ? ` (${c.per_person_limit}/person)` : ""}
+                    </span>
+                  ),
                 },
                 {
                   key: "valid",
@@ -765,14 +781,24 @@ export default function PromotionsPage() {
                   onChange={(e) => setCouponForm({ ...couponForm, valid_until: e.target.value })}
                 />
               </div>
-              <Input
-                label="Usage limit"
-                type="number"
-                min={1}
-                placeholder="Optional"
-                value={couponForm.usage_limit}
-                onChange={(e) => setCouponForm({ ...couponForm, usage_limit: e.target.value })}
-              />
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="Usage limit"
+                  type="number"
+                  min={1}
+                  placeholder="Optional"
+                  value={couponForm.usage_limit}
+                  onChange={(e) => setCouponForm({ ...couponForm, usage_limit: e.target.value })}
+                />
+                <Input
+                  label="Per person limit"
+                  type="number"
+                  min={1}
+                  placeholder="Optional"
+                  value={couponForm.per_person_limit}
+                  onChange={(e) => setCouponForm({ ...couponForm, per_person_limit: e.target.value })}
+                />
+              </div>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"

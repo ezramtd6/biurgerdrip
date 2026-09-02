@@ -106,6 +106,8 @@ class Coupon(models.Model):
     usage_limit = models.PositiveIntegerField(blank=True, null=True)
     times_used = models.PositiveIntegerField(default=0)
 
+    per_person_limit = models.PositiveIntegerField(blank=True, null=True)
+
     is_active = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -133,11 +135,21 @@ class Coupon(models.Model):
             return "This coupon has reached its usage limit."
         return None
 
-    def validate_for(self, subtotal):
+    def validate_for(self, subtotal, user=None):
         """Return an error message if this coupon cannot be used for the subtotal, else None."""
         if subtotal < self.min_subtotal:
             return f"This coupon requires a minimum subtotal of ETB {self.min_subtotal:.2f}."
-        return self.error_message()
+        reason = self.error_message()
+        if reason:
+            return reason
+        if user is not None and user.is_authenticated and self.per_person_limit is not None:
+            from .models import CouponRedemption
+
+            used = CouponRedemption.objects.filter(coupon=self, user=user).first()
+            count = used.count if used else 0
+            if count >= self.per_person_limit:
+                return "You have already used this coupon."
+        return None
 
     def calculate_discount(self, subtotal):
         if self.discount_percent:
@@ -149,3 +161,15 @@ class Coupon(models.Model):
         else:
             discount = Decimal("0.00")
         return min(discount, subtotal)
+
+
+class CouponRedemption(models.Model):
+    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE, related_name="redemptions")
+    user = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="coupon_redemptions")
+    count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = [("coupon", "user")]
+
+    def __str__(self):
+        return f"{self.coupon.code} x{self.user_id} used {self.count}"

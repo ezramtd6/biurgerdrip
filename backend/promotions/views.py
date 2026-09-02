@@ -45,7 +45,7 @@ class CouponViewSet(viewsets.ModelViewSet):
         coupon = Coupon.resolve(code) if code else None
         if not coupon:
             return Response({"valid": False, "error": "Invalid coupon code."})
-        reason = coupon.validate_for(subtotal)
+        reason = coupon.validate_for(subtotal, user=request.user)
         if reason:
             return Response({"valid": False, "error": reason})
         return Response(

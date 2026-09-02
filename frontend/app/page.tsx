@@ -18,7 +18,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { RestaurantInfo, Category, Product, Branch, SocialLink, Contact, OptionValue, OptionGroup } from "@/types";
+import { RestaurantInfo, Category, Product, Branch, SocialLink, Contact, OptionValue, OptionGroup, Promotion } from "@/types";
+import { usePromotions } from "@/hooks/usePromotions";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
 import dynamic from "next/dynamic";
@@ -105,6 +106,7 @@ export default function Home() {
     }
   });
   const { lang: currentLang, setLang: setCurrentLang, t } = useLanguage();
+  const { data: bannerPromotions } = usePromotions();
   const [cartOpen, setCartOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<string | number>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -375,6 +377,20 @@ export default function Home() {
 
   const menuAvailable = !checkingRestaurant && restaurantReady && !restaurantClosed;
 
+  const activeBanners = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayIso = today.toISOString().slice(0, 10);
+    return (bannerPromotions ?? [])
+      .filter((p) => p.type === "BANNER")
+      .filter((p) => p.is_active)
+      .filter((p) => (p.start_date ? p.start_date <= todayIso : true))
+      .filter((p) => (p.end_date ? p.end_date >= todayIso : true))
+      .filter((p) => p.image)
+      .sort((a, b) => a.display_order - b.display_order)
+      .slice(0, 3);
+  }, [bannerPromotions]);
+
   const unavailableItems = productsLoaded
     ? cart.filter((ci) => !products.some((p) => p.id === ci.id))
     : [];
@@ -570,22 +586,38 @@ export default function Home() {
       </section>
 
       <section id="deals" className="py-16 checkered transition-colors duration-500">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="bg-gradient-to-r from-red-600 to-red-800 rounded-3xl p-10 md:p-14 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-yellow-400 rounded-full -translate-y-1/2 translate-x-1/4 opacity-20 animate-pulse" />
-            <div className="absolute bottom-0 left-0 w-60 h-60 bg-yellow-300 rounded-full translate-y-1/2 -translate-x-1/4 opacity-10" />
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-center md:justify-between gap-6 text-center md:text-left">
-              <div>
-                <span className="bg-yellow-400 text-red-800 text-xs font-black px-4 py-1.5 rounded-full inline-block mb-4">{t("hot_deal")}</span>
-                <h3 className="text-4xl md:text-5xl font-black mb-2">{t("deal_title")}</h3>
-                <p className="text-red-200 text-lg">{t("deal_desc")}</p>
+        {activeBanners.length > 0 && (() => {
+          const deal = activeBanners[0];
+          return (
+            <div className="max-w-7xl mx-auto px-4">
+              <div className="relative rounded-3xl overflow-hidden text-white min-h-[320px] md:min-h-[400px] flex items-stretch shadow-2xl">
+                {deal.image && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={deal.image}
+                    alt={deal.title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+                <div className="relative z-10 flex flex-col md:flex-row items-center md:items-end justify-between gap-6 p-6 md:p-12 w-full">
+                  <div className="text-center md:text-left">
+                    <span className="bg-yellow-400 text-red-800 text-xs font-black px-4 py-1.5 rounded-full inline-block mb-4">{t("hot_deal")}</span>
+                    {deal.title && (
+                      <h3 className="text-3xl md:text-5xl font-black mb-2 drop-shadow-lg">{deal.title}</h3>
+                    )}
+                    {deal.description && (
+                      <p className="text-base md:text-lg text-red-100 drop-shadow">{deal.description}</p>
+                    )}
+                  </div>
+                  <a href="#menu" className="bg-white text-red-600 px-8 py-4 rounded-full font-black text-lg hover:bg-gray-100 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 whitespace-nowrap flex items-center gap-2 shrink-0">
+                    {t("grab_deal")} <i className="fas fa-fire text-red-500"></i>
+                  </a>
+                </div>
               </div>
-              <a href="#menu" className="bg-white text-red-600 px-8 py-4 rounded-full font-black text-lg hover:bg-gray-100 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 whitespace-nowrap flex items-center gap-2">
-                {t("grab_deal")} <i className="fas fa-fire text-red-500"></i>
-              </a>
             </div>
-          </div>
-        </div>
+          );
+        })()}
       </section>
 
       <section id="menu" className="py-16 bg-white dark:bg-gray-800 transition-colors duration-500">

@@ -250,6 +250,7 @@ export interface Coupon {
   valid_from: string | null;
   valid_until: string | null;
   usage_limit: number | null;
+  per_person_limit: number | null;
   times_used: number;
   is_active: boolean;
   created_at: string;

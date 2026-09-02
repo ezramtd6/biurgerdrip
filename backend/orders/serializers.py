@@ -238,13 +238,13 @@ class OrderCreateSerializer(serializers.Serializer):
             )
         return attrs
 
-    def _resolve_coupon(self, code, subtotal):
+    def _resolve_coupon(self, code, subtotal, user=None):
         from promotions.models import Coupon
 
         coupon = Coupon.resolve(code) if code else None
         if not coupon:
             raise serializers.ValidationError({"coupon_code": "Invalid coupon code."})
-        reason = coupon.validate_for(subtotal)
+        reason = coupon.validate_for(subtotal, user=user)
         if reason:
             raise serializers.ValidationError({"coupon_code": reason})
         return coupon
@@ -285,10 +285,20 @@ class OrderCreateSerializer(serializers.Serializer):
         coupon = None
         coupon_discount = 0
         if coupon_code:
-            coupon = self._resolve_coupon(coupon_code, subtotal)
+            coupon = self._resolve_coupon(coupon_code, subtotal, user=user)
             coupon_discount = coupon.calculate_discount(subtotal)
             coupon.times_used += 1
             coupon.save(update_fields=["times_used"])
+            if coupon.per_person_limit is not None and getattr(user, "is_authenticated", False):
+                from promotions.models import CouponRedemption
+
+                redemption, _ = CouponRedemption.objects.get_or_create(
+                    coupon=coupon,
+                    user=user,
+                    defaults={"count": 0},
+                )
+                redemption.count += 1
+                redemption.save()
 
         customer_total = validated_data.get("total")
         if customer_total is not None:
