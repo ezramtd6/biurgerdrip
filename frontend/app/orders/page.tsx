@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCreateOrder } from "@/hooks/useOrders";
 import type { Order } from "@/types";
 import { usePaymentSystems } from "@/hooks/usePaymentSystems";
@@ -44,6 +45,7 @@ const readCart = (): CartItem[] => {
 
 export default function OrdersPage() {
   const { lang: currentLang, t } = useLanguage();
+  const router = useRouter();
   const { data: paymentSystems } = usePaymentSystems();
   const { data: restaurant } = useRestaurant();
   const createOrder = useCreateOrder();
@@ -173,6 +175,9 @@ export default function OrdersPage() {
           );
         }
         window.dispatchEvent(new Event("cart-updated"));
+        setTimeout(() => {
+          router.push("/orders/history");
+        }, 2000);
       },
       onError: (err) => {
         const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data || {};

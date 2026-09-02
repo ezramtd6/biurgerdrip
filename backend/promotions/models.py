@@ -142,7 +142,17 @@ class Coupon(models.Model):
         reason = self.error_message()
         if reason:
             return reason
-        if user is not None and user.is_authenticated and self.per_person_limit is not None:
+        # Per-person limits only apply to real customer accounts — a cashier
+        # placing a walk-in order is acting on behalf of the customer, not
+        # the person using the coupon.
+        from accounts.models import User
+
+        if (
+            user is not None
+            and user.is_authenticated
+            and user.role == User.Role.CUSTOMER
+            and self.per_person_limit is not None
+        ):
             from .models import CouponRedemption
 
             used = CouponRedemption.objects.filter(coupon=self, user=user).first()

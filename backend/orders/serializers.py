@@ -289,7 +289,15 @@ class OrderCreateSerializer(serializers.Serializer):
             coupon_discount = coupon.calculate_discount(subtotal)
             coupon.times_used += 1
             coupon.save(update_fields=["times_used"])
-            if coupon.per_person_limit is not None and getattr(user, "is_authenticated", False):
+            # Per-person redemption only counts against the real customer
+            # account; cashier walk-in orders are not tied to a person.
+            from accounts.models import User
+
+            if (
+                coupon.per_person_limit is not None
+                and getattr(user, "is_authenticated", False)
+                and user.role == User.Role.CUSTOMER
+            ):
                 from promotions.models import CouponRedemption
 
                 redemption, _ = CouponRedemption.objects.get_or_create(
