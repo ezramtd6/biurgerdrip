@@ -26,6 +26,9 @@ frontend/.env.production
 # Django media uploads
 backend/media/
 
+# Django collected static assets (generated)
+backend/staticfiles/
+
 # Django runtime logs
 backend/logs/
 

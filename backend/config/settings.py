@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 import os
 
 
@@ -22,16 +23,34 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1", "true", "yes", "on")
+
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-1j6pvy8m!n(uszcflesi25+3r228#lx!no%+l4@8i@l5%uz^ju'
+def _load_secret_key():
+    key = os.getenv("SECRET_KEY")
+    if key:
+        return key
+    if DEBUG:
+        # Local development fallback only — production must set SECRET_KEY.
+        return (
+            "django-insecure-1j6pvy8m!n(uszcflesi25+3r228#lx!no%+l4@8i@l5%uz^ju"
+        )
+    raise ImproperlyConfigured(
+        "SECRET_KEY must be set in the environment when DEBUG is off."
+    )
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "10.42.0.1"]
+SECRET_KEY = _load_secret_key()
+
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv(
+        "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,10.42.0.1"
+    ).split(",")
+    if host.strip()
+]
 
 
 # Application definition
@@ -89,19 +108,19 @@ CORS_EXPOSE_HEADERS = [
     "Content-Disposition",
 ]
 
+_LOCAL_CORS_ORIGINS = (
+    "http://localhost:3000,http://127.0.0.1:3000,http://10.42.0.1:3000,"
+    "http://172.20.0.183:3000,http://192.168.0.100:3000"
+)
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://10.42.0.1:3000",
-    "http://172.20.0.183:3000",
-    "http://192.168.0.100:3000",
+    origin.strip()
+    for origin in os.getenv("DJANGO_CORS_ORIGINS", _LOCAL_CORS_ORIGINS).split(",")
+    if origin.strip()
 ]
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://10.42.0.1:3000",
-    "http://127.0.0.1:3000",
-    "http://172.20.0.183:3000",
-    "http://192.168.0.100:3000",
+    origin.strip()
+    for origin in os.getenv("DJANGO_CSRF_ORIGINS", _LOCAL_CORS_ORIGINS).split(",")
+    if origin.strip()
 ]
 ROOT_URLCONF = 'config.urls'
 
@@ -129,11 +148,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "burgerdrip",
-        "USER": "postgres",
-        "PASSWORD": "8740",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": os.getenv("DB_NAME", "burgerdrip"),
+        "USER": os.getenv("DB_USER", "postgres"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "8740"),
+        "HOST": os.getenv("DB_HOST", "localhost"),
+        "PORT": os.getenv("DB_PORT", "5432"),
     }
 }
 
@@ -141,7 +160,21 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 AUTH_USER_MODEL = "accounts.User"
-AUTH_PASSWORD_VALIDATORS = []
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 8},
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+]
 
 
 # Internationalization
@@ -160,6 +193,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
