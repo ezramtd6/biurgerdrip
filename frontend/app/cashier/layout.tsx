@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthModal } from "@/components/auth/auth-modal-context";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import SiteBrand from "@/components/layout/SiteBrand";
 import ConfirmDialog from "@/components/common/ConfirmDialog";
@@ -21,8 +22,16 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
   const { openAuth } = useAuthModal();
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [mounted, setMounted] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      queryClient.invalidateQueries();
+    }, 5000);
+    return () => clearInterval(id);
+  }, [queryClient]);
 
   useEffect(() => {
     setMounted(true);
