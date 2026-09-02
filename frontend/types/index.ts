@@ -142,6 +142,7 @@ export interface Order {
   tax: number;
   total: number;
   coupon: number | null;
+  coupon_code?: string | null;
   payment_method: "CASH" | "CARD" | "MOBILE" | string | null;
   payment_proof: string | null;
   proof_attempts: number;

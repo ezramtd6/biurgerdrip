@@ -150,8 +150,9 @@ export default function OrdersPage() {
     const formData = new FormData();
     formData.append("discount", "0");
     formData.append("tax", "0");
+    formData.append("total", String(grandTotal));
     formData.append("payment_method", selectedMethod);
-    if (couponCode.trim()) formData.append("coupon_code", couponCode.trim());
+    if (couponStatus.state === "valid") formData.append("coupon_code", couponCode.trim());
     formData.append("items", JSON.stringify(items));
     formData.append("payment_proof", proofFile);
     createOrder.mutate(formData, {

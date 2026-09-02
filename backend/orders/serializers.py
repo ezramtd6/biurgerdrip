@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 
 from rest_framework import serializers
 from .models import Order, OrderItem, OrderItemOption, PaymentSystem, OrderNotification, PaymentProofAttempt
@@ -76,18 +77,22 @@ class OrderSerializer(serializers.ModelSerializer):
     support_phone = serializers.SerializerMethodField(read_only=True)
     customer_details = serializers.SerializerMethodField(read_only=True)
     cashier_details = serializers.SerializerMethodField(read_only=True)
+    coupon_code = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Order
         fields = [
             "id", "order_number", "customer", "cashier", "subtotal",
-            "discount", "tax", "total", "coupon", "payment_method", "status",
+            "discount", "tax", "total", "coupon", "coupon_code", "payment_method", "status",
             "payment_proof", "proof_attempts", "rejection_reason", "notifications", "proof_history",
             "has_unavailable_items", "support_phone", "customer_details", "cashier_details",
             "refund_method", "refund_account",
             "created_at", "updated_at", "items",
         ]
         read_only_fields = ["id", "order_number", "customer", "cashier", "created_at", "updated_at"]
+
+    def get_coupon_code(self, obj):
+        return obj.coupon.code if obj.coupon_id else None
 
     def get_payment_proof(self, obj):
         if obj.payment_proof:
@@ -138,6 +143,7 @@ class OrderCreateSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     discount = serializers.DecimalField(max_digits=10, decimal_places=2, default=0)
     tax = serializers.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     payment_method = serializers.CharField(required=False, allow_blank=True, max_length=20)
     coupon_code = serializers.CharField(required=False, allow_blank=True, max_length=50)
     payment_proof = serializers.ImageField(required=False, allow_null=True)
@@ -284,6 +290,12 @@ class OrderCreateSerializer(serializers.Serializer):
             coupon.times_used += 1
             coupon.save(update_fields=["times_used"])
 
+        customer_total = validated_data.get("total")
+        if customer_total is not None:
+            if customer_total < 0:
+                raise serializers.ValidationError({"total": "Total cannot be negative."})
+            coupon_discount = max(Decimal("0"), subtotal - customer_total)
+
         order = Order.objects.create(
             customer=user if user.role == "CUSTOMER" else None,
             cashier=user if user.role == "CASHIER" else None,
@@ -317,7 +329,11 @@ class OrderCreateSerializer(serializers.Serializer):
                 )
 
         order.subtotal = subtotal
-        order.total = subtotal - order.discount + order.tax
+        order.total = (
+            customer_total
+            if customer_total is not None
+            else subtotal - order.discount + order.tax
+        )
         order.save()
 
         if order.payment_proof:

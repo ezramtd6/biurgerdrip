@@ -275,7 +275,11 @@ export default function Home() {
     const selected = groups
       .map((g) => ({ group: g, value: g.values?.find((v) => v.id === selectedOptions[`${item.id}:${g.id}`]) }))
       .filter((x) => x.value) as { group: OptionGroup; value: OptionValue }[];
-    const price = Number(item.price) + selected.reduce((sum, x) => sum + Number(x.value.price_adjustment), 0);
+    const basePrice =
+      item.discounted_price != null && Number(item.discounted_price) < Number(item.price)
+        ? Number(item.discounted_price)
+        : Number(item.price);
+    const price = basePrice + selected.reduce((sum, x) => sum + Number(x.value.price_adjustment), 0);
     const optionKey = selected.map((x) => x.value.id).sort((a, b) => a - b).join("-");
     const optionNames = selected.map((x) => `${x.group.name}: ${x.value.name}`).join(", ");
     setCart((prev) => {
@@ -694,10 +698,18 @@ export default function Home() {
                         <p className="text-gray-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">{itemDesc}</p>
                         <div className="flex flex-col gap-3">
                           {!sizeGroup && (
-                            <span className="text-red-600 leading-none">
-                              <span className="text-[10px] font-bold uppercase tracking-widest mr-1 opacity-70 align-top">{t("currency")}</span>
-                              <span className="text-xl font-extrabold tracking-tight">{Number(item.price).toFixed(2)}</span>
-                            </span>
+                            item.discounted_price != null && Number(item.discounted_price) < Number(item.price) ? (
+                              <span className="text-red-600 leading-none">
+                                <span className="text-[10px] font-bold uppercase tracking-widest mr-1 opacity-70 align-top">{t("currency")}</span>
+                                <span className="text-xl font-extrabold tracking-tight">{Number(item.discounted_price).toFixed(2)}</span>
+                                <span className="ml-2 text-xs font-semibold text-gray-400 line-through">{t("currency")} {Number(item.price).toFixed(2)}</span>
+                              </span>
+                            ) : (
+                              <span className="text-red-600 leading-none">
+                                <span className="text-[10px] font-bold uppercase tracking-widest mr-1 opacity-70 align-top">{t("currency")}</span>
+                                <span className="text-xl font-extrabold tracking-tight">{Number(item.price).toFixed(2)}</span>
+                              </span>
+                            )
                           )}
                           {groups.map((group) => {
                             const groupKey = `${item.id}:${group.id}`;

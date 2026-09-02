@@ -439,6 +439,17 @@ export default function OrderHistoryPage() {
                   </div>
                 )}
 
+                {order.coupon_code && Number(order.discount) > 0 && (
+                  <div className="border-t dark:border-gray-700 mt-3 pt-3 flex justify-between items-center gap-3">
+                    <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                      {t("coupon_discount")} <span className="font-bold">({order.coupon_code})</span>
+                    </span>
+                    <span className="font-bold text-base sm:text-sm text-green-600 dark:text-green-400 text-right">
+                      -{t("currency")} {Number(order.discount).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+
                 <div className="border-t dark:border-gray-700 mt-3 pt-3 flex justify-between items-center gap-3">
                   <span className="text-sm font-medium text-gray-900 dark:text-white">{t("total")}</span>
                   <span className="font-bold text-base sm:text-sm text-gray-900 dark:text-white text-right">{t("currency")} {Number(order.total).toFixed(2)}</span>
